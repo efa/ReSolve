@@ -1,0 +1,46 @@
+; put here the dynamic configurations for ReSolve +0.08.09g beta
+; numeric values follow equal sign, with no space in between
+; strings are enclosed in "", keep in one line, shorter than 78 chars
+; vectors are {} enclosed and comma separated (space and multi lines allowed)
+; comments follow ;
+; remember that command line arguments take precedence to config value
+; -h|--help to see command line syntax
+
+expr="1.25*(1+b/a)" ; default formula. Es. '1.25*(1+b/a)'
+                    ; reverse high partitor (LM317)
+
+desired=9 ; 9 Volt output
+
+Eseries=96  ; Exx: Series E12, E24, E96 or E192
+            ;   0  for custom list, see 'baseR' and 'listNumber'
+            ;   1  
+            ;   3 @40% tolerance
+            ;   6 @20% tolerance
+            ;  12 @10% tolerance
+            ;  24 @5% (and 2%) tolerance
+            ;  48 @2% tolerance
+            ;  96 @1% tolerance
+            ; 192 @0.5% (and 0.1%) tolerance
+decades=7 ; number of decades of interest, normally 6 or 7
+          ; not used when Eseries=0
+
+baseR={  470,   510,   560,   620,   680,   750,   820,   910,
+        1000,  1100,  1200,  1300,  1500,  1600,  1800,
+        2000,  2200,  2400,  2700,  3000,  3300,  3600,  3900,
+        4300,  4700,  5100,  5600,  6200,  6800,  7500,  8200, 9100,
+       10000, 11000, 12000, 13000, 15000, 16000, 18000,
+       20000, 22000, 24000, 27000, 30000, 33000, 36000, 39000,
+       43000, 47000, 51000, 56000, 62000, 68000,
+       75000, 82000, 91000, 100000} ; custom list of 57 values @1% : TH @RS
+listNumber=57 ; insert here custom list quantity. Not used when Eseries>0
+
+baseRdesc="custom list of 57 values @1% tolerance: TH @RS" ; max 64 chars
+                                                           ; description only
+
+numberOfResults=20 ; show the best 20 results
+
+maxRp=1 ; max number of resistances supported per position: as now 1 or 2.
+        ; with 2 try all series and parallel for 'a' and 'b'. Note: when 2
+        ; require Eseries = 12 or 24 or will end memory, see 'Readme.txt'
+maxRc=2 ; as now 2 is the only supported value
+        ; (numbers of variables in formula, 'a' and 'b')

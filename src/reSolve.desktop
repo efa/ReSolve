@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Exec=reSolveGui
+Comment=Start ReSolveGui
+Comment[it_IT]=Avvia ReSolveGui
+Icon=ReSolve
+Icon[it_IT]=ReSolve
+Name=ReSolveGui
+Name[it_IT]=ReSolveGui
+Categories=Utility

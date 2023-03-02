@@ -1,0 +1,20 @@
+#!/bin/sh
+HERE="$(dirname "$(readlink -f "${0}")")"
+#echo "HERE:'$HERE'"; echo ""
+cd ${HERE}
+export UNION_PRELOAD="${HERE}"
+LIBS=:$(find . -type f -name "*.so.*" | tr '\n' ':' | sed 's|:$||g')
+#echo "LIBS:'$LIBS'"; echo ""
+export LD_PRELOAD=`echo $LIBS | sed 's|:|:'${HERE}'/|g' | sed 's|/\./|/|g' | sed 's|^:||g'`
+#echo "LD_PRELOAD:'$LD_PRELOAD'"; echo ""
+#export PATH=/bin:/usr/bin:/usr/local/bin:/sbin:"${HERE}"/usr/bin:"${PATH}"
+export PATH="${HERE}":"${PATH}"
+#echo "PATH:'$PATH'"; echo ""
+#export LD_LIBRARY_PATH=/lib64:/usr/lib:/lib:/usr/lib/x86_64-linux-gnu:"${HERE}"/usr/lib:"${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${HERE}"/lib:"${LD_LIBRARY_PATH}"
+#echo "LD_LIBRARY_PATH:'$LD_LIBRARY_PATH'"; echo ""
+#export PKG_CONFIG_PATH="${HERE}"/usr/share/pkgconfig:$PKG_CONFIG_PATH
+#EXEC=$(grep -e '^Exec=.*' "${HERE}"/*.desktop | head -n 1 | cut -d "=" -f 2- | sed -e 's| %.||g')
+EXEC=reSolveGui
+#echo "EXEC:'$EXEC'"; echo "RUN:${HERE}/${EXEC}"
+exec ${HERE}/${EXEC} "$@"

@@ -1,0 +1,63 @@
+# Makefile to generate 'reSolve' @32bit on 64bit OS
+# Linux64=>Linux32
+
+BITS := $(shell getconf LONG_BIT)
+BUILD?=release
+ifeq ($(BUILD),debug)
+   COPT=-O1 -g -fsanitize=address -fno-omit-frame-pointer
+   LOPT=-fsanitize=address
+else
+   COPT=-O3
+endif
+
+CC=gcc
+CFLAGS=-std=gnu11 -Wall $(COPT) -D__USE_MINGW_ANSI_STDIO=1 -m32
+PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig:$PKG_CONFIG_PATH
+GFLAGS=`pkg-config --cflags --libs gtk+-3.0`
+LDFLAGS=$(LOPT)
+TARGET=reSolveLinux32
+GUI=reSolveGuiLinux32
+
+all: $(TARGET) $(GUI)
+	@rm -f *.gch
+
+$(GUI): fileIo.o exprParser.o reSolveLib.o reSolveGui.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(GFLAGS)
+
+$(TARGET): fileIo.o exprParser.o reSolveLib.o reSolveCli.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+
+fileIo.o: comType.h fileIo.h fileIo.c
+
+exprParser.o: exprParser.h exprParser.c
+
+reSolveLib.o: comType.h fileIo.h exprParser.h reSolveLib.h reSolveLib.c
+
+reSolveCli.o: comType.h fileIo.h exprParser.h reSolveLib.h reSolveCli.c
+
+reSolveGui.o: comType.h fileIo.h exprParser.h reSolveLib.h reSolveGui.c
+	$(CC) $(CFLAGS) -c $^ $(GFLAGS)
+
+strip:
+	strip $(TARGET) $(GUI)
+
+cleanobj:
+	rm -f *.o
+	@rm -f *.gch
+
+cleanbin:
+	rm -f $(TARGET) $(GUI)
+
+clean:
+	rm -f *.o $(TARGET) $(GUI)
+
+bin: all cleanobj strip
+
+force: clean bin
+	rm -f *.o
+
+rel: force
+	mv $(TARGET) $(GUI) ..
+
+pkg: rel
+	@makeAppDir.sh
