@@ -1,7 +1,10 @@
 # Makefile to generate 'reSolve' @32bit on 64bit OS
 # Linux64=>Linux32
 
-BITS := $(shell getconf LONG_BIT)
+HOST=$(shell uname -o)
+PKG=Linux
+BITS = 32
+
 BUILD?=release
 ifeq ($(BUILD),debug)
    COPT=-O1 -g -fsanitize=address -fno-omit-frame-pointer
@@ -51,6 +54,8 @@ cleanbin:
 clean:
 	rm -f *.o $(TARGET) $(GUI)
 
+debug: all cleanobj
+
 bin: all cleanobj strip
 
 force: clean bin
@@ -60,4 +65,4 @@ rel: force
 	mv $(TARGET) $(GUI) ..
 
 pkg: rel
-	@makeAppDir.sh
+	@makeAppDir.sh $(PKG) $(BITS)

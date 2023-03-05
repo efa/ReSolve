@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/01 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/05 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* comType.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify

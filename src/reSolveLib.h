@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/01 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/05 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -31,8 +31,8 @@
 #include "fileIo.h"     /* file Input/Output */
 #include "exprParser.h" /* expression parser interface */
 
-#define SourceVersion "0.09.09g beta"
-#define SourceDate    "2023/02/12"
+#define SourceVersion "0.09.09h beta"
+#define SourceDate    "2023/03/05"
 
 #ifdef __MSVCRT__       /* CrossCompile to MinGw target */
 #define fsync _commit   /* msvcrt.dll miss fsync, that is present on unix */
@@ -104,7 +104,7 @@
 #define PRINTVERBOSE 6
 #define DbgLv PRINTF
 
-extern char* expr;     /* default value for formula: reversed high partitor (LM317) */
+extern char expr[];    /* default value for formula: reversed high partitor (LM317) */
 extern double desired; /* searched value */
 extern u08 Eseries;    /* Exx: Series E12, E24, (E48), E96 or E192. Use 0 for custom list */
 extern u08 decades;    /* number of decades of interest, normally 6 or 7 */

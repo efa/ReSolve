@@ -1,7 +1,13 @@
 # Makefile to generate 'reSolve'
 # Linux32=>Linux32, Linux64=>Linux64, MinGw32=>Win32, MinGw64=>Win64
 
+HOST=$(shell uname -o)
+PKG=Linux
+ifeq ($(HOST),Msys)
+   PKG=Win
+endif
 BITS := $(shell getconf LONG_BIT)
+
 BUILD?=release
 ifeq ($(BUILD),debug)
    COPT=-O1 -g -fsanitize=address -fno-omit-frame-pointer
@@ -15,8 +21,8 @@ CFLAGS=-std=gnu11 -Wall $(COPT) -D__USE_MINGW_ANSI_STDIO=1
 PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH
 GFLAGS=`pkg-config --cflags --libs gtk+-3.0`
 LDFLAGS=$(LOPT)
-TARGET=reSolveLinux64
-GUI=reSolveGuiLinux64
+TARGET=reSolve$(PKG)64
+GUI=reSolveGui$(PKG)64
 
 all: $(TARGET) $(GUI)
 	@rm -f *.gch
@@ -54,6 +60,8 @@ cleanbin:
 
 clean: cleanobj cleanbin
 
+debug: all cleanobj
+
 bin: all cleanobj strip
 
 force: clean bin
@@ -63,4 +71,4 @@ rel: force
 	mv $(TARGET) $(GUI) ..
 
 pkg: rel
-	@makeAppDir.sh
+	@makeAppDir.sh $(PKG) $(BITS)

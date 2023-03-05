@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/01 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/05 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -56,8 +56,8 @@ int main(int numPar, char* param[]) {
          /*printf ("param2Str:%s\n", param[2]);*/
          len = strlen (param[2]);
          if (len < 60) {
-            pos = strcspn (param[2], "!\"#$&',:;<=>?@[\\]_`{|}~�簧");
-            if (pos!=len) { // filter out: !"#$&',:;<=>?@[\]_`{|}~�簧
+            pos = strcspn (param[2], "!\"#$&',:;<=>?@[\\]_`{|}~�簧");
+            if (pos!=len) { // filter out: !"#$&',:;<=>?@[\]_`{|}~�簧
                showHelp (allocatedMB);
                printf ("Unsupported char: '%c'\n", *(param[2]+pos));
                return (ERROR);
@@ -77,7 +77,7 @@ int main(int numPar, char* param[]) {
                   }
                }
             }
-            expr = param[2];
+            strcpy(expr, param[2]);
          } else {
             showHelp (allocatedMB);
             printf ("Formula too long: %u chars\n", len);
@@ -139,7 +139,6 @@ int main(int numPar, char* param[]) {
    ret = freeMem(); // free memory
    // free mem allocated by fillConfigVars()
    if (baseR) free (baseR);
-   if (expr) free (expr);
 
    return (OK);
 }

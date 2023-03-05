@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/01 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/05 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 u08 dbgLev = DbgLv;
 u08 dbgLv  = DbgLv;
 
-char*  expr = ExpressionDefault;/* default value for formula: reversed high partitor (LM317) */
+char expr[LineLen] = ExpressionDefault;/* default value for formula: reversed high partitor (LM317) */
 double desired;        /* searched value */
 u08 Eseries = Series;  /* Exx: Series E12, E24, (E48), E96 or E192. Use 0 for custom list */
 u08 decades = Decades; /* number of decades of interest, normally 6 or 7 */
@@ -593,9 +593,9 @@ int fillConfigVars(void) { // load and check users config file
       if (dbgLev>=PRINTWARN) printf ("WARN %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
    } else {
       //printf ("expr='%s'\n", paramValue);
-      expr = malloc (LineLen); // was 52
-      if (!expr) {
-         printf ("Dynamic allocation of:%u Bytes failed:0x%8p\n", LineLen, expr);
+      int len=strlen(paramValue);
+      if (len>=LineLen) {
+         printf ("Parameter:'%s' len:%u, max supported len:%u\n", paramName, len, LineLen);
          return (ERROR);
       }
       endPtr = strcpy (expr, paramValue);
@@ -662,62 +662,6 @@ int fillConfigVars(void) { // load and check users config file
    }
    if (dbgLev>=PRINTDEBUG) printf ("listNumber=%u\n", listNumber);
 
-   strcpy (paramName, "maxRp");
-   ret=parseConf (bufferPtr, paramName, paramValue);
-   if (ret!=OK) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
-   }
-   //printf ("maxRp='%s'\n", paramValue);
-   maxRp = strtol (paramValue, &endPtr, 10);
-   if (endPtr==paramValue) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in maxRp='%s'\n", __FUNCTION__, paramValue);
-      return (ERROR);
-   }
-   if (dbgLev>=PRINTDEBUG) printf ("maxRp=%u\n", maxRp);
-
-   strcpy (paramName, "maxRc");
-   ret=parseConf (bufferPtr, paramName, paramValue);
-   if (ret!=OK) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
-   }
-   //printf ("maxRc='%s'\n", paramValue);
-   maxRc = strtol (paramValue, &endPtr, 10);
-   if (endPtr==paramValue) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in maxRc='%s'\n", __FUNCTION__, paramValue);
-      return (ERROR);
-   }
-   if (dbgLev>=PRINTDEBUG) printf ("maxRc=%u\n", maxRc);
-
-   strcpy (paramName, "baseRdesc");
-   ret=parseConf (bufferPtr, paramName, paramValue);
-   if (ret!=OK) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
-   }
-   //printf ("baseRdesc='%s'\n", paramValue);
-   endPtr = strcpy (baseRdesc, paramValue);
-   if (endPtr==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
-      return (ERROR);
-   }
-   if (dbgLev>=PRINTDEBUG) printf ("baseRdesc='%s'\n", baseRdesc);
-
-   strcpy (paramName, "numberOfResults");
-   ret=parseConf (bufferPtr, paramName, paramValue);
-   if (ret!=OK) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
-   }
-   //printf ("numberOfResults='%s'\n", paramValue);
-   numBestRes = strtol (paramValue, &endPtr, 10);
-   if (endPtr==paramValue) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
-      return (ERROR);
-   }
-   if (dbgLev>=PRINTDEBUG) printf ("numberOfResults='%s'\n", baseRdesc);
-
    strcpy (paramName, "baseR");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
@@ -765,6 +709,63 @@ int fillConfigVars(void) { // load and check users config file
       if (dbgLev>=PRINTDEBUG) printf ("%g, ", baseR[p]);
    }
    if (dbgLev>=PRINTDEBUG) printf ("\n");
+
+   strcpy (paramName, "baseRdesc");
+   ret=parseConf (bufferPtr, paramName, paramValue);
+   if (ret!=OK) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
+      return (ERROR);
+   }
+   //printf ("baseRdesc='%s'\n", paramValue);
+   endPtr = strcpy (baseRdesc, paramValue);
+   if (endPtr==NULL) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
+      return (ERROR);
+   }
+   if (dbgLev>=PRINTDEBUG) printf ("baseRdesc='%s'\n", baseRdesc);
+
+   strcpy (paramName, "numberOfResults");
+   ret=parseConf (bufferPtr, paramName, paramValue);
+   if (ret!=OK) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
+      return (ERROR);
+   }
+   //printf ("numberOfResults='%s'\n", paramValue);
+   numBestRes = strtol (paramValue, &endPtr, 10);
+   if (endPtr==paramValue) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
+      return (ERROR);
+   }
+   if (dbgLev>=PRINTDEBUG) printf ("numberOfResults='%s'\n", baseRdesc);
+
+   strcpy (paramName, "maxRp");
+   ret=parseConf (bufferPtr, paramName, paramValue);
+   if (ret!=OK) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
+      return (ERROR);
+   }
+   //printf ("maxRp='%s'\n", paramValue);
+   maxRp = strtol (paramValue, &endPtr, 10);
+   if (endPtr==paramValue) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in maxRp='%s'\n", __FUNCTION__, paramValue);
+      return (ERROR);
+   }
+   if (dbgLev>=PRINTDEBUG) printf ("maxRp=%u\n", maxRp);
+
+   strcpy (paramName, "maxRc");
+   ret=parseConf (bufferPtr, paramName, paramValue);
+   if (ret!=OK) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
+      return (ERROR);
+   }
+   //printf ("maxRc='%s'\n", paramValue);
+   maxRc = strtol (paramValue, &endPtr, 10);
+   if (endPtr==paramValue) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in maxRc='%s'\n", __FUNCTION__, paramValue);
+      return (ERROR);
+   }
+   if (dbgLev>=PRINTDEBUG) printf ("maxRc=%u\n", maxRc);
+
    //dbgLev=PRINTF;
    //printf ("Freeing buffer ...\n");
    free (bufferPtr);
@@ -816,36 +817,41 @@ int fillConfigVars(void) { // load and check users config file
 } // int fillConfigVars()
 
 int updateRdesc() { // update Rdesc
-   if (Eseries>0) { // standard Exx series resistors
-      switch (Eseries) {
-      case (1):
-         strcpy (baseRdesc, baseR1desc);
-         break;
-      case (3):
-         strcpy (baseRdesc, baseR3desc);
-         break;
-      case (6):
-         strcpy (baseRdesc, baseR6desc);
-         break;
-      case (12):
-         strcpy (baseRdesc, baseR12desc);
-         break;
-      case (24):
-         strcpy (baseRdesc, baseR24desc);
-         break;
-      case (48):
-         strcpy (baseRdesc, baseR48desc);
-         break;
-      case (96):
-         strcpy (baseRdesc, baseR96desc);
-         break;
-      case (192):
-         strcpy (baseRdesc, baseR192desc);
-         break;
-      default:
-         printf ("Unsupported Series:%u. Supported are 1, 3, 6, 12, 24, 48, 96 and 192\n", Eseries);
-         return 1;
-      }
+   switch (Eseries) {
+   case (0):
+      strcpy (baseRdesc, "custom list of ");
+      char str[6];
+      sprintf(str, "%u", listNumber);
+      strcat (baseRdesc, str);
+      strcat (baseRdesc, " values");
+      break;
+   case (1): // standard Exx series resistors
+      strcpy (baseRdesc, baseR1desc);
+      break;
+   case (3):
+      strcpy (baseRdesc, baseR3desc);
+      break;
+   case (6):
+      strcpy (baseRdesc, baseR6desc);
+      break;
+   case (12):
+      strcpy (baseRdesc, baseR12desc);
+      break;
+   case (24):
+      strcpy (baseRdesc, baseR24desc);
+      break;
+   case (48):
+      strcpy (baseRdesc, baseR48desc);
+      break;
+   case (96):
+      strcpy (baseRdesc, baseR96desc);
+      break;
+   case (192):
+      strcpy (baseRdesc, baseR192desc);
+      break;
+   default:
+      printf ("Unsupported Series:%u. Supported are 1, 3, 6, 12, 24, 48, 96 and 192\n", Eseries);
+      return 1;
    }
    return 0;
 } // int updateRdesc()

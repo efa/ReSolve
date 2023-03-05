@@ -1,7 +1,19 @@
 #!/bin/bash
 # makeAppDir.sh: this script generate the AppDir for ReSolve
+echo "makeAppDir.sh: generating the AppDir for ReSolve ..."
+if (test "" = "$1") then
+   echo "makeAppDir.sh ERR: need the target platform to create package"
+   exit
+fi
+PKG=$1
+if (test "" = "$2") then
+   BITS=$(getconf LONG_BIT)
+else
+   BITS=$2
+fi
+echo "makeAppDir.sh: generating $PKG $BITS bit package ..."
+rm -rf AppDir
 mkdir -p AppDir/lib
-BITS=$(getconf LONG_BIT)
 if (test "$BITS" = "64") then
    cp -a /lib/x86_64-linux-gnu/libatk-1.0.so.0 AppDir/lib
    cp -a /lib/x86_64-linux-gnu/libatk-bridge-2.0.so.0 AppDir/lib
@@ -148,27 +160,33 @@ if (test "$BITS" = "32") then
 fi
 cp reSolveConf.txt reSolve.glade circuit*.png AppDir
 cp reSolve.desktop ReSolve.png AppRun AppDir
-if (test "$BITS" = "64") then
-   cp -a reSolveLinux64    AppDir/reSolve
-   cp -a reSolveGuiLinux64 AppDir/reSolveGui
-fi
-if (test "$BITS" = "32") then
-   cp -a reSolveLinux32    AppDir/reSolve
-   cp -a reSolveGuiLinux32 AppDir/reSolveGui
+if (test "$PKG" = "Win") then
+   EXT=".exe"
 fi
 if (test "$BITS" = "64") then
-   if (! test -x appimagetool-x86_64.AppImage) then
-      wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
-      chmod +x appimagetool-x86_64.AppImage
-   fi
-   appimagetool-x86_64.AppImage AppDir
-   mv ReSolveGui-x86_64.AppImage ..
+   cp -a ../reSolve${PKG}64${EXT}    AppDir/reSolve
+   cp -a ../reSolveGui${PKG}64${EXT} AppDir/reSolveGui
 fi
 if (test "$BITS" = "32") then
-   if (! test -x appimagetool-i686.AppImage) then
-      wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-i686.AppImage"
-      chmod +x appimagetool-i686.AppImage
+   cp -a ../reSolve${PKG}32${EXT}    AppDir/reSolve
+   cp -a ../reSolveGui${PKG}32${EXT} AppDir/reSolveGui
+fi
+if (test "$PKG" = "Linux") then
+   echo "makeAppDir.sh: Generating the AppImage for ReSolve ..."
+   if (test "$BITS" = "64") then
+      if (! test -x appimagetool-x86_64.AppImage) then
+         wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+         chmod +x appimagetool-x86_64.AppImage
+      fi
+      appimagetool-x86_64.AppImage AppDir
+      mv ReSolveGui-x86_64.AppImage ..
    fi
-   appimagetool-i686.AppImage AppDir
-   mv ReSolveGui-i686.AppImage ..
+   if (test "$BITS" = "32") then
+      if (! test -x appimagetool-i686.AppImage) then
+         wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-i686.AppImage"
+         chmod +x appimagetool-i686.AppImage
+      fi
+      appimagetool-i686.AppImage AppDir
+      mv ReSolveGui-i386.AppImage ..
+   fi
 fi

@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.38.2 
 
-Copyright (C) 2022 Valerio Messina
+Copyright (C) 2022-2023 Valerio Messina
 
-This file is part of reSolve.
+This file is part of ReSolve.
 
-reSolve is free software: you can redistribute it and/or modify
+ReSolve is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-reSolve is distributed in the hope that it will be useful,
+ReSolve is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with reSolve.  If not, see <http://www.gnu.org/licenses/>.
+along with ReSolve.  If not, see <http://www.gnu.org/licenses/>.
 
 Author: Valerio Messina
 
 -->
 <!-- GUI resource file for reSolve -->
 <interface>
-  <requires lib="gtk+" version="3.6"/>
+  <requires lib="gtk+" version="3.10"/>
   <!-- interface-license-type lgplv3 -->
-  <!-- interface-name reSolve -->
-  <!-- interface-copyright 2022 Valerio Messina -->
+  <!-- interface-name ReSolve -->
+  <!-- interface-copyright 2022-2023 Valerio Messina -->
   <!-- interface-authors Valerio Messina -->
   <object class="GtkAdjustment" id="adjDesired">
     <property name="upper">127</property>
@@ -384,12 +384,10 @@ operators: +,-,*,/,%,^, parentesis () with any depth</property>
         </child>
         <child>
           <object class="GtkLabel" id="output">
-            <property name="height-request">3</property>
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="label" translatable="yes">Results output line 00
-Results output line 01
-Results output line 02
+            <property name="label" translatable="yes">00000000011111111112222222222333333333344444444445555555555666666666677777777778
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
 Results output line 03
 Results output line 04
 Results output line 05
@@ -406,8 +404,12 @@ Results output line 15
 Results output line 16
 Results output line 17
 Results output line 18
-Results output line 19</property>
+Results output line 19
+Results output line 20</property>
+            <property name="wrap">True</property>
             <property name="selectable">True</property>
+            <property name="width-chars">80</property>
+            <property name="max-width-chars">80</property>
           </object>
           <packing>
             <property name="expand">True</property>

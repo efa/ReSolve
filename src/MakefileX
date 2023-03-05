@@ -1,7 +1,10 @@
 # Makefile to crosscompile 'reSolve' from Linux to Win64
 # Linux=>Win64
 
+HOST=$(shell uname -o)
+PKG=Win
 BITS := $(shell getconf LONG_BIT)
+
 BUILD?=release
 ifeq ($(BUILD),debug)
    COPT=-O1 -g -fsanitize=address -fno-omit-frame-pointer
@@ -53,6 +56,8 @@ cleanbin:
 clean:
 	rm -f *.o $(TARGET) $(GUI)
 
+debug: all cleanobj
+
 bin: all cleanobj strip
 
 force: clean bin
@@ -62,4 +67,4 @@ rel: force
 	mv $(TARGET) $(GUI) ..
 
 pkg: rel
-	@makeAppDir.sh
+	@makeAppDir.sh $(PKG) $(BITS)

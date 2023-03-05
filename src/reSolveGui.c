@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/01 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/05 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -26,7 +26,14 @@ GtkBuilder* builderPtr;
 GObject* windowPtr;
 GObject* widgetPtr;
 
-int runReSolve();
+char exprConf[LineLen]; // config expression backup
+double* baseRconf;      // config custom list backup
+u16 listNumberConf;     // config custom list quantity backup
+char exprBack[LineLen]; // user expression backup
+double* baseRback;      // user custom list backup
+u16 listNumberBack;     // user custom list quantity backup
+
+int runReSolve(); // memSize, memAlloc, doCalc, show output, freeMem
 
 int updateLabelDesc() {
    widgetPtr = gtk_builder_get_object (builderPtr, "description");
@@ -55,14 +62,44 @@ static void formulaPre(GtkWidget* widgetPtr, gpointer dataPtr) {
    gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetPtr);
    g_print("value:'%s'\n", comboValPtr);
    widgetPtr=GTK_WIDGET(gtk_builder_get_object(builderPtr, "circuits"));
-   if (!strcmp(comboValPtr, "Series"))
+   if (!strcmp(comboValPtr, "Series")) {
       gtk_image_set_from_file(GTK_IMAGE(widgetPtr), "circuit00.png");
-   if (!strcmp(comboValPtr, "Parallel"))
+      char formula[]="a+b";
+      strcpy(expr, formula);
+   }
+   if (!strcmp(comboValPtr, "Parallel")) {
       gtk_image_set_from_file(GTK_IMAGE(widgetPtr), "circuit01.png");
-   if (!strcmp(comboValPtr, "Partitor"))
+      char formula[]="a*b/(a+b)";
+      strcpy(expr, formula);
+   }
+   if (!strcmp(comboValPtr, "Partitor")) {
       gtk_image_set_from_file(GTK_IMAGE(widgetPtr), "circuit02.png");
-   if (!strcmp(comboValPtr, "VoltReg"))
+      char formula[]="(a+b)/b";
+      strcpy(expr, formula);
+   }
+   if (!strcmp(comboValPtr, "VoltReg")) {
       gtk_image_set_from_file(GTK_IMAGE(widgetPtr), "circuit03.png");
+      char formula[]="1.25*(1+b/a)";
+      strcpy(expr, formula);
+   }
+   if (!strcmp(comboValPtr, "custom formula")) {
+      gtk_image_set_from_file(GTK_IMAGE(widgetPtr), "circuit03.png");
+   }
+   widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "formula");
+   if (!strcmp(comboValPtr, "custom formula")) {
+      if (exprBack[0]!='\0') { // user has already type a formula
+         gtk_entry_set_text ((GtkEntry*)widgetPtr, exprBack);
+         strcpy(expr, exprBack);
+      } else { // use config file
+         gtk_entry_set_text ((GtkEntry*)widgetPtr, exprConf);
+         strcpy(expr, exprConf);
+      }
+   } else {
+      gtk_entry_set_text ((GtkEntry*)widgetPtr, "");
+   }
+   printf("expr:'%s'\n", expr);
+   printf("exprConf:'%s'\n", exprConf);
+   printf("exprBack:'%s'\n", exprBack);
    g_free(comboValPtr);
 }
 
@@ -70,10 +107,20 @@ static void formula(GtkWidget* widgetPtr, gpointer dataPtr) {
    g_print("Formula editbox\n");
    const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetPtr);
    g_print("text:'%s'\n", textPtr);
-   int len = strlen(textPtr);
-   expr = malloc(len+1);
-   expr[0]='\0';
-   strcat(expr, textPtr);
+   if (textPtr[0]!='\0') strcpy(exprBack, textPtr);
+   widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "formulaList");
+   gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetPtr);
+   if (!strcmp(comboValPtr, "custom formula")) {
+      int len = strlen(textPtr);
+      if (len>=LineLen) {
+         printf ("Custom formula text len:%u, max supported len:%u\n", len, LineLen);
+         return;
+      }
+      strcpy(expr, textPtr);
+   }
+   printf("expr:'%s'\n", expr);
+   printf("exprConf:'%s'\n", exprConf);
+   printf("exprBack:'%s'\n", exprBack);
    //g_free(textPtr);
 }
 
@@ -88,6 +135,28 @@ static void standardSeries(GtkWidget* widgetPtr, gpointer dataPtr) {
    g_print("standardSeries radioButton\n");
    guint radioVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetPtr);
    g_print("value:'%u'\n", radioVal);
+   widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "EseriesList");
+   gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetPtr);
+   //char valStr[5];
+   //sprintf(valStr, "%u", radioVal);
+   g_print("EseriesList combo value:'%s'\n", comboValPtr);
+   if ( !strcmp(comboValPtr,"E1"  ) ) Eseries=1;
+   if ( !strcmp(comboValPtr,"E3"  ) ) Eseries=3;
+   if ( !strcmp(comboValPtr,"E6"  ) ) Eseries=6;
+   if ( !strcmp(comboValPtr,"E12" ) ) Eseries=12;
+   if ( !strcmp(comboValPtr,"E24" ) ) Eseries=24;
+   if ( !strcmp(comboValPtr,"E48" ) ) Eseries=48;
+   if ( !strcmp(comboValPtr,"E96" ) ) Eseries=96;
+   if ( !strcmp(comboValPtr,"E192") ) Eseries=192;
+   printf("Eserie:E%u\n", Eseries);
+   g_free(comboValPtr);
+   updateRdesc();
+   printf("baseRdesc:'%s'\n", baseRdesc);
+   updateLabelDesc();
+   memCalc();
+   updateLabelMem();
+   widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "customList");
+   gtk_entry_set_text ((GtkEntry*)widgetPtr, "");
 }
 
 static void EseriesList(GtkWidget* widgetPtr, gpointer dataPtr) {
@@ -110,6 +179,10 @@ static void EseriesList(GtkWidget* widgetPtr, gpointer dataPtr) {
    updateLabelDesc();
    memCalc();
    updateLabelMem();
+   //widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "standardSeries");
+   //gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, TRUE);
+   //widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "customValues");
+   //gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, FALSE);
 }
 
 static void decadesFct(GtkWidget* widgetPtr, gpointer dataPtr) {
@@ -126,12 +199,40 @@ static void customValues(GtkWidget* widgetPtr, gpointer dataPtr) {
    g_print("customValues radioButton\n");
    guint radioVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetPtr);
    g_print("value:'%u'\n", radioVal);
+   printf("listNumber:%u\n", listNumber);
+   printf("listNumberConf:%u\n", listNumberConf);
+   Eseries=0;
+   listNumber=listNumberConf;
+   uint16_t len=0;
+   char doubleStr[25];
+   for (uint16_t r=0; r<listNumberConf; r++) {
+      sprintf(doubleStr, "%0.f", baseRconf[r]);
+      len+=strlen(doubleStr);
+   }
+   len+=listNumberConf;
+   char* doubleList = calloc(len+1,1);
+   for (uint16_t r=0; r<listNumberConf; r++) {
+      sprintf(doubleStr, "%0.f", baseRconf[r]);
+      strcat(doubleList, doubleStr);
+      if (r<listNumberConf-1) strcat(doubleList, ",");
+   }
+   printf("custom values:'%s'\n", doubleList);
+   widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "customList");
+   gtk_entry_set_text ((GtkEntry*)widgetPtr, doubleList);
+   free(doubleList);
+   updateRdesc();
+   printf("baseRdesc:'%s'\n", baseRdesc);
+   updateLabelDesc();
+   memCalc();
+   updateLabelMem();
 }
 
 static void customList(GtkWidget* widgetPtr, gpointer dataPtr) {
    g_print("CustomList editbox\n");
    const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetPtr);
    g_print("text:'%s'\n", textPtr);
+   //widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "customValues");
+   //gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, TRUE);
    //g_free(textPtr);
 }
 
@@ -183,7 +284,7 @@ static void aboutButton(GtkWidget* widgetPtr, gpointer dataPtr) {
 int quit() {
    // free mem allocated by fillConfigVars()
    if (baseR) free (baseR);
-   if (expr) free (expr);
+   if (baseRconf) free (baseRconf);
    gtk_main_quit();
    return 0;
 } // quit()
@@ -279,6 +380,7 @@ int guiUpdateIn() { // update widgets with input/config values
    }
    //printf("custom values:'%s'\n", doubleList);
    gtk_entry_set_text ((GtkEntry*)widgetPtr, doubleList);
+   free(doubleList);
 
    updateLabelDesc();
 
@@ -329,7 +431,7 @@ int guiInit(int argc, char *argv[]) {
    widgetPtr = gtk_builder_get_object (builderPtr, "formulaList");
    g_signal_connect (widgetPtr, "changed", G_CALLBACK(formulaPre), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "formula");
-   g_signal_connect (widgetPtr, "activate", G_CALLBACK(formula), NULL);
+   g_signal_connect (widgetPtr, "changed", G_CALLBACK(formula), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "desired");
    g_signal_connect (widgetPtr, "changed", G_CALLBACK(desiredFct), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "standardSeries");
@@ -341,7 +443,7 @@ int guiInit(int argc, char *argv[]) {
    widgetPtr = gtk_builder_get_object (builderPtr, "customValues");
    g_signal_connect (widgetPtr, "toggled", G_CALLBACK(customValues), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "customList");
-   g_signal_connect (widgetPtr, "activate", G_CALLBACK(customList), NULL);
+   g_signal_connect (widgetPtr, "changed", G_CALLBACK(customList), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "Rp");
    g_signal_connect (widgetPtr, "toggled", G_CALLBACK(Rp), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "results");
@@ -358,7 +460,33 @@ int guiInit(int argc, char *argv[]) {
    return 0;
 } // guiInit()
 
-int runReSolve() {
+int backVal() { // backup 'expr' and 'baseR'
+   strcpy(exprConf, expr);
+   int size=sizeof(double)*listNumberConf;
+   printf("size:%u\n", size);
+   printf("listNumber:%u\n", listNumber);
+   printf("listNumberConf:%u\n", listNumberConf);
+   //printf("baseR[r]:");
+   //for (uint16_t r=0; r<listNumberConf; r++) {
+      //printf("%0.f,", baseR[r]);
+   //}
+   //printf("\n");
+
+   baseRconf=malloc(size);
+   //memcpy(baseRconf, baseR, size);
+   for (uint16_t r=0; r<listNumberConf; r++) {
+      baseRconf[r]=baseR[r];
+   }
+
+   //printf("baseRconf[r]:");
+   //for (uint16_t r=0; r<listNumberConf; r++) {
+      //printf("%0.f,", baseRconf[r]);
+   //}
+   //printf("\n");
+   return 0;
+}
+
+int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
    int  ret;
 
    // 2 - read and set user request
@@ -407,6 +535,7 @@ int main(int argc, char *argv[]) {
    }
    // 2 - read and set user request
    // 3 - calculate the needed memory
+   listNumberConf=listNumber;
    ret = memCalc();
 
    // 4 - checking config value validity
@@ -414,6 +543,7 @@ int main(int argc, char *argv[]) {
    // 5 - show config value in CLI or GUI
    showHead ();
    printf ("Found and loaded config file: 'reSolveConf.txt'\n");
+   ret = backVal(); // backup 'expr' and 'baseR'
    ret = guiInit(argc, argv);
    ret = guiUpdateIn();
 
