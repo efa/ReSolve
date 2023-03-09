@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/05 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/08 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -32,7 +32,7 @@ u16 maxRc = MaxRc; /* number of resistances (variables) in the circuit: 2 */
 u64 totV = TotV;   /* number of values to try */
 u16 numBestRes = NumberResDefault; /* number of best results to show */
 
-char Exx[24]="";
+char Exx[24]=""; // description for single result when Rp=2
 
 char   baseR1desc[65] = "standard series E1"; // max 64 chars
 double baseR1[1] = { 1.0 }; // E1
@@ -120,6 +120,32 @@ float allocatedMB;
 u32 rValueSize;
 u64 resultSize;
 u32 first;
+
+int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
+
+// aprintf(): selectable asprintf(autoalloc sprintf) OR printf
+// when first parameter is NULL is like printf()
+// when first parameter is not NULL is like asprintf() AND
+// if requested call functionPtr(strPtr) to update the GUI
+// call with:
+// char* stringPtr;
+// aprintf(&stringPtr, "asprintf str:'%s' is %d\n", text, num);
+// free(stringPtr);
+int aprintf (char** strPtrPtr, const char* format, ...) {
+   int len;
+   va_list ap;
+   va_start(ap, format);
+   if (strPtrPtr==NULL) { // output to stdout like printf()
+      len = vprintf(format, ap);
+   } else { // output to auto allocated string like asprintf()
+      len = vasprintf (strPtrPtr, format, ap);
+      // then update the GUI
+      if (guiUpdateOutPtr!=NULL) (*guiUpdateOutPtr)(*strPtrPtr, len);
+      free(*strPtrPtr);
+   }
+   va_end(ap);
+   return len;
+}
 
 u32 powlmy(u32 base, u32 exp) { /* substitute the pow() in math.h but use u32 */
     register u32 c;
@@ -780,11 +806,6 @@ int fillConfigVars(void) { // load and check users config file
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: unsupported Eseries:%u\n", __FUNCTION__, Eseries);
       return (ERROR);
    }
-   strcpy (Exx, "E");
-   char series[4];
-   sprintf (series, "%u", Eseries);
-   strcat (Exx, series);
-   strcat (Exx, " series"); // 11 chars
    //decades=7; // ignored when Eseries=0
    if (decades==0 || decades>7) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: unsupported decades:%u\n", __FUNCTION__, decades);
@@ -880,6 +901,11 @@ int memCalc() { // memory size calculation
       // listNumber=57; /* insert here custom list quantity */
       numR=(u32)listNumber; /* number of existant values of resistances */
    }
+   strcpy (Exx, "E");
+   char series[4];
+   sprintf (series, "%u", Eseries);
+   strcat (Exx, series);
+   strcat (Exx, " series"); // 11 chars
    //maxRp=1; /* max number of resistances supported per position: as now 1 or 2 */
 
    // 3 - calculate the needed memory

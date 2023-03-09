@@ -56,7 +56,7 @@ cleanbin:
 clean:
 	rm -f *.o $(TARGET) $(GUI)
 
-debug: all cleanobj
+debug: cleanobj all cleanobj
 
 bin: all cleanobj strip
 

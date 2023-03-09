@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/05 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/08 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -23,6 +23,8 @@ int main(int numPar, char* param[]) {
    u08  p;
    char c;
    int  ret;
+
+   guiUpdateOutPtr = NULL; // no function pointer to guiUpdateOut()
 
    // 1 - load configuration file and params
    ret = baseInit (); // basic initialization: load config from file+memSize

@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/05 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/08 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* exprParser.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -26,6 +26,6 @@ return the result. Supported: numbers, variables, operators +,-,*,/,%,^,(,) */
 extern double exprVarsParser[26]; /* 26 input user variables, case insensitive A-Z */
 
 // public functions:
-extern double evalExprParser(char* expressionPtr); /* calculate an expression */
+double evalExprParser(char* expressionPtr); /* calculate an expression */
 
 #endif /* _INCexprParserh */

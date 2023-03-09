@@ -31,7 +31,7 @@ baseR={  470,   510,   560,   620,   680,   750,   820,   910,
        10000, 11000, 12000, 13000, 15000, 16000, 18000,
        20000, 22000, 24000, 27000, 30000, 33000, 36000, 39000,
        43000, 47000, 51000, 56000, 62000, 68000,
-       75000, 82000, 91000, 100000} ; custom list of 57 values @1% : TH @RS
+       75000, 82000, 91000, 100000 } ; custom list of 57 values @1% : TH @RS
 listNumber=57 ; insert here custom list quantity. Not used when Eseries>0
 
 baseRdesc="custom list of 57 values @1% tolerance: TH @RS" ; max 64 chars

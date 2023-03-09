@@ -30,7 +30,7 @@ Limits:
 - support only variables "a" and "b" and it is case insensitive.
 - Variables are considered with one letter only.
   Es. "aa" is the same as "ab". So you CANNOT use R1, R2,..., Rn
-  as are seen by reSolve all as the same resistor.
+  as are seen by ReSolve all as the same resistor.
 - max 2 resistors per position (no series/parallel when Rp>2 resistances)
 - do not solve library math functions (sin, cos, tan, exp, log, ...)
 
@@ -133,7 +133,7 @@ When I was at lower school I wrote a Basic program called 'Ohmico',
 It is still on my web site, it searched only parallel resistance close to
 a required value. The limit at that time was memory allocation to 640 kBytes,
 that prevent to implement usefull functions and large resistance series.
-Instead reSolve is written in C and is more general and fast.
+Instead ReSolve is written in C and is more general and fast.
 
 v0.01.00 2005/01
 * first released beta version:
@@ -279,18 +279,13 @@ V0.09.09g 2023/02/12
 * Cosmetic:
   - removed "curses.h" as is obsolete with current MinGw64/Msys2
 
-V0.09.09h 2023/03/01
+V0.09.09h 2023/03/08
 * Added:
-  - a partially working GUI for inputs settings and circuit shown,
-    results still goes to console, keeping algorithmic part separated
-  - generation of Linux AppImage
-
-V0.09.09h 2023/03/05
-* Added:
-  - other steps to a working GUI for inputs settings and circuit shown,
+  - a working GUI for inputs settings and circuits shown,
     results still goes to console, debug output active for GUI
   - GUI: read custom formula from text entry
   - GUI: read custom values from text entry
+  - generation of Linux AppImage
 
 ToDo:
 -----
@@ -303,10 +298,11 @@ ToDo:
 - Made generic the number of total values, based on variables number in formula
 - For each position of resistance in circuit, add support for 'Rp' resistances
   in series or parallel. Probably not possible with current resources.
-- Option to keep only the first N best results and discard others
-  Autosorting of results while keeping first N best results
+- Option to keep only the first N best results and discard others,
+  autosorting of results while keeping first N best results on low memory
 - On memory low: save block of results on disk and deallocate memory
 - show allocated memory with SI prefix k,M,G,T
+- show calc and sort progress as percent
 - GUI: output to window instead of console
 - GUI: working Stop and About buttons
 - GUI: better circuit images
@@ -324,16 +320,16 @@ The package is composed of the following files that must be always present:
 comType.h                common definitions
 fileIo.h                 file I/O interface
 exprParser.h             expression parser interface
-reSolveLib.h             reSolve lib interface
+reSolveLib.h             ReSolve lib interface
 fileIo.c                 file I/O handling
 exprParser.c             expression parser
-reSolveLib.c             reSolve lib implementation
+reSolveLib.c             ReSolve lib implementation
 reSolveCli.c             main CLI source
 reSolveGui.c             main GUI source
 Makefile                 Makefile
-Makefile32               Makefile to generate from Linux64 to Linux32
-MakefileX                Makefile to crosscompile from Linux to Win64
-MakefileX32              Makefile to crosscompile from Linux to Win32
+Makefile32               Makefile to build from Linux64 to Linux32
+MakefileX                Makefile to cross-build from Linux to Win64
+MakefileX32              Makefile to cross-build from Linux to Win32
 reSolveLinux32           CLI binary for Linux/x86
 reSolveGuiLinux32        GUI binary for Linux/x86
 reSolveLinux64           CLI binary for Linux/amd64

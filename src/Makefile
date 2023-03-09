@@ -60,7 +60,7 @@ cleanbin:
 
 clean: cleanobj cleanbin
 
-debug: all cleanobj
+debug: cleanobj all cleanobj
 
 bin: all cleanobj strip
 

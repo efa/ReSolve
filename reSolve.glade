@@ -23,13 +23,13 @@ Author: Valerio Messina
 -->
 <!-- GUI resource file for reSolve -->
 <interface>
-  <requires lib="gtk+" version="3.10"/>
+  <requires lib="gtk+" version="3.6"/>
   <!-- interface-license-type lgplv3 -->
   <!-- interface-name ReSolve -->
   <!-- interface-copyright 2022-2023 Valerio Messina -->
   <!-- interface-authors Valerio Messina -->
   <object class="GtkAdjustment" id="adjDesired">
-    <property name="upper">127</property>
+    <property name="upper">44000000000</property>
     <property name="value">9</property>
     <property name="step-increment">0.10</property>
     <property name="page-increment">10</property>
@@ -41,6 +41,7 @@ Author: Valerio Messina
     <property name="step-increment">1</property>
     <property name="page-increment">2</property>
   </object>
+  <object class="GtkTextBuffer" id="output"/>
   <object class="GtkWindow" id="window">
     <property name="width-request">640</property>
     <property name="height-request">480</property>
@@ -383,37 +384,27 @@ operators: +,-,*,/,%,^, parentesis () with any depth</property>
           </packing>
         </child>
         <child>
-          <object class="GtkLabel" id="output">
+          <object class="GtkScrolledWindow">
             <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="label" translatable="yes">00000000011111111112222222222333333333344444444445555555555666666666677777777778
-12345678901234567890123456789012345678901234567890123456789012345678901234567890
-Results output line 03
-Results output line 04
-Results output line 05
-Results output line 06
-Results output line 07
-Results output line 08
-Results output line 09
-Results output line 10
-Results output line 11
-Results output line 12
-Results output line 13
-Results output line 14
-Results output line 15
-Results output line 16
-Results output line 17
-Results output line 18
-Results output line 19
-Results output line 20</property>
-            <property name="wrap">True</property>
-            <property name="selectable">True</property>
-            <property name="width-chars">80</property>
-            <property name="max-width-chars">80</property>
+            <property name="can-focus">True</property>
+            <property name="vscrollbar-policy">always</property>
+            <property name="shadow-type">in</property>
+            <property name="min-content-width">642</property>
+            <property name="min-content-height">342</property>
+            <child>
+              <object class="GtkTextView" id="textview">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="vexpand">True</property>
+                <property name="editable">False</property>
+                <property name="buffer">output</property>
+                <property name="monospace">True</property>
+              </object>
+            </child>
           </object>
           <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
             <property name="position">5</property>
           </packing>
         </child>

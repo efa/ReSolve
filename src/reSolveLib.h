@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/05 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/08 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -19,11 +19,13 @@
 #ifndef _INCreSolveLibh
 #define _INCreSolveLibh
 
-#define _XOPEN_SOURCE 600
+//#define _XOPEN_SOURCE 600
+#define _GNU_SOURCE     /* vasprintf() */
 #include <stdio.h>      /* printf */
 #include <string.h>     /* strcpy, strlen, strcspn */
 #include <stdint.h>     /* uintptr_t */
 #include <stdlib.h>     /* qsort, atof, exit */
+#include <stdarg.h>     /* va_list, va_start(), va_end() */
 #include <math.h>       /* pow, fabs */
 #include <ctype.h>      /* isdigit */
 #include <malloc.h>     /* malloc */
@@ -32,7 +34,7 @@
 #include "exprParser.h" /* expression parser interface */
 
 #define SourceVersion "0.09.09h beta"
-#define SourceDate    "2023/03/05"
+#define SourceDate    "2023/03/08"
 
 #ifdef __MSVCRT__       /* CrossCompile to MinGw target */
 #define fsync _commit   /* msvcrt.dll miss fsync, that is present on unix */
@@ -51,29 +53,12 @@
 */
 
 #define Series 192 /* Exx: Series E12, E24, (E48), E96 or E192. Use 0 for custom list */
-/* Series=E12  & MaxRp=1 & Decades = 5 (30kB), 6 (43kB), 7 (58kB) */
-/* Series=E24  & MaxRp=1 & Decades = 5 (115kB), 6 (165kB), 7 (223kB) */
-/* Series=E96  & MaxRp=1 & Decades = 5 (1.8MB), 6 (2.6MB), 7 (3.5MB) */
-/* Series=E192 & MaxRp=1 & Decades = 5 (7MB), 6 (10MB), 7 (14MB) */
-/* Series=E12  & MaxRp=2 & Decades = 5 (106MB), 6 (217MB), 7 (399MB) */
-/* Series=E24  & MaxRp=2 & Decades = 1 (3MB), 2 (44MB), 3 (217MB), 4 (676MB), 5 (1.64GB) */
-/* Series=E96  & MaxRp=2 & Decades = 1 (676MB) */
 #define Decades 7 /* number of decades of interest, normally 6 or 7 */
 #if (Series>0) /* standard Exx series */
     #define NumR    (u32)Series*Decades /* number of existant values of resistance */
     #define ListNumber 0 // not used
 #else /* custom list */
-    //#define ListNumber 57 /* insert here custom list quantity */
-    //#define ListNumber 473 /* insert here custom list quantity */
-    //#define ListNumber 33 /* insert here custom list quantity */
-    //#define ListNumber 14 /* insert here custom list quantity */
-    //#define ListNumber 20 /* insert here custom list quantity */
-    //#define ListNumber 47 /* insert here custom list quantity */
-    //#define ListNumber 14 /* insert here custom list quantity */
-    //#define ListNumber 120 /* insert here custom list quantity */
-    //#define ListNumber 13 /* insert here custom list quantity */
-    #define ListNumber 3 /* insert here custom list quantity */
-    //#define ListNumber 12 /* insert here custom list quantity */
+    #define ListNumber 57 /* insert here custom list quantity */
     #define NumR   (u32)ListNumber /* number of existant values of resistance */
 #endif
 #define MaxRp 1 /* max number of resistances supported per position: as now 1 or 2 */
@@ -86,9 +71,6 @@
 #define MaxRc 2 /* number of resistances (variables) in the circuit: 2 */
 #if (MaxRc==2)   /* as now 2 is the only supported number */
     #define TotV (((u32)NumV)*((u32)NumV)) /* number of values to try */
-    // compile&doNotStart with 3'882'988'894 max. Start with 917'797'375 max.
-    // compile&doNotStart with   268'402'689 max. Start with  59'954'049 max.
-    // RunWell with 59'954'049 max.
 #endif
 /* default value for formula: reversed high partitor (LM317) */
 #define ExpressionDefault "1.25*(1+b/a)                                      "
@@ -131,6 +113,7 @@ extern float allocatedMB;
 extern u32 rValueSize;
 extern u64 resultSize;
 extern u32 first;
+extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 
 int fillConfigVars(void); // load and check users config file
 void showHelp(float allocatedMB);
@@ -149,5 +132,6 @@ int memAlloc(); // memory allocation
 int showConf(); // show config set
 int doCalc(); // fill inputs, calcs, sort solutions
 int freeMem(); // free memory
+int aprintf (char** strPtrPtr, const char* format, ...);
 
 #endif /* _INCh */
