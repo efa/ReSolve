@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/08 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/11 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 #include "exprParser.h" /* expression parser interface */
 
 #define SourceVersion "0.09.09h beta"
-#define SourceDate    "2023/03/08"
+#define SourceDate    "2023/03/11"
 
 #ifdef __MSVCRT__       /* CrossCompile to MinGw target */
 #define fsync _commit   /* msvcrt.dll miss fsync, that is present on unix */
@@ -113,6 +113,7 @@ extern float allocatedMB;
 extern u32 rValueSize;
 extern u64 resultSize;
 extern u32 first;
+extern int gui; // when not 0 gprintf() update the GUI
 extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 
 int fillConfigVars(void); // load and check users config file
@@ -132,6 +133,6 @@ int memAlloc(); // memory allocation
 int showConf(); // show config set
 int doCalc(); // fill inputs, calcs, sort solutions
 int freeMem(); // free memory
-int aprintf (char** strPtrPtr, const char* format, ...);
+int gprintf (int gui, const char* format, ...); // printf() or update GUI
 
 #endif /* _INCh */

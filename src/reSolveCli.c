@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/08 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/11 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -24,17 +24,18 @@ int main(int numPar, char* param[]) {
    char c;
    int  ret;
 
+   gui=0; // mean gprintf() do not update GUI
    guiUpdateOutPtr = NULL; // no function pointer to guiUpdateOut()
 
    // 1 - load configuration file and params
-   ret = baseInit (); // basic initialization: load config from file+memSize
+   ret = baseInit (); // LIB: basic initialization: load config from file+memSize
    if (ret != 0) {
       printf ("baseInit returned:%u, quit\n", ret);
       return -1;
    }
    // 2 - read and set user request
    // 3 - calculate the needed memory
-   ret = memCalc();
+   ret = memCalc(); // LIB: calculate the needed memory
 
    // 4 - checking arguments syntax
    /*printf ("numPar:%u\n", numPar);*/
@@ -98,49 +99,47 @@ int main(int numPar, char* param[]) {
       if (numPar>3) printf ("WARNING: Ignoring numPar[%u++]='%s'\n", numPar, param[4]);
    }
    // 5 - show config value in CLI or GUI
-   showHead ();
-   printf ("Found and loaded config file: 'reSolveConf.txt'\n");
+   showHead (); // LIB: show config value
+   gprintf (gui, "Found and loaded config file: 'reSolveConf.txt'\n");
 
    // 6 - allocate the memory asking to the OS a malloc()
    // 7 - create the structure's vector inside the allocated memory
-   ret = memAlloc(); // memory allocation
+   ret = memAlloc(); // LIB: memory allocation
+   if (ret != 0) {
+      printf ("memAlloc() returned:%u, quit\n", ret);
+      return -1;
+   }
 
-   ret=showConf(); // show config set
+   ret=showConf(); // LIB: show config set
 
    // 8 - fill the input vectors with needed data
    // 9 - calculus of solutions
    // 10 - sorting of solutions
-   ret = doCalc(); // fill inputs, calcs, sort solutions
+   ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
 
    // 11 - print of results
-   printf ("Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
+   gprintf (gui, "Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
    if (maxRp==1) { // no need to showVal4,3,2 ...
-      printf ("Show %u solutions with 2 resistors:\n", numBestRes);
+      gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
       ret = showVal2 (numBestRes);
-      printf ("\n");
-      for (u32 e=0; e<numV; e++) {
-         if (rValues[e].rp) free (rValues[e].rp);
-      }
-      if (results) free (results);
-      return (OK);
+   } else {
+      gprintf (gui, "Show %u solutions with up to 4 resistors:\n", numBestRes);
+      ret = showVal (first);
+      gprintf (gui, "\n");
+      gprintf (gui, "Show %u solutions with 4 resistors:\n", numBestRes);
+      ret = showVal4 (numBestRes);
+      gprintf (gui, "\n");
+      gprintf (gui, "Show %u solutions with 3 resistors:\n", numBestRes);
+      ret = showVal3 (numBestRes);
+      gprintf (gui, "\n");
+      gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
+      ret = showVal2 (numBestRes);
    }
-   printf ("Show %u solutions with up to 4 resistors:\n", numBestRes);
-   ret = showVal (first);
-   printf ("\n");
-   printf ("Show %u solutions with 4 resistors:\n", numBestRes);
-   ret = showVal4 (numBestRes);
-   printf ("\n");
-   printf ("Show %u solutions with 3 resistors:\n", numBestRes);
-   ret = showVal3 (numBestRes);
-   printf ("\n");
-   printf ("Show %u solutions with 2 resistors:\n", numBestRes);
-   ret = showVal2 (numBestRes);
-   printf ("\n");
+   gprintf (gui, "\n");
 
    // 12 - freeing dynamic allocated memory ...
-   ret = freeMem(); // free memory
-   // free mem allocated by fillConfigVars()
-   if (baseR) free (baseR);
+   ret = freeMem(); // LIB: free memory
+   if (baseR) free (baseR); // free mem allocated by fillConfigVars()
 
    return (OK);
 }

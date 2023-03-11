@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/08 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/11 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@
 // $ gcc reSolveGui.c -o reSolveGui `pkg-config --cflags --libs gtk+-3.0`
 
 #include <stdlib.h>
+#include <locale.h>
 #include <gtk/gtk.h>
 #include "reSolveLib.h"    /* main source include */
 
@@ -385,6 +386,7 @@ int quit() {
    // free mem allocated by fillConfigVars()
    if (baseR) free (baseR);
    if (baseRconf) free (baseRconf);
+   if (baseRuser) free (baseRuser);
    gtk_main_quit();
    return 0;
 } // quit()
@@ -542,7 +544,7 @@ int guiInit(int argc, char *argv[]) {
    widgetPtr = gtk_builder_get_object (builderPtr, "Rp");
    g_signal_connect (widgetPtr, "toggled", G_CALLBACK(Rp), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "results");
-   g_signal_connect (widgetPtr, "activate", G_CALLBACK(resultsFct), NULL);
+   g_signal_connect (widgetPtr, "changed", G_CALLBACK(resultsFct), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "resolveButton");
    g_signal_connect (widgetPtr, "clicked", G_CALLBACK(resolveButton), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "aboutButton");
@@ -563,7 +565,7 @@ int backVal() { // backup 'expr' and 'baseR'
    //printf("listNumberConf:%u\n", listNumberConf);
    //printf("baseR[r]:");
    //for (uint16_t r=0; r<listNumberConf; r++) {
-      //printf("%0.f,", baseR[r]);
+   //   printf("%0.f,", baseR[r]);
    //}
    //printf("\n");
 
@@ -575,7 +577,7 @@ int backVal() { // backup 'expr' and 'baseR'
 
    //printf("baseRconf[r]:");
    //for (uint16_t r=0; r<listNumberConf; r++) {
-      //printf("%0.f,", baseRconf[r]);
+   //   printf("%0.f,", baseRconf[r]);
    //}
    //printf("\n");
    return 0;
@@ -585,8 +587,10 @@ int guiUpdateOut(char* txtPtr, int l) { // update widgets with results values
    g_print("guiUpdateOut()\n");
    widgetPtr = gtk_builder_get_object (builderPtr, "output");
    if (txtPtr==NULL) { // clear
-      gtk_text_buffer_set_text((GtkTextBuffer*)widgetPtr, txtPtr, -1);
+      //printf("GUI output clear\n");
+      gtk_text_buffer_set_text((GtkTextBuffer*)widgetPtr, "", -1);
    } else { // append to prev
+      //printf("GUI output append\n");
       GtkTextIter iter;
       gtk_text_buffer_get_end_iter((GtkTextBuffer*)widgetPtr, &iter);
       //printf("txtPtr:'%s'\n", txtPtr);
@@ -598,56 +602,51 @@ int guiUpdateOut(char* txtPtr, int l) { // update widgets with results values
 int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
    int  ret;
 
+   // clear output widget
+   ret=guiUpdateOut(NULL, 0);
+
    // 2 - read and set user request
    // 3 - calculate the needed memory
-   ret = memCalc();
+   ret = memCalc(); // LIB: calculate the needed memory
 
    // 6 - allocate the memory asking to the OS a malloc()
    // 7 - create the structure's vector inside the allocated memory
-   ret = memAlloc(); // memory allocation
+   ret = memAlloc(); // LIB: memory allocation
+   if (ret != 0) {
+      printf ("memAlloc() returned:%u, quit\n", ret);
+      return -1;
+   }
 
-   ret=showConf(); // show config set
+   ret=showConf(); // LIB: show config set
+   //sleep(1);
 
    // 8 - fill the input vectors with needed data
    // 9 - calculus of solutions
    // 10 - sorting of solutions
-   ret = doCalc(); // fill inputs, calcs, sort solutions
+   ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
 
    // 11 - print of results
-   printf ("Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
+   gprintf (gui, "Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
    if (maxRp==1) { // no need to showVal4,3,2 ...
-      printf ("Show %u solutions with 2 resistors:\n", numBestRes);
+      gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
       ret = showVal2 (numBestRes);
-      printf ("\n");
-      for (u32 e=0; e<numV; e++) {
-         if (rValues[e].rp) free (rValues[e].rp);
-      }
-      if (results) free (results);
-      return (OK);
+   } else {
+      gprintf (gui, "Show %u solutions with up to 4 resistors:\n", numBestRes);
+      ret = showVal (first);
+      gprintf (gui, "\n");
+      gprintf (gui, "Show %u solutions with 4 resistors:\n", numBestRes);
+      ret = showVal4 (numBestRes);
+      gprintf (gui, "\n");
+      gprintf (gui, "Show %u solutions with 3 resistors:\n", numBestRes);
+      ret = showVal3 (numBestRes);
+      gprintf (gui, "\n");
+      gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
+      ret = showVal2 (numBestRes);
    }
-   printf ("Show %u solutions with up to 4 resistors:\n", numBestRes);
-   ret = showVal (first);
-   printf ("\n");
-   printf ("Show %u solutions with 4 resistors:\n", numBestRes);
-   ret = showVal4 (numBestRes);
-   printf ("\n");
-   printf ("Show %u solutions with 3 resistors:\n", numBestRes);
-   ret = showVal3 (numBestRes);
-   printf ("\n");
-   printf ("Show %u solutions with 2 resistors:\n", numBestRes);
-   ret = showVal2 (numBestRes);
-   printf ("\n");
-   //ret = guiUpdateOut("ab", 2);
-   char* stringPtr;
-   aprintf(&stringPtr, "new text with output\nline2\n");
-   //free(stringPtr);
+   //gprintf (gui, "\n");
 
    // 12 - freeing dynamic allocated memory ...
-   ret = freeMem(); // free memory
-   if (ret != 0) {
-      printf ("freeMem returned:%u, quit\n", ret);
-      return -1;
-   }
+   ret = freeMem(); // LIB: free memory
 
    return 0;
 } // runReSolve()
@@ -655,10 +654,11 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
 int main(int argc, char *argv[]) {
    int ret;
 
+   gui=1; // mean gprintf() update GUI
    guiUpdateOutPtr = &guiUpdateOut; // function pointer to guiUpdateOut()
 
    // 1 - load configuration file and params
-   ret = baseInit(); // basic initialization: load config from file+memSize
+   ret = baseInit(); // LIB: basic initialization: load config from file+memSize
    if (ret != 0) {
       printf ("baseInit returned:%u, quit\n", ret);
       return -1;
@@ -666,14 +666,19 @@ int main(int argc, char *argv[]) {
    // 2 - read and set user request
    // 3 - calculate the needed memory
    listNumberConf=listNumber;
-   ret = memCalc();
+   ret = memCalc(); // LIB: calculate the needed memory
 
    // 4 - checking config value validity
 
    // 5 - show config value in CLI or GUI
-   showHead ();
+   showHead (); // LIB: show config value
    printf ("Found and loaded config file: 'reSolveConf.txt'\n");
+
    ret = backVal(); // backup 'expr' and 'baseR'
+   //putenv("LANG=C"); // as now use C locale to avoid trouble with .|,
+   setlocale(LC_ALL,"C");
+   gtk_disable_setlocale();
+   printf ("Starting GUI ...\n");
    ret = guiInit(argc, argv);
    ret = guiUpdateIn();
 

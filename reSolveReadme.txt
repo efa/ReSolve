@@ -1,5 +1,5 @@
-ReSolve - find a formula result using list of discrete values only
-==================================================================
+ReSolve - solve math expressions using discrete values
+======================================================
 
 What it do:
 -----------
@@ -33,6 +33,7 @@ Limits:
   as are seen by ReSolve all as the same resistor.
 - max 2 resistors per position (no series/parallel when Rp>2 resistances)
 - do not solve library math functions (sin, cos, tan, exp, log, ...)
+- calculate all possible solutions, will consume too much memory
 
 Calling Example:
 ----------------
@@ -279,16 +280,21 @@ V0.09.09g 2023/02/12
 * Cosmetic:
   - removed "curses.h" as is obsolete with current MinGw64/Msys2
 
-V0.09.09h 2023/03/08
+V0.09.09h 2023/03/11
 * Added:
-  - a working GUI for inputs settings and circuits shown,
-    results still goes to console, debug output active for GUI
+  - GUI: working for inputs settings, circuits shown and results
+    GUI debug output still goes to CLI
   - GUI: read custom formula from text entry
   - GUI: read custom values from text entry
   - generation of Linux AppImage
 
 ToDo:
 -----
+- Option to keep only the first N best results and discard others,
+  autosorting of results while keeping first N best results on low memory
+- On memory low: save block of results on disk and deallocate memory
+- show allocated memory with SI prefix k,M,G,T
+- show calc and sort progress as percent
 - remove duplicated triangular solutions with MaxRp=2
 - first print exact results, separated by approximate results
 - separate value below and over the target value (show delta sign)
@@ -298,12 +304,7 @@ ToDo:
 - Made generic the number of total values, based on variables number in formula
 - For each position of resistance in circuit, add support for 'Rp' resistances
   in series or parallel. Probably not possible with current resources.
-- Option to keep only the first N best results and discard others,
-  autosorting of results while keeping first N best results on low memory
-- On memory low: save block of results on disk and deallocate memory
-- show allocated memory with SI prefix k,M,G,T
-- show calc and sort progress as percent
-- GUI: output to window instead of console
+- GUI: output is not refreshed as expected while heavy calculation
 - GUI: working Stop and About buttons
 - GUI: better circuit images
 - GUI: show results value in circuit

@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/08 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/11 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -121,13 +121,14 @@ u32 rValueSize;
 u64 resultSize;
 u32 first;
 
+int gui; // when not 0 gprintf() update the GUI
 int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 
 // aprintf(): selectable asprintf(autoalloc sprintf) OR printf
 // when first parameter is NULL is like printf()
 // when first parameter is not NULL is like asprintf() AND
 // if requested call functionPtr(strPtr) to update the GUI
-// call with:
+// Call with:
 // char* stringPtr;
 // aprintf(&stringPtr, "asprintf str:'%s' is %d\n", text, num);
 // free(stringPtr);
@@ -141,425 +142,33 @@ int aprintf (char** strPtrPtr, const char* format, ...) {
       len = vasprintf (strPtrPtr, format, ap);
       // then update the GUI
       if (guiUpdateOutPtr!=NULL) (*guiUpdateOutPtr)(*strPtrPtr, len);
-      free(*strPtrPtr);
    }
    va_end(ap);
    return len;
 }
 
-u32 powlmy(u32 base, u32 exp) { /* substitute the pow() in math.h but use u32 */
-    register u32 c;
-    register u32 res = 1;
-    for (c=0; c<exp; c++) {
-       res = res * base;
-    }
-    return (res);
-} // u32 powlmy(u32 base, u32 exp)
-
-/* using one decade values and 'decades', calculate all standard Exx series values */
-// use 'baseRxx[Eseries/listNumber]' and generate ==> rValues[pos].r, rValues[pos].rp[p]
-s16 calcEseries(void) { // or fill with the custom list of values when Eseries=0
-   u08 decade;
-   u08 rBase;
-   s16 pos = 0; // expected max 7*192=1344
-   register double val;
-   u08 p;
-   if (Eseries>0) { // standard Exx series resistors
-      for (decade=0; decade<decades; decade++) {
-         for (rBase=0; rBase<Eseries; rBase++) {
-            pos = rBase + decade*Eseries;
-            switch (Eseries) {
-            case (1):
-               /*printf ("rBase:%u baseR1[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR1[rBase], decade, pos);*/
-               val = baseR1[rBase] * (double)powlmy (10, decade);
-               break;
-            case (3):
-               /*printf ("rBase:%u baseR3[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR3[rBase], decade, pos);*/
-               val = baseR3[rBase] * (double)powlmy (10, decade);
-               break;
-            case (6):
-               /*printf ("rBase:%u baseR6[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR6[rBase], decade, pos);*/
-               val = baseR6[rBase] * (double)powlmy (10, decade);
-               break;
-            case (12):
-               /*printf ("rBase:%u baseR12[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR12[rBase], decade, pos);*/
-               val = baseR12[rBase] * (double)powlmy (10, decade);
-               break;
-            case (24):
-               /*printf ("rBase:%u baseR24[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR24[rBase], decade, pos);*/
-               val = baseR24[rBase] * (double)powlmy (10, decade);
-               break;
-            case (48):
-               /*printf ("rBase:%u baseR48[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR48[rBase], decade, pos);*/
-               val = baseR48[rBase] * (double)powlmy (10, decade);
-               break;
-            case (96):
-               /*printf ("rBase:%u baseR96[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR96[rBase], decade, pos);*/
-               val = baseR96[rBase] * (double)powlmy (10, decade);
-               break;
-            case (192):
-               /*printf ("rBase:%u baseR192[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR192[rBase], decade, pos);*/
-               val = baseR192[rBase] * (double)powlmy (10, decade);
-               break;
-            default:
-               printf ("Unsupported Series:%u. Supported are 1, 3, 6, 12, 24, 48, 96 and 192\n", Eseries);
-               return (ERROR);
-            }
-            rValues[pos].r = val;
-            for (p=0; p<maxRp; p++) {
-               rValues[pos].rp[p] = val;
-            }
-            //strcpy (rValues[pos].desc, "Exxx series"); // 11 chars
-            strcpy (rValues[pos].desc, Exx);
-            if (dbgLv>=PRINTDEBUG) printf ("rValue:%g\n", val);
-         }
-      }
-   } else { // custom list of values
-      for (pos=0; pos<listNumber; pos++) { // populate with custom values
-         val = baseR[pos];
-         rValues[pos].r = val;
-         for (p=0; p<maxRp; p++) {
-            rValues[pos].rp[p] = val;
-         }
-         strcpy (rValues[pos].desc, "Custom list"); // 11 chars
-         if (dbgLv>=PRINTVERBOSE) printf ("rValue:%g\n", val);
-      }
+// gprintf(): selectable asprintf(autoalloc sprintf) OR printf
+// when first parameter is 0 is like printf()
+// when first parameter is not 0 is like asprintf() AND call
+// functionPtr(strPtr) to update the GUI, autofree allocated string ptr
+// Call with:
+// gprintf(int, "asprintf str:'%s' is %d\n", text, num);
+int gprintf (int gui, const char* format, ...) {
+   int len;
+   va_list ap;
+   va_start(ap, format);
+   if (gui==0) { // output to stdout like printf()
+      len = vprintf(format, ap);
+   } else { // output to auto allocated string like asprintf()
+      char* stringPtr;
+      len = vasprintf (&stringPtr, format, ap);
+      // then update the GUI
+      if (guiUpdateOutPtr!=NULL) (*guiUpdateOutPtr)(stringPtr, len);
+      free(stringPtr);
    }
-   if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
-   return (pos);
-} // s16 calcEseries(void)
-
-/* calculate all possible resistive values using 'MaxRp' resistances */
-int calcRvalues(void) { /* in series or parallel, support MaxRp=2 only */
-   s16 pos;
-   register double val;
-   u16 rp1, rp2;
-   u08 p;
-   /* at first calculate the single values (Eseries) or fill custom values */
-   pos = calcEseries ();
-   if (pos==ERROR) {
-      printf ("calcEseries returned ERROR\n");
-      return (ERROR);
-   }
-   if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
-   if (maxRp==2) { // as now support only maxRp=2 resistances per position
-      /* now calculate all series values with 2 resistances per position */
-      pos = numR;
-      for (rp1=0; rp1<numR; rp1++) {
-         for (rp2=0; rp2<numR; rp2++) {
-            if (rp1<rp2) continue; /* triangular matrix */
-            val = rValues[rp1].r + rValues[rp2].r;
-            rValues[pos].r = val;
-            rValues[pos].rp[0] = rValues[rp1].r;
-            for (p=1; p<maxRp; p++) {
-               rValues[pos].rp[p] = rValues[rp2].r;
-            }
-            strcpy (rValues[pos].desc, "Series   of"); // 11 chars
-/*           printf ("r1:%g + r2:%g = ", rValues[rp1].r, rValues[rp2].r);
-            printf ("rValue:%g\n", val);*/
-            pos++;
-         }
-      }
-      if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
-      /* now calculate all parallel values with 2 resistances per position */
-      for (rp1=0; rp1<numR; rp1++) {
-         for (rp2=0; rp2<numR; rp2++) {
-            if (rp1<rp2) continue; /* triangular matrix */
-            val = rValues[rp1].r * rValues[rp2].r / (rValues[rp1].r + rValues[rp2].r);
-            rValues[pos].r = val;
-            rValues[pos].rp[0] = rValues[rp1].r;
-            for (p=1; p<maxRp; p++) {
-               rValues[pos].rp[p] = rValues[rp2].r;
-            }
-            strcpy (rValues[pos].desc, "Parallel of"); // 11 chars
-/*           printf ("r1:%g // r2:%g = ", rValues[rp1].r, rValues[rp2].r);
-            printf ("rValue:%g\n", val);*/
-            pos++;
-         }
-      }
-   }
-   if (maxRp>2) {
-      printf ("Unsupported maxRp:%u. Supported maxRp 1 or 2\n", maxRp);
-      return (ERROR);
-   }
-   if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
-   return (OK);
-} // int calcRvalues(void)
-
-#include <unistd.h> // fsync
-
-/* calculate all formula results using 'maxRc' resistances */
-int calcFvalues(void) {
-   u32 rc1, rc2;
-   /*float res[maxRc];*/ /* single case, normally 2 resistances */
-   register double val;
-   register double delta = 0;
-   register u32 pos = 0;
-   if (dbgLv>=PRINTDEBUG) printf ("numV:%u, totV:%llu\n", numV, totV);
-   if (dbgLv>=PRINTDEBUG) printf ("expr:'%s'\n", expr);
-   if (dbgLv>=PRINTF) printf ("sol="); // here print something for user feedback (take time)
-   for (rc1=0; rc1<numV; rc1++) {
-      exprVarsParser[0] = rValues[rc1].r; /* estract single case to try */
-      if (dbgLv>=PRINTDEBUG) printf ("exprVarsParser[0]:%g\n", exprVarsParser[0]);
-      for (rc2=0; rc2<numV; rc2++) {
-         exprVarsParser[1] = rValues[rc2].r; /* estract single case to try */
-         if (dbgLv>=PRINTDEBUG) printf ("exprVarsParser[1]:%g\n", exprVarsParser[1]);
-         val = evalExprParser (expr);
-         /*if (desired >= val) delta = desired - val;
-         if (val > desired) delta = val - desired;*/
-         delta = desired - val;
-         /*printf ("rc1:%u rc2:%u pos:%lu val:%g delta:%g\n", rc1, rc2, pos, val, delta);*/
-         results[pos].pos[0] = rc1;
-         results[pos].pos[1] = rc2;
-         /*results[pos].val    = val;*/
-         results[pos].delta  = delta;
-         pos++;
-      }
-      if (rc1%1000==0) {
-         if (dbgLv>=PRINTF) printf ("%u,", rc1*numV);
-         fflush (NULL); // user space stdout flush
-         fsync (1);   // kernel space stdout flush
-      }
-   }
-   if (dbgLv>=PRINTF) printf ("%u\n", rc1*numV-1);
-   return (OK);
-} // int calcFvalues(void) {
-
-s32 tot; // used for communication between 'structQuickSort' & 'qsStruct'
-
-/* QuickSort for vector of structs of type resultsTy. */
-/* Sorting criteria: field 'abs(delta)' */
-void qsStruct(struct resultsTy results[], s32 left, s32 right) {
-   register s32 l, r, m; /* position left, right and median */
-   float  mp; /* will contain data in center position */
-   struct resultsTy temp;            /* temp struct for swap */
-   static u32 qs=0;
-   if (qs%6000000==0) {
-      if (dbgLv>=PRINTF) printf ("%u,", qs);
-      fflush (NULL); // user space stdout flush
-      fsync (1);   // kernel space stdout flush
-   }
-   qs++;
-   if (dbgLv>=PRINTDEBUG) {
-      for (s32 c=0; c<tot; c++) {
-         printf ("s[%2d]=%11G\n", c, results[c].delta);
-      }
-   }
-   if (dbgLv>=PRINTDEBUG) printf ("left:%9d right:%9d\n", left, right);
-   l = left; r = right;
-   m = (left+right)/2; /* center position rounded down */
-   mp = fabs(results[m].delta); /* take center element in module */
-   if (dbgLv>=PRINTDEBUG) printf ("meanPos(left+right)/2:%9d meanValue_delta[meanPos]:%11G\n", m, mp);
-   do { /* at least once, until is true (l<=r) */
-      if (dbgLv>=PRINTDEBUG) printf ("l:%9d r:%9d\n", l, r);
-      /* find first element at left <= of center element */
-      while ( ((mp-fabs(results[l].delta))<0) && (l<right) ) l++; /* test, if true exec */
-      /* find first element at right > of center element */
-      while ( ((mp-fabs(results[r].delta))>0) && (r>left ) ) r--; /* test, if true exec */
-      if (dbgLv>=PRINTDEBUG) printf ("limits: value[l=%9d]=%11G value[r=%9d]=%11G\n", l, results[l].delta, r, results[r].delta);
-      if (l <= r) { /* if not crossed, swap */
-         if (dbgLv>=PRINTDEBUG) printf ("swap: l:%9d r:%9d\n", l, r);
-         temp = results[l];
-         results[l] = results[r];
-         results[r] = temp;
-         l++; r--;
-      }
-      if (dbgLv>=PRINTDEBUG) {
-         for (s32 c=0; c<tot; c++) {
-            printf (" [%2d]=%11G\n", c, results[c].delta);
-         }
-      }
-   } while (l <= r);
-   if (dbgLv>=PRINTVERBOSE) {
-      for (s32 c=left; c<right; c++) {
-         printf ("value[%9d]=%11G\n", c, results[c].delta);
-      }
-   }
-   if (left < r) {
-      if (dbgLv>=PRINTDEBUG) printf ("analisys: value[left=%9d]=%11G value[r=%9d]=%11G\n", left, results[left].delta, r, results[r].delta);
-      if (dbgLv>=PRINTDEBUG) printf ("\n");
-      qsStruct (results, left , r);
-   }
-   if (l < right) {
-      if (dbgLv>=PRINTDEBUG) printf ("analisys: value[l=%9d]=%11G value[right=%9d]=%11G\n", l, results[l].delta, right, results[right].delta);
-      if (dbgLv>=PRINTDEBUG) printf ("\n");
-      qsStruct (results, l, right);
-   }
-   if (dbgLv>=PRINTDEBUG) printf ("\n");
-} // void qsStruct(struct resultsTy results[], s32 left, s32 right)
-
-/* QuickSort for vector of structs of type resultsTy, using field 'abs(delta)' */
-/* put in results[0] the greatest and in results[totNumber-1] the smallest */
-int structQuickSort(struct resultsTy results[], s32 totNumber) {
-   if (totNumber==0) return (ERROR);
-   tot = totNumber;
-   if (dbgLv>=PRINTF) {
-      printf ("qs="); // here print something for user feedback (take time)
-      fflush (NULL); // user space stdout flush
-      fsync (1);   // kernel space stdout flush
-   }
-   qsStruct (results, 0UL, totNumber-1);
-   if (dbgLv>=PRINTF) printf ("\n");
-   if (dbgLv>=PRINTDEBUG) {
-      for (s32 c=0; c<tot; c++) {
-         printf ("f[%2d]=%11G\n", c, results[c].delta);
-      }
-   }
-   return (OK);
-} // int structQuickSort(struct resultsTy results[], s32 totNumber)
-
-/* print last 'numBestRes=totV-first' results */
-int showVal(u32 first) { // solutions with up to 4 resistors
-   u32 pos;
-   int cmp0, cmp1;
-   for (pos=first; pos<totV; pos++) { // 'totV-1' is the best solution
-      /*printf ("pos:%9lu", pos);*/
-      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[0]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[1]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      printf ("a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      printf ("   val:%11G   delta:%11G", desired-results[pos].delta, fabs(results[pos].delta));
-      printf (" e%%:%6.3G\n", fabs(results[pos].delta/desired*100));
-      if (maxRp==2) { // maybe a series or parallel value
-         if (cmp0==0) { // single resistors
-            printf ("a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
-         } else { // 2 resistors in series or parallel
-            printf ("a:%-12s:%8g & %8g  " , rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0], rValues[results[pos].pos[0]].rp[1]);
-         }
-         if (cmp1==0) { // single resistors
-            printf ("b:%-12s:%8g", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0]);
-         } else { // 2 resistors in series or parallel
-            printf ("b:%-12s:%8g & %8g ", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0], rValues[results[pos].pos[1]].rp[1]);
-         }
-         printf ("\n");
-      }
-   }
-   return (OK);
-} // int showVal(u32 first)
-
-/* print best 'numBestRes' results */
-int showVal4(u32 numBestRes) { // Solutions with 4 resistors
-   s32 pos, best;
-   u32 count=0;
-   int cmp0, cmp1;
-   u32 res[NumberResMax];
-   //printf ("numBestRes:%ld NumberResMax:%d\n", numBestRes, NumberResMax);
-   if (numBestRes>NumberResMax) numBestRes=NumberResMax;
-   //printf ("numBestRes:%ld NumberResMax:%d\n", numBestRes, NumberResMax);
-   for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
-      /*printf ("pos:%9lu", pos);*/
-      if (count>=numBestRes) break; // printed 'numBestRes' results
-      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[0]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[1]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      if (cmp0==0 || cmp1==0) continue; // skip when one is 0 (so skip when are less than 4 resistances, do when both are series/parallel)
-      res[count]=pos;
-      //printf ("4 added pos:%ld\n", pos);
-      count++;
-   }
-   for (best=count-1; best>=0; best--) { // [0] is the best solution
-      pos=res[best];
-      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[0]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[1]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      printf ("a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      printf ("   val:%11G   delta:%11G", desired-results[pos].delta, fabs(results[pos].delta));
-      printf (" e%%:%6.3G\n", fabs(results[pos].delta/desired*100));
-      if (maxRp==2) { // maybe a series or parallel value
-         if (cmp0==0) { // single resistors
-            printf ("a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
-         } else { // 2 resistors in series or parallel
-            printf ("a:%-12s:%8g & %8g  "  , rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0], rValues[results[pos].pos[0]].rp[1]);
-         }
-         if (cmp1==0) { // single resistors
-            printf ("b:%-12s:%8g", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0]);
-         } else { // 2 resistors in series or parallel
-            printf ("b:%-12s:%8g & %8g ", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0], rValues[results[pos].pos[1]].rp[1]);
-         }
-         printf ("\n");
-      }
-   }
-   return (OK);
-} // int showVal4(u32 numBestRes)
-
-/* print best 'numBestRes' results */
-int showVal3(u32 numBestRes) { // Solutions with 3 resistors
-   s32 pos, best;
-   u32 count=0;
-   int cmp0, cmp1;
-   u32 res[NumberResMax];
-   if (numBestRes>NumberResMax) numBestRes=NumberResMax;
-   for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
-      if (count>=numBestRes) break; // printed 'numBestRes' results
-      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[0]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[1]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      if (cmp0==cmp1) continue; // skip when both 0 or both 1 (both Arb/Exx or both series/parallel, so do when are 3 resistances)
-      res[count]=pos;
-      //printf ("3 added pos:%ld\n", pos);
-      count++;
-   }
-   for (best=count-1; best>=0; best--) { // [0] is the best solution
-      pos=res[best];
-      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[0]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[1]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      printf ("a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      printf ("   val:%11G   delta:%11G", desired-results[pos].delta, fabs(results[pos].delta));
-      printf (" e%%:%6.3G\n", fabs(results[pos].delta/desired*100));
-      if (maxRp==2) {
-         if (cmp0==0) { // single resistors
-            printf ("a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
-         } else { // 2 resistors in series or parallel
-            printf ("a:%-12s:%8g & %8g  " , rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0], rValues[results[pos].pos[0]].rp[1]);
-         }
-         if (cmp1==0) { // single resistors
-            printf ("b:%-12s:%8g", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0]);
-         } else { // 2 resistors in series or parallel
-            printf ("b:%-12s:%8g & %8g ", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0], rValues[results[pos].pos[1]].rp[1]);
-         }
-         printf ("\n");
-      }
-   }
-   return (OK);
-} // int showVal3(u32 numBestRes)
-
-/* print best 'numBestRes' results */
-int showVal2(u32 numBestRes) { // Solutions with 2 resistors
-   s32 pos, best;
-   u32 count=0;
-   int cmp0, cmp1;
-   u32 res[NumberResMax];
-   if (numBestRes>NumberResMax) numBestRes=NumberResMax;
-   for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
-      if (count>=numBestRes) break; // printed 'numBestRes' results
-      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[0]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
-             (strcmp (rValues[results[pos].pos[1]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      if (cmp0!=0 || cmp1!=0) continue; // skip when one is 1 (so skip when are more than 2 resistances, do when both are Exx/custom)
-      res[count]=pos;
-      //printf ("2 added pos:%ld\n", pos);
-      count++;
-   }
-   for (best=count-1; best>=0; best--) { // [0] is the best solution
-      pos=res[best];
-      printf ("a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      printf ("   val:%11G   delta:%11G", desired-results[pos].delta, fabs(results[pos].delta));
-      printf (" e%%:%6.3G\n", fabs(results[pos].delta/desired*100));
-      if (maxRp==2) { // this is just a repetition of 'a' and 'b' as are Custom list
-         printf ("a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
-         printf ("b:%-12s:%8g"       , rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0]);
-         printf ("\n");
-      }
-   }
-   return (OK);
-} // int showVal2(u32 numBestRes)
+   va_end(ap);
+   return len;
+}
 
 void showHead(void) {
    printf ("ReSolve v%s %s by Valerio Messina users.iol.it/efa\n", SourceVersion, SourceDate);
@@ -892,6 +501,420 @@ int baseInit() { // basic initialization: load config from file+memSize
    return 0;
 } // int baseInit()
 
+u32 powlmy(u32 base, u32 exp) { /* substitute the pow() in math.h but use u32 */
+    register u32 c;
+    register u32 res = 1;
+    for (c=0; c<exp; c++) {
+       res = res * base;
+    }
+    return (res);
+} // u32 powlmy(u32 base, u32 exp)
+
+/* using one decade values and 'decades', calculate all standard Exx series values */
+// use 'baseRxx[Eseries/listNumber]' and generate ==> rValues[pos].r, rValues[pos].rp[p]
+s16 calcEseries(void) { // or fill with the custom list of values when Eseries=0
+   u08 decade;
+   u08 rBase;
+   s16 pos = 0; // expected max 7*192=1344
+   register double val;
+   u08 p;
+   if (Eseries>0) { // standard Exx series resistors
+      for (decade=0; decade<decades; decade++) {
+         for (rBase=0; rBase<Eseries; rBase++) {
+            pos = rBase + decade*Eseries;
+            switch (Eseries) {
+            case (1):
+               /*printf ("rBase:%u baseR1[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR1[rBase], decade, pos);*/
+               val = baseR1[rBase] * (double)powlmy (10, decade);
+               break;
+            case (3):
+               /*printf ("rBase:%u baseR3[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR3[rBase], decade, pos);*/
+               val = baseR3[rBase] * (double)powlmy (10, decade);
+               break;
+            case (6):
+               /*printf ("rBase:%u baseR6[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR6[rBase], decade, pos);*/
+               val = baseR6[rBase] * (double)powlmy (10, decade);
+               break;
+            case (12):
+               /*printf ("rBase:%u baseR12[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR12[rBase], decade, pos);*/
+               val = baseR12[rBase] * (double)powlmy (10, decade);
+               break;
+            case (24):
+               /*printf ("rBase:%u baseR24[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR24[rBase], decade, pos);*/
+               val = baseR24[rBase] * (double)powlmy (10, decade);
+               break;
+            case (48):
+               /*printf ("rBase:%u baseR48[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR48[rBase], decade, pos);*/
+               val = baseR48[rBase] * (double)powlmy (10, decade);
+               break;
+            case (96):
+               /*printf ("rBase:%u baseR96[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR96[rBase], decade, pos);*/
+               val = baseR96[rBase] * (double)powlmy (10, decade);
+               break;
+            case (192):
+               /*printf ("rBase:%u baseR192[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR192[rBase], decade, pos);*/
+               val = baseR192[rBase] * (double)powlmy (10, decade);
+               break;
+            default:
+               printf ("Unsupported Series:%u. Supported are 1, 3, 6, 12, 24, 48, 96 and 192\n", Eseries);
+               return (ERROR);
+            }
+            rValues[pos].r = val;
+            for (p=0; p<maxRp; p++) {
+               rValues[pos].rp[p] = val;
+            }
+            //strcpy (rValues[pos].desc, "Exxx series"); // 11 chars
+            strcpy (rValues[pos].desc, Exx);
+            if (dbgLv>=PRINTDEBUG) printf ("rValue:%g\n", val);
+         }
+      }
+   } else { // custom list of values
+      for (pos=0; pos<listNumber; pos++) { // populate with custom values
+         val = baseR[pos];
+         rValues[pos].r = val;
+         for (p=0; p<maxRp; p++) {
+            rValues[pos].rp[p] = val;
+         }
+         strcpy (rValues[pos].desc, "Custom list"); // 11 chars
+         if (dbgLv>=PRINTVERBOSE) printf ("rValue:%g\n", val);
+      }
+   }
+   if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
+   return (pos);
+} // s16 calcEseries(void)
+
+/* calculate all possible resistive values using 'MaxRp' resistances */
+int calcRvalues(void) { /* in series or parallel, support MaxRp=2 only */
+   s16 pos;
+   register double val;
+   u16 rp1, rp2;
+   u08 p;
+   /* at first calculate the single values (Eseries) or fill custom values */
+   pos = calcEseries ();
+   if (pos==ERROR) {
+      printf ("calcEseries returned ERROR\n");
+      return (ERROR);
+   }
+   if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
+   if (maxRp==2) { // as now support only maxRp=2 resistances per position
+      /* now calculate all series values with 2 resistances per position */
+      pos = numR;
+      for (rp1=0; rp1<numR; rp1++) {
+         for (rp2=0; rp2<numR; rp2++) {
+            if (rp1<rp2) continue; /* triangular matrix */
+            val = rValues[rp1].r + rValues[rp2].r;
+            rValues[pos].r = val;
+            rValues[pos].rp[0] = rValues[rp1].r;
+            for (p=1; p<maxRp; p++) {
+               rValues[pos].rp[p] = rValues[rp2].r;
+            }
+            strcpy (rValues[pos].desc, "Series   of"); // 11 chars
+/*           printf ("r1:%g + r2:%g = ", rValues[rp1].r, rValues[rp2].r);
+            printf ("rValue:%g\n", val);*/
+            pos++;
+         }
+      }
+      if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
+      /* now calculate all parallel values with 2 resistances per position */
+      for (rp1=0; rp1<numR; rp1++) {
+         for (rp2=0; rp2<numR; rp2++) {
+            if (rp1<rp2) continue; /* triangular matrix */
+            val = rValues[rp1].r * rValues[rp2].r / (rValues[rp1].r + rValues[rp2].r);
+            rValues[pos].r = val;
+            rValues[pos].rp[0] = rValues[rp1].r;
+            for (p=1; p<maxRp; p++) {
+               rValues[pos].rp[p] = rValues[rp2].r;
+            }
+            strcpy (rValues[pos].desc, "Parallel of"); // 11 chars
+/*           printf ("r1:%g // r2:%g = ", rValues[rp1].r, rValues[rp2].r);
+            printf ("rValue:%g\n", val);*/
+            pos++;
+         }
+      }
+   }
+   if (maxRp>2) {
+      printf ("Unsupported maxRp:%u. Supported maxRp 1 or 2\n", maxRp);
+      return (ERROR);
+   }
+   if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
+   return (OK);
+} // int calcRvalues(void)
+
+#include <unistd.h> // fsync
+
+/* calculate all formula results using 'maxRc' resistances */
+int calcFvalues(void) {
+   u32 rc1, rc2;
+   /*float res[maxRc];*/ /* single case, normally 2 resistances */
+   register double val;
+   register double delta = 0;
+   register u32 pos = 0;
+   if (dbgLv>=PRINTDEBUG) printf ("numV:%u, totV:%llu\n", numV, totV);
+   if (dbgLv>=PRINTDEBUG) printf ("expr:'%s'\n", expr);
+   if (dbgLv>=PRINTF) gprintf (gui, "sol="); // here print something for user feedback (take time)
+   for (rc1=0; rc1<numV; rc1++) {
+      exprVarsParser[0] = rValues[rc1].r; /* estract single case to try */
+      if (dbgLv>=PRINTDEBUG) printf ("exprVarsParser[0]:%g\n", exprVarsParser[0]);
+      for (rc2=0; rc2<numV; rc2++) {
+         exprVarsParser[1] = rValues[rc2].r; /* estract single case to try */
+         if (dbgLv>=PRINTDEBUG) printf ("exprVarsParser[1]:%g\n", exprVarsParser[1]);
+         val = evalExprParser (expr);
+         /*if (desired >= val) delta = desired - val;
+         if (val > desired) delta = val - desired;*/
+         delta = desired - val;
+         /*printf ("rc1:%u rc2:%u pos:%lu val:%g delta:%g\n", rc1, rc2, pos, val, delta);*/
+         results[pos].pos[0] = rc1;
+         results[pos].pos[1] = rc2;
+         /*results[pos].val    = val;*/
+         results[pos].delta  = delta;
+         pos++;
+      }
+      if (rc1%1000==0) {
+         if (dbgLv>=PRINTF) gprintf (gui, "%u,", rc1*numV);
+         fflush (NULL); // user space stdout flush
+         fsync (1);   // kernel space stdout flush
+      }
+   }
+   if (dbgLv>=PRINTF) gprintf (gui, "%u\n", rc1*numV-1);
+   return (OK);
+} // int calcFvalues(void) {
+
+s32 tot; // used for communication between 'structQuickSort' & 'qsStruct'
+
+/* QuickSort for vector of structs of type resultsTy. */
+/* Sorting criteria: field 'abs(delta)' */
+void qsStruct(struct resultsTy results[], s32 left, s32 right) {
+   register s32 l, r, m; /* position left, right and median */
+   float  mp; /* will contain data in center position */
+   struct resultsTy temp;            /* temp struct for swap */
+   static u32 qs=0;
+   if (qs%6000000==0) {
+      if (dbgLv>=PRINTF) gprintf (gui, "%u,", qs);
+      fflush (NULL); // user space stdout flush
+      fsync (1);   // kernel space stdout flush
+   }
+   qs++;
+   if (dbgLv>=PRINTDEBUG) {
+      for (s32 c=0; c<tot; c++) {
+         printf ("s[%2d]=%11G\n", c, results[c].delta);
+      }
+   }
+   if (dbgLv>=PRINTDEBUG) printf ("left:%9d right:%9d\n", left, right);
+   l = left; r = right;
+   m = (left+right)/2; /* center position rounded down */
+   mp = fabs(results[m].delta); /* take center element in module */
+   if (dbgLv>=PRINTDEBUG) printf ("meanPos(left+right)/2:%9d meanValue_delta[meanPos]:%11G\n", m, mp);
+   do { /* at least once, until is true (l<=r) */
+      if (dbgLv>=PRINTDEBUG) printf ("l:%9d r:%9d\n", l, r);
+      /* find first element at left <= of center element */
+      while ( ((mp-fabs(results[l].delta))<0) && (l<right) ) l++; /* test, if true exec */
+      /* find first element at right > of center element */
+      while ( ((mp-fabs(results[r].delta))>0) && (r>left ) ) r--; /* test, if true exec */
+      if (dbgLv>=PRINTDEBUG) printf ("limits: value[l=%9d]=%11G value[r=%9d]=%11G\n", l, results[l].delta, r, results[r].delta);
+      if (l <= r) { /* if not crossed, swap */
+         if (dbgLv>=PRINTDEBUG) printf ("swap: l:%9d r:%9d\n", l, r);
+         temp = results[l];
+         results[l] = results[r];
+         results[r] = temp;
+         l++; r--;
+      }
+      if (dbgLv>=PRINTDEBUG) {
+         for (s32 c=0; c<tot; c++) {
+            printf (" [%2d]=%11G\n", c, results[c].delta);
+         }
+      }
+   } while (l <= r);
+   if (dbgLv>=PRINTVERBOSE) {
+      for (s32 c=left; c<right; c++) {
+         printf ("value[%9d]=%11G\n", c, results[c].delta);
+      }
+   }
+   if (left < r) {
+      if (dbgLv>=PRINTDEBUG) printf ("analisys: value[left=%9d]=%11G value[r=%9d]=%11G\n", left, results[left].delta, r, results[r].delta);
+      if (dbgLv>=PRINTDEBUG) printf ("\n");
+      qsStruct (results, left , r);
+   }
+   if (l < right) {
+      if (dbgLv>=PRINTDEBUG) printf ("analisys: value[l=%9d]=%11G value[right=%9d]=%11G\n", l, results[l].delta, right, results[right].delta);
+      if (dbgLv>=PRINTDEBUG) printf ("\n");
+      qsStruct (results, l, right);
+   }
+   if (dbgLv>=PRINTDEBUG) printf ("\n");
+} // void qsStruct(struct resultsTy results[], s32 left, s32 right)
+
+/* QuickSort for vector of structs of type resultsTy, using field 'abs(delta)' */
+/* put in results[0] the greatest and in results[totNumber-1] the smallest */
+int structQuickSort(struct resultsTy results[], s32 totNumber) {
+   if (totNumber==0) return (ERROR);
+   tot = totNumber;
+   if (dbgLv>=PRINTF) {
+      gprintf (gui, "qs="); // here print something for user feedback (take time)
+      fflush (NULL); // user space stdout flush
+      fsync (1);   // kernel space stdout flush
+   }
+   qsStruct (results, 0UL, totNumber-1);
+   if (dbgLv>=PRINTF) gprintf (gui, "\n");
+   if (dbgLv>=PRINTDEBUG) {
+      for (s32 c=0; c<tot; c++) {
+         printf ("f[%2d]=%11G\n", c, results[c].delta);
+      }
+   }
+   return (OK);
+} // int structQuickSort(struct resultsTy results[], s32 totNumber)
+
+/* print last 'numBestRes=totV-first' results */
+int showVal(u32 first) { // solutions with up to 4 resistors
+   u32 pos;
+   int cmp0, cmp1;
+   for (pos=first; pos<totV; pos++) { // 'totV-1' is the best solution
+      /*printf ("pos:%9lu", pos);*/
+      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[0]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[1]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      gprintf (gui, "a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
+      gprintf (gui, "   val:%11G   delta:%11G", desired-results[pos].delta, fabs(results[pos].delta));
+      gprintf (gui, " e%%:%6.3G\n", fabs(results[pos].delta/desired*100));
+      if (maxRp==2) { // maybe a series or parallel value
+         if (cmp0==0) { // single resistors
+            gprintf (gui, "a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
+         } else { // 2 resistors in series or parallel
+            gprintf (gui, "a:%-12s:%8g & %8g  " , rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0], rValues[results[pos].pos[0]].rp[1]);
+         }
+         if (cmp1==0) { // single resistors
+            gprintf (gui, "b:%-12s:%8g", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0]);
+         } else { // 2 resistors in series or parallel
+            gprintf (gui, "b:%-12s:%8g & %8g ", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0], rValues[results[pos].pos[1]].rp[1]);
+         }
+         gprintf (gui, "\n");
+      }
+   }
+   return (OK);
+} // int showVal(u32 first)
+
+/* print best 'numBestRes' results */
+int showVal4(u32 numBestRes) { // Solutions with 4 resistors
+   s32 pos, best;
+   u32 count=0;
+   int cmp0, cmp1;
+   u32 res[NumberResMax];
+   //printf ("numBestRes:%ld NumberResMax:%d\n", numBestRes, NumberResMax);
+   if (numBestRes>NumberResMax) numBestRes=NumberResMax;
+   //printf ("numBestRes:%ld NumberResMax:%d\n", numBestRes, NumberResMax);
+   for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
+      /*printf ("pos:%9lu", pos);*/
+      if (count>=numBestRes) break; // printed 'numBestRes' results
+      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[0]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[1]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      if (cmp0==0 || cmp1==0) continue; // skip when one is 0 (so skip when are less than 4 resistances, do when both are series/parallel)
+      res[count]=pos;
+      //printf ("4 added pos:%ld\n", pos);
+      count++;
+   }
+   for (best=count-1; best>=0; best--) { // [0] is the best solution
+      pos=res[best];
+      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[0]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[1]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      gprintf (gui, "a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
+      gprintf (gui, "   val:%11G   delta:%11G", desired-results[pos].delta, fabs(results[pos].delta));
+      gprintf (gui, " e%%:%6.3G\n", fabs(results[pos].delta/desired*100));
+      if (maxRp==2) { // maybe a series or parallel value
+         if (cmp0==0) { // single resistors
+            gprintf (gui, "a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
+         } else { // 2 resistors in series or parallel
+            gprintf (gui, "a:%-12s:%8g & %8g  "  , rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0], rValues[results[pos].pos[0]].rp[1]);
+         }
+         if (cmp1==0) { // single resistors
+            gprintf (gui, "b:%-12s:%8g", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0]);
+         } else { // 2 resistors in series or parallel
+            gprintf (gui, "b:%-12s:%8g & %8g ", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0], rValues[results[pos].pos[1]].rp[1]);
+         }
+         gprintf (gui, "\n");
+      }
+   }
+   return (OK);
+} // int showVal4(u32 numBestRes)
+
+/* print best 'numBestRes' results */
+int showVal3(u32 numBestRes) { // Solutions with 3 resistors
+   s32 pos, best;
+   u32 count=0;
+   int cmp0, cmp1;
+   u32 res[NumberResMax];
+   if (numBestRes>NumberResMax) numBestRes=NumberResMax;
+   for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
+      if (count>=numBestRes) break; // printed 'numBestRes' results
+      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[0]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[1]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      if (cmp0==cmp1) continue; // skip when both 0 or both 1 (both Arb/Exx or both series/parallel, so do when are 3 resistances)
+      res[count]=pos;
+      //printf ("3 added pos:%ld\n", pos);
+      count++;
+   }
+   for (best=count-1; best>=0; best--) { // [0] is the best solution
+      pos=res[best];
+      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[0]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[1]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      gprintf (gui, "a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
+      gprintf (gui, "   val:%11G   delta:%11G", desired-results[pos].delta, fabs(results[pos].delta));
+      gprintf (gui, " e%%:%6.3G\n", fabs(results[pos].delta/desired*100));
+      if (maxRp==2) {
+         if (cmp0==0) { // single resistors
+            gprintf (gui, "a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
+         } else { // 2 resistors in series or parallel
+            gprintf (gui, "a:%-12s:%8g & %8g  " , rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0], rValues[results[pos].pos[0]].rp[1]);
+         }
+         if (cmp1==0) { // single resistors
+            gprintf (gui, "b:%-12s:%8g", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0]);
+         } else { // 2 resistors in series or parallel
+            gprintf (gui, "b:%-12s:%8g & %8g ", rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0], rValues[results[pos].pos[1]].rp[1]);
+         }
+         gprintf (gui, "\n");
+      }
+   }
+   return (OK);
+} // int showVal3(u32 numBestRes)
+
+/* print best 'numBestRes' results */
+int showVal2(u32 numBestRes) { // Solutions with 2 resistors
+   s32 pos, best;
+   u32 count=0;
+   int cmp0, cmp1;
+   u32 res[NumberResMax];
+   if (numBestRes>NumberResMax) numBestRes=NumberResMax;
+   for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
+      if (count>=numBestRes) break; // printed 'numBestRes' results
+      cmp0 = (strcmp (rValues[results[pos].pos[0]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[0]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
+             (strcmp (rValues[results[pos].pos[1]].desc, Exx )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      if (cmp0!=0 || cmp1!=0) continue; // skip when one is 1 (so skip when are more than 2 resistances, do when both are Exx/custom)
+      res[count]=pos;
+      //printf ("2 added pos:%ld\n", pos);
+      count++;
+   }
+   for (best=count-1; best>=0; best--) { // [0] is the best solution
+      pos=res[best];
+      gprintf (gui, "a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
+      gprintf (gui, "   val:%11G   delta:%11G", desired-results[pos].delta, fabs(results[pos].delta));
+      gprintf (gui, " e%%:%6.3G\n", fabs(results[pos].delta/desired*100));
+      if (maxRp==2) { // this is just a repetition of 'a' and 'b' as are Custom list
+         gprintf (gui, "a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
+         gprintf (gui, "b:%-12s:%8g"       , rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0]);
+         gprintf (gui, "\n");
+      }
+   }
+   return (OK);
+} // int showVal2(u32 numBestRes)
+
 int memCalc() { // memory size calculation
    // 2 - read and set user request
    if (Eseries>0) {
@@ -943,7 +966,7 @@ int memAlloc() { // memory allocation
    /* allocated memory for all R: [12*7]+([12*7]*[12*7])+[12*7] : */
    //struct rValuesTy rValues[numV]; /* single, series & parallel */
    //struct rValuesTy* rValues; /* pointer to memory for single, series & parallel */
-   printf ("Allocating about %.1f MB of RAM for inputs ...\n", rValueSize/1048576.0);
+   gprintf (gui, "Allocating about %.1f MB of RAM for inputs ...\n", rValueSize/1048576.0);
    rValues=malloc(rValueSize); // numV*sizeof(struct rValuesTy)
    // allocation fail with 2'930'000'000 on a 4 GB RAM, 8 GB swap, 32 bit OS
    if (!rValues) {
@@ -959,7 +982,7 @@ int memAlloc() { // memory allocation
       }
    }
    // now can use global rValues[].rp[], rValues[].r for input values
-   printf ("Allocating about %.1f MB of RAM for results ...\n", resultSize/1048576.0);
+   gprintf (gui, "Allocating about %.1f MB of RAM for results ...\n", resultSize/1048576.0);
    //printf ("size_t size:%u Bytes ptr:%lu\n", sizeof (size_t), (u32) pow(2, 8*sizeof (size_t)));
    if (resultSize > pow(2, 8*sizeof (size_t))) {
       printf ("ERROR: This machine cannot handle allocation of:%llu Bytes\n", resultSize);
@@ -978,8 +1001,8 @@ int memAlloc() { // memory allocation
 } // int memAlloc()
 
 int showConf() { // show config set
-   printf ("Desired Value  : %0.3f\n", desired);
-   printf ("Applied Formula: %s\n", expr);
+   gprintf (gui, "Desired Value  : %0.3f\n", desired);
+   gprintf (gui, "Applied Formula: %s\n", expr);
    exprVarsParser[0]=10.0; exprVarsParser[1]=1.0;
    evalExprParser (expr); /* formula syntax test */
    exprVarsParser[0]=0.0; exprVarsParser[1]=0.0;
@@ -988,17 +1011,17 @@ int showConf() { // show config set
    //printf ("sizeof (resultsTy):%u\n", resTy);
    //printf ("sizeof (results[%lu]):%lu\n", totV, res);
    if (Eseries>0) {
-      printf ("Resistors Series:E%u, Decades:%u\n", Eseries, decades);
+      gprintf (gui, "Resistors Series:E%u, Decades:%u\n", Eseries, decades);
       //printf ("Allocated about %lu MB of RAM\n", 220*powlmy(2, decades-5));
    } else {
-      printf ("Resistors custom list of %u values\n", numR);
+      gprintf (gui, "Resistors custom list of %u values\n", numR);
       /*maxRc = 2;
       maxRp = 1; // as now with custom list of values, we support only 1 resistor
       numR = listNumber;
       numV = listNumber;
       totV = numV * numV;*/
    }
-   printf ("Allocated about %.1f MB of total RAM\n", allocatedMB);
+   gprintf (gui, "Allocated about %.1f MB of total RAM\n", allocatedMB);
 
    return 0;
 } // showConf()
@@ -1008,9 +1031,9 @@ int doCalc() { // fill inputs, calcs, sort solutions
 
    // 8 - fill the input vectors with needed data
    if (maxRp>1) {
-      printf ("Calculating all:%u values with max:%u resistors per position ...\n", numV, maxRp);
+      gprintf (gui, "Calculating all:%u values with max:%u resistors per position ...\n", numV, maxRp);
    } else {
-      printf ("Populating all:%u values with max:%u resistors per position ...\n", numV, maxRp);
+      gprintf (gui, "Populating all:%u values with max:%u resistors per position ...\n", numV, maxRp);
    }
    ret = calcRvalues (); /* populate with all possible resistance values */
    if (ret==ERROR) {
@@ -1020,7 +1043,7 @@ int doCalc() { // fill inputs, calcs, sort solutions
    }
 
    // 9 - calculus of solutions
-   printf ("Calculating all:%llu solutions with a formula of:%u resistors ...\n", totV, maxRc);
+   gprintf (gui, "Calculating all:%llu solutions with a formula of:%u resistors ...\n", totV, maxRc);
    ret = calcFvalues (); /* calculate all results and delta */
    if (ret==ERROR) {
       printf ("calcFvalues returned ERROR\n");
@@ -1034,7 +1057,7 @@ int doCalc() { // fill inputs, calcs, sort solutions
 //ret = showVal (first);
 
    // 10 - sorting of solutions
-   printf ("Sorting all:%llu founded solutions ...\n", totV);
+   gprintf (gui, "Sorting all:%llu founded solutions ...\n", totV);
    structQuickSort (results, totV); /* QuickSort on all results */
 
    return 0;
@@ -1042,11 +1065,11 @@ int doCalc() { // fill inputs, calcs, sort solutions
 
 int freeMem() { // free memory
    // 12 - freeing dynamic allocated memory ...
-   if (results) free (results);
    for (u32 e=0; e<numV; e++) {
       if (rValues[e].rp) free (rValues[e].rp);
    }
-   if (rValues) free (rValues);
-
+   if (results) free (results);
+   if (maxRp==1) return (OK);
+   if (rValues) free (rValues); // only with parallel/series
    return 0;
 } // int freeMem()
