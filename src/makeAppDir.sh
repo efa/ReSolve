@@ -160,6 +160,8 @@ if (test "$BITS" = "32") then
 fi
 cp -aL reSolveConf.txt reSolve.glade circuit*.png AppDir
 cp -aL reSolve.desktop ReSolve.png AppRun AppDir
+cp -a ../reSolveReadme.txt ../README.md
+cp -a ../reSolveReadme.txt AppDir
 if (test "$PKG" = "Win") then
    EXT=".exe"
 fi
