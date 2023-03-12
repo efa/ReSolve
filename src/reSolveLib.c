@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/11 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/12 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -116,7 +116,7 @@ struct rValuesTy* rValues; /* pointer to memory for single, series & parallel */
 struct resultsTy* results; /* pointer to memory for results: [(12*7)^2] */
 
 u16  valTy, resTy;
-float allocatedMB;
+u64 allocatedB;
 u32 rValueSize;
 u64 resultSize;
 u32 first;
@@ -124,30 +124,7 @@ u32 first;
 int gui; // when not 0 gprintf() update the GUI
 int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 
-// aprintf(): selectable asprintf(autoalloc sprintf) OR printf
-// when first parameter is NULL is like printf()
-// when first parameter is not NULL is like asprintf() AND
-// if requested call functionPtr(strPtr) to update the GUI
-// Call with:
-// char* stringPtr;
-// aprintf(&stringPtr, "asprintf str:'%s' is %d\n", text, num);
-// free(stringPtr);
-int aprintf (char** strPtrPtr, const char* format, ...) {
-   int len;
-   va_list ap;
-   va_start(ap, format);
-   if (strPtrPtr==NULL) { // output to stdout like printf()
-      len = vprintf(format, ap);
-   } else { // output to auto allocated string like asprintf()
-      len = vasprintf (strPtrPtr, format, ap);
-      // then update the GUI
-      if (guiUpdateOutPtr!=NULL) (*guiUpdateOutPtr)(*strPtrPtr, len);
-   }
-   va_end(ap);
-   return len;
-}
-
-// gprintf(): selectable asprintf(autoalloc sprintf) OR printf
+// gprintf(): selectable printf OR asprintf(autoalloc sprintf)
 // when first parameter is 0 is like printf()
 // when first parameter is not 0 is like asprintf() AND call
 // functionPtr(strPtr) to update the GUI, autofree allocated string ptr
@@ -175,7 +152,7 @@ void showHead(void) {
    printf ("\n");
 }
 
-void showHelp(float allocatedMB) {
+void showHelp(u64 allocatedB) {
    showHead ();
    /*printf ("Syntax: reSolve desiredFloatValue [numberOfResults]\n");*/
    printf ("Syntax: reSolve -h|--help\n");
@@ -195,7 +172,10 @@ void showHelp(float allocatedMB) {
    printf ("numR:%u, numV:%u, totV:%llu\n", numR, numV, totV);
    printf ("%u possible values with max:%u resistors per position\n", numV, maxRp);
    //printf ("WARN: may allocate about %lu MB of RAM !\n", 220*powlmy(2, decades-5));
-   if (allocatedMB>200) printf ("WARN: may allocate about %.2f MB of RAM !\n", allocatedMB);
+   char* stringPtr;
+   stringPtr=siMem(allocatedB);
+   printf ("Will allocate about %s of total RAM\n", stringPtr);
+   if (allocatedB>200E6) printf ("WARN: may allocate more than 200 MB RAM !\n");
    printf ("Show the best:%u results\n", numBestRes);
    printf ("\n");
 } // showHelp(float allocatedMB)
@@ -688,7 +668,7 @@ void qsStruct(struct resultsTy results[], s32 left, s32 right) {
    float  mp; /* will contain data in center position */
    struct resultsTy temp;            /* temp struct for swap */
    static u32 qs=0;
-   if (qs%6000000==0) {
+   if (qs%20000000==0) {
       if (dbgLv>=PRINTF) gprintf (gui, "%u,", qs);
       fflush (NULL); // user space stdout flush
       fsync (1);   // kernel space stdout flush
@@ -753,7 +733,7 @@ int structQuickSort(struct resultsTy results[], s32 totNumber) {
       fsync (1);   // kernel space stdout flush
    }
    qsStruct (results, 0UL, totNumber-1);
-   if (dbgLv>=PRINTF) gprintf (gui, "\n");
+   if (dbgLv>=PRINTF) gprintf (gui, "%d\n", totNumber-1);
    if (dbgLv>=PRINTDEBUG) {
       for (s32 c=0; c<tot; c++) {
          printf ("f[%2d]=%11G\n", c, results[c].delta);
@@ -955,18 +935,34 @@ int memCalc() { // memory size calculation
    //printf ("Will allocate about %f MB of RAM for val\n", rValueSize/1048576.0);
    //printf ("size of struct resultsTy:%u\n", resTy);
    //printf ("Will allocate about %f MB of RAM for res\n", resultSize/1048576.0);
-   allocatedMB = (rValueSize/1048576.0+resultSize/1048576.0);
-   //printf("will allocateMB:'%.1f'\n", allocatedMB);
+   allocatedB = rValueSize+resultSize;
+   //printf("will allocateMB:'%.1f'\n", allocatedB);
 
    return 0;
 } // int memCalc()
+
+char* siMem(u64 sizeB) { // convert an u64 to string using SI prefix
+   int len=0;
+   char* stringPtr;
+   if      (sizeB>1E12) len = asprintf (&stringPtr, "%.1f TB", (float)sizeB/1E12);
+   else if (sizeB>1E9)  len = asprintf (&stringPtr, "%.1f GB", (float)sizeB/1E9);
+   else if (sizeB>1E6)  len = asprintf (&stringPtr, "%.1f MB", (float)sizeB/1E6);
+   else if (sizeB>1E3)  len = asprintf (&stringPtr, "%.1f kB", (float)sizeB/1E3);
+   else                 len = asprintf (&stringPtr, "%.0f B ", (float)sizeB);
+   if (len==0) return NULL;
+   return stringPtr; // remember caller to free ptr
+}
 
 int memAlloc() { // memory allocation
    // 6 - allocate the memory asking to the OS a malloc()
    /* allocated memory for all R: [12*7]+([12*7]*[12*7])+[12*7] : */
    //struct rValuesTy rValues[numV]; /* single, series & parallel */
    //struct rValuesTy* rValues; /* pointer to memory for single, series & parallel */
-   gprintf (gui, "Allocating about %.1f MB of RAM for inputs ...\n", rValueSize/1048576.0);
+   char* stringPtr;
+   stringPtr=siMem(rValueSize);
+   //printf ("allocat:'%s'\n", stringPtr);
+   gprintf (gui, "Allocating about %s of RAM for inputs ...\n", stringPtr);
+   free(stringPtr);
    rValues=malloc(rValueSize); // numV*sizeof(struct rValuesTy)
    // allocation fail with 2'930'000'000 on a 4 GB RAM, 8 GB swap, 32 bit OS
    if (!rValues) {
@@ -982,7 +978,9 @@ int memAlloc() { // memory allocation
       }
    }
    // now can use global rValues[].rp[], rValues[].r for input values
-   gprintf (gui, "Allocating about %.1f MB of RAM for results ...\n", resultSize/1048576.0);
+   stringPtr=siMem(resultSize);
+   gprintf (gui, "Allocating about %s of RAM for results ...\n", stringPtr);
+   free(stringPtr);
    //printf ("size_t size:%u Bytes ptr:%lu\n", sizeof (size_t), (u32) pow(2, 8*sizeof (size_t)));
    if (resultSize > pow(2, 8*sizeof (size_t))) {
       printf ("ERROR: This machine cannot handle allocation of:%llu Bytes\n", resultSize);
@@ -1021,7 +1019,10 @@ int showConf() { // show config set
       numV = listNumber;
       totV = numV * numV;*/
    }
-   gprintf (gui, "Allocated about %.1f MB of total RAM\n", allocatedMB);
+   char* stringPtr;
+   stringPtr=siMem(allocatedB);
+   gprintf (gui, "Allocated about %s of total RAM\n", stringPtr);
+   free(stringPtr);
 
    return 0;
 } // showConf()

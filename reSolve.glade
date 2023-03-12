@@ -397,6 +397,7 @@ operators: +,-,*,/,%,^, parentesis () with any depth</property>
                 <property name="can-focus">True</property>
                 <property name="vexpand">True</property>
                 <property name="editable">False</property>
+                <property name="wrap-mode">char</property>
                 <property name="buffer">output</property>
                 <property name="monospace">True</property>
               </object>

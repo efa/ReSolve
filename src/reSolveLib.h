@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/11 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/12 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 #include "exprParser.h" /* expression parser interface */
 
 #define SourceVersion "0.09.09h beta"
-#define SourceDate    "2023/03/11"
+#define SourceDate    "2023/03/12"
 
 #ifdef __MSVCRT__       /* CrossCompile to MinGw target */
 #define fsync _commit   /* msvcrt.dll miss fsync, that is present on unix */
@@ -109,7 +109,7 @@ struct resultsTy { u16   pos[MaxRc]; /* positions of each resistance, [maxRc] el
                   }; /* struct declaration */
 extern struct resultsTy* results; /* pointer to memory for results: [(12*7)^2] */
 extern u16  valTy, resTy;
-extern float allocatedMB;
+extern u64 allocatedB;
 extern u32 rValueSize;
 extern u64 resultSize;
 extern u32 first;
@@ -117,7 +117,7 @@ extern int gui; // when not 0 gprintf() update the GUI
 extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 
 int fillConfigVars(void); // load and check users config file
-void showHelp(float allocatedMB);
+void showHelp(u64 allocatedB);
 void showHead(void);
 int calcRvalues(void); /* in series or parallel, support MaxRp=2 only */
 int calcFvalues(void); /* calculate all formula results using 'maxRc' resistances */
@@ -134,5 +134,6 @@ int showConf(); // show config set
 int doCalc(); // fill inputs, calcs, sort solutions
 int freeMem(); // free memory
 int gprintf (int gui, const char* format, ...); // printf() or update GUI
+char* siMem(u64 sizeB); // convert an u64 to string using SI prefix
 
 #endif /* _INCh */

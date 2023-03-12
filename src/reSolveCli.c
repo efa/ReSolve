@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/11 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/12 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -44,7 +44,7 @@ int main(int numPar, char* param[]) {
    /*printf ("numPar:%u\n", numPar);*/
    if (numPar>0) {
       if (!strcmp(param[1],"-h") || !strcmp(param[1],"--help")) {
-         showHelp (allocatedMB);
+         showHelp (allocatedB);
          return (ERROR);
       }
    }
@@ -61,20 +61,20 @@ int main(int numPar, char* param[]) {
          if (len < 60) {
             pos = strcspn (param[2], "!\"#$&',:;<=>?@[\\]_`{|}~�簧");
             if (pos!=len) { // filter out: !"#$&',:;<=>?@[\]_`{|}~�簧
-               showHelp (allocatedMB);
+               showHelp (allocatedB);
                printf ("Unsupported char: '%c'\n", *(param[2]+pos));
                return (ERROR);
             }
             for (p=0; p<len; p++) {
                c = *(param[2]+p);
                if ((u08)c>127) {
-                  showHelp (allocatedMB);
+                  showHelp (allocatedB);
                   printf ("Unsupported char: '%c'\n", *(param[2]+pos));
                   return (ERROR);
                }
                if (isalpha ((u08)c)) {
                   if ( (toupper ((u08)c)-'A') >= MaxRc ) {
-                     showHelp (allocatedMB);
+                     showHelp (allocatedB);
                      printf ("ERROR: Unsupported Variable:'%c'\n\n", c);
                      return (ERROR);
                   }
@@ -82,7 +82,7 @@ int main(int numPar, char* param[]) {
             }
             strcpy(expr, param[2]);
          } else {
-            showHelp (allocatedMB);
+            showHelp (allocatedB);
             printf ("Formula too long: %u chars\n", len);
             return (ERROR);
          }
@@ -98,8 +98,8 @@ int main(int numPar, char* param[]) {
       if (numBestRes==0) numBestRes = NumberResDefault; /* letters case */
       if (numPar>3) printf ("WARNING: Ignoring numPar[%u++]='%s'\n", numPar, param[4]);
    }
-   // 5 - show config value in CLI or GUI
-   showHead (); // LIB: show config value
+   // 5 - show config values
+   showHead (); // LIB: show header
    gprintf (gui, "Found and loaded config file: 'reSolveConf.txt'\n");
 
    // 6 - allocate the memory asking to the OS a malloc()

@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/11 solve math expressions using discrete values*/
+/* ReSolve V0.09.09h 2023/03/12 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@
 // build with:
 // $ gcc reSolveGui.c -o reSolveGui `pkg-config --cflags --libs gtk+-3.0`
 
+#define _GNU_SOURCE     /* vasprintf() */
 #include <stdlib.h>
 #include <locale.h>
 #include <gtk/gtk.h>
@@ -43,18 +44,15 @@ int updateLabelDesc() {
 }
 
 int updateLabelMem() {
-   char allocateStr[80]="";
-   //printf("allocateStr:'%s'\n", allocateStr);
-   //allocateStr[0]='\0';
-   strcat(allocateStr, "Will allocate about ");
-   //printf("allocatedMB:'%f'\n", allocatedMB);
-   char doubleStr[25];
-   sprintf(doubleStr, "%.0f", allocatedMB);
-   strcat(allocateStr, doubleStr);
-   strcat(allocateStr, " MB of total RAM");
-   //printf("allocateStr:'%s'\n", allocateStr);
+   char* stringPtr;
+   stringPtr=siMem(allocatedB);
+   //printf ("allocat:'%s'\n", stringPtr);
+   char* strPtr;
+   asprintf (&strPtr, "Will allocate about %s of total RAM", stringPtr);
+   free(stringPtr);
    GObject* widget2Ptr = gtk_builder_get_object (builderPtr, "allocate");
-   gtk_label_set_text ((GtkLabel*)widget2Ptr, allocateStr);
+   gtk_label_set_text ((GtkLabel*)widget2Ptr, strPtr);
+   free(strPtr);
    return 0;
 }
 
@@ -584,7 +582,7 @@ int backVal() { // backup 'expr' and 'baseR'
 } // backVal()
 
 int guiUpdateOut(char* txtPtr, int l) { // update widgets with results values
-   g_print("guiUpdateOut()\n");
+   //g_print("guiUpdateOut()\n");
    widgetPtr = gtk_builder_get_object (builderPtr, "output");
    if (txtPtr==NULL) { // clear
       //printf("GUI output clear\n");
@@ -595,7 +593,11 @@ int guiUpdateOut(char* txtPtr, int l) { // update widgets with results values
       gtk_text_buffer_get_end_iter((GtkTextBuffer*)widgetPtr, &iter);
       //printf("txtPtr:'%s'\n", txtPtr);
       gtk_text_buffer_insert((GtkTextBuffer*)widgetPtr, &iter, txtPtr, l);
+      widgetPtr = gtk_builder_get_object (builderPtr, "textview");
+      gtk_text_view_scroll_to_iter ((GtkTextView*)widgetPtr,&iter,0,0,1,1);
    }
+   while (gtk_events_pending ()) // force GUI update
+      gtk_main_iteration ();
    return 0;
 } // guiUpdateOut()
 
@@ -618,7 +620,6 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
    }
 
    ret=showConf(); // LIB: show config set
-   //sleep(1);
 
    // 8 - fill the input vectors with needed data
    // 9 - calculus of solutions
@@ -670,8 +671,8 @@ int main(int argc, char *argv[]) {
 
    // 4 - checking config value validity
 
-   // 5 - show config value in CLI or GUI
-   showHead (); // LIB: show config value
+   // 5 - show config values
+   showHead (); // LIB: show header
    printf ("Found and loaded config file: 'reSolveConf.txt'\n");
 
    ret = backVal(); // backup 'expr' and 'baseR'
