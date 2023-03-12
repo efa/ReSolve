@@ -23,7 +23,7 @@ Author: Valerio Messina
 -->
 <!-- GUI resource file for reSolve -->
 <interface>
-  <requires lib="gtk+" version="3.6"/>
+  <requires lib="gtk+" version="3.22"/>
   <!-- interface-license-type lgplv3 -->
   <!-- interface-name ReSolve -->
   <!-- interface-copyright 2022-2023 Valerio Messina -->
@@ -53,6 +53,7 @@ Author: Valerio Messina
       <object class="GtkBox">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
+        <property name="vexpand">True</property>
         <property name="orientation">vertical</property>
         <child>
           <object class="GtkBox">
@@ -391,11 +392,11 @@ operators: +,-,*,/,%,^, parentesis () with any depth</property>
             <property name="shadow-type">in</property>
             <property name="min-content-width">642</property>
             <property name="min-content-height">342</property>
+            <property name="propagate-natural-height">True</property>
             <child>
               <object class="GtkTextView" id="textview">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="vexpand">True</property>
                 <property name="editable">False</property>
                 <property name="wrap-mode">char</property>
                 <property name="buffer">output</property>

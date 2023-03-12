@@ -380,7 +380,7 @@ static void aboutButton(GtkWidget* widgetPtr, gpointer dataPtr) {
    g_print("About button\n");
 }
 
-int quit() {
+int quit() { // called also on Window destroy
    // free mem allocated by fillConfigVars()
    if (baseR) free (baseR);
    if (baseRconf) free (baseRconf);
@@ -501,28 +501,32 @@ int guiInit(int argc, char *argv[]) {
 
    /* Construct a GtkBuilder instance and load our UI description */
    builderPtr = gtk_builder_new();
-
+   //printf ("Try to load 'reSolve.glade'\n");
 #if 0
+   builderPtr=gtk_builder_new_from_file("reSolve.glade");
+   printf ("gtk_builder_new_from_file() returned:%p\n", builderPtr);
+   if (builderPtr == NULL) {
+      //g_printerr ("Error loading file: %s\n", errorPtr->message);
+      //g_clear_error (&errorPtr);
+      printf ("'reSolve.glade' not found, quit\n");
+      return 1;
+   }
+#endif
    GError* errorPtr = NULL;
-   if (gtk_builder_add_from_file(builderPtr, "reSolve.glade", &errorPtr) == 0) {
+   gboolean bit;
+   bit = gtk_builder_add_from_file(builderPtr, "reSolve.glade", &errorPtr);
+   if (bit == 0) {
       g_printerr ("Error loading file: %s\n", errorPtr->message);
       g_clear_error (&errorPtr);
       return 1;
    }
-#endif
-   builderPtr=gtk_builder_new_from_file("reSolve.glade");
-   if (builderPtr == NULL) {
-      //g_printerr ("Error loading file: %s\n", errorPtr->message);
-      //g_clear_error (&errorPtr);
-      return 1;
-   }
+   //printf ("'reSolve.glade' loaded\n");
 
    /* Connect signal handlers to the constructed widgets */
    windowPtr = gtk_builder_get_object (builderPtr, "window");
    g_signal_connect (windowPtr, "destroy", G_CALLBACK(quit), NULL);
 
    //gtk_builder_connect_signals(builderPtr, NULL); // seems unnecessary
-
    widgetPtr = gtk_builder_get_object (builderPtr, "formulaList");
    g_signal_connect (widgetPtr, "changed", G_CALLBACK(formulaPre), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "formula");
@@ -681,6 +685,10 @@ int main(int argc, char *argv[]) {
    gtk_disable_setlocale();
    printf ("Starting GUI ...\n");
    ret = guiInit(argc, argv);
+   if (ret!=0) {
+      printf ("GUI cannot be initialized, quit\n");
+      exit (1);
+   }
    ret = guiUpdateIn();
 
    //ret=runReSolve(); // steps 6 to 12 called by widget callbacks

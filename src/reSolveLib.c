@@ -626,6 +626,7 @@ int calcRvalues(void) { /* in series or parallel, support MaxRp=2 only */
 int calcFvalues(void) {
    u32 rc1, rc2;
    /*float res[maxRc];*/ /* single case, normally 2 resistances */
+   register u64 per; // percentage progress
    register double val;
    register double delta = 0;
    register u32 pos = 0;
@@ -649,13 +650,16 @@ int calcFvalues(void) {
          results[pos].delta  = delta;
          pos++;
       }
-      if (rc1%1000==0) {
-         if (dbgLv>=PRINTF) gprintf (gui, "%u,", rc1*numV);
+      if (rc1%1000==0) { // here print something for user feedback (take time)
+         //if (dbgLv>=PRINTF) gprintf (gui, "%u,", rc1*numV);
+         per=(u64)rc1*numV*100/totV;
+         if (dbgLv>=PRINTF) gprintf (gui, "%d%%,", per);
          fflush (NULL); // user space stdout flush
          fsync (1);   // kernel space stdout flush
       }
    }
-   if (dbgLv>=PRINTF) gprintf (gui, "%u\n", rc1*numV-1);
+   //if (dbgLv>=PRINTF) gprintf (gui, "%u\n", rc1*numV-1); // here print something for user feedback (take time)
+   if (dbgLv>=PRINTF) gprintf (gui, "100%\n"); // here print something for user feedback (take time)
    return (OK);
 } // int calcFvalues(void) {
 
@@ -665,11 +669,14 @@ s32 tot; // used for communication between 'structQuickSort' & 'qsStruct'
 /* Sorting criteria: field 'abs(delta)' */
 void qsStruct(struct resultsTy results[], s32 left, s32 right) {
    register s32 l, r, m; /* position left, right and median */
+   register u64 per; // percentage progress
    float  mp; /* will contain data in center position */
    struct resultsTy temp;            /* temp struct for swap */
    static u32 qs=0;
    if (qs%20000000==0) {
-      if (dbgLv>=PRINTF) gprintf (gui, "%u,", qs);
+      //if (dbgLv>=PRINTF) gprintf (gui, "%u,", qs);
+      per=(u64)qs*100/tot;
+      if (dbgLv>=PRINTF) gprintf (gui, "%d%%,", per);
       fflush (NULL); // user space stdout flush
       fsync (1);   // kernel space stdout flush
    }
@@ -733,7 +740,8 @@ int structQuickSort(struct resultsTy results[], s32 totNumber) {
       fsync (1);   // kernel space stdout flush
    }
    qsStruct (results, 0UL, totNumber-1);
-   if (dbgLv>=PRINTF) gprintf (gui, "%d\n", totNumber-1);
+   //if (dbgLv>=PRINTF) gprintf (gui, "%d\n", totNumber-1);
+   if (dbgLv>=PRINTF) gprintf (gui, "100%%\n");
    if (dbgLv>=PRINTDEBUG) {
       for (s32 c=0; c<tot; c++) {
          printf ("f[%2d]=%11G\n", c, results[c].delta);
