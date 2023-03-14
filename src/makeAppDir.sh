@@ -195,4 +195,4 @@ fi
 cd ../..
 date=`date -I`
 if (test -f reSolve00909h_$date.tgz) then { rm reSolve00909h_$date.tgz ; } fi
-tar --exclude-vcs --exclude=AppDir --exclude=appimagetool* --exclude=textView.ods --exclude=reSolveBack.glade -cvaf reSolve00909h_$date.tgz ReSolve
+tar --exclude-vcs --exclude=AppDir --exclude=appimagetool* --exclude=textView.ods --exclude=reSolveBack.glade --exclude=notes.txt -cvaf reSolve00909h_$date.tgz ReSolve

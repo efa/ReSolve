@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/12 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/14 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -26,6 +26,7 @@ int main(int numPar, char* param[]) {
 
    gui=0; // mean gprintf() do not update GUI
    guiUpdateOutPtr = NULL; // no function pointer to guiUpdateOut()
+   winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
    // 1 - load configuration file and params
    ret = baseInit (); // LIB: basic initialization: load config from file+memSize
@@ -36,6 +37,7 @@ int main(int numPar, char* param[]) {
    // 2 - read and set user request
    // 3 - calculate the needed memory
    ret = memCalc(); // LIB: calculate the needed memory
+//memLowCalc();
 
    // 4 - checking arguments syntax
    /*printf ("numPar:%u\n", numPar);*/
@@ -109,6 +111,7 @@ int main(int numPar, char* param[]) {
       printf ("memAlloc() returned:%u, quit\n", ret);
       return -1;
    }
+//memLowAlloc(); // allocate low mem for results
 
    ret=showConf(); // LIB: show config set
 
@@ -116,24 +119,25 @@ int main(int numPar, char* param[]) {
    // 9 - calculus of solutions
    // 10 - sorting of solutions
    ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
+//doLowMemCalc();
 
    // 11 - print of results
    gprintf (gui, "Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
    if (maxRp==1) { // no need to showVal4,3,2 ...
       gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-      ret = showVal2 (numBestRes);
+      ret = showVal2 (numBestRes); // LIB: 
    } else {
       gprintf (gui, "Show %u solutions with up to 4 resistors:\n", numBestRes);
-      ret = showVal (first);
+      ret = showVal (first); // LIB: 
       gprintf (gui, "\n");
       gprintf (gui, "Show %u solutions with 4 resistors:\n", numBestRes);
-      ret = showVal4 (numBestRes);
+      ret = showVal4 (numBestRes); // LIB: 
       gprintf (gui, "\n");
       gprintf (gui, "Show %u solutions with 3 resistors:\n", numBestRes);
-      ret = showVal3 (numBestRes);
+      ret = showVal3 (numBestRes); // LIB: 
       gprintf (gui, "\n");
       gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-      ret = showVal2 (numBestRes);
+      ret = showVal2 (numBestRes); // LIB: 
    }
    gprintf (gui, "\n");
 

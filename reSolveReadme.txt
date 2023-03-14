@@ -8,8 +8,8 @@ list. It is very useful to find results with commercial resistance values.
 Calcolate a formula with numeric constants and find resistances values to best
 approximate a desiderata value.
 
-Performances:
--------------
+Features:
+---------
 - resolve any formula (series, parallel, ratio, partitors, ...)
 - supported operator with priority: +,-,*,/,%,^,(,) with any depth
 - can use a configurable resistor series (default E12, E24, E96 or E192)
@@ -17,7 +17,7 @@ Performances:
 - as alternative can use a custom list of values
 - sort and show results in best match order, showing difference and error%
   from desiderata value
-- configuration is read from the file 'reSolveConf.txt'
+- default configuration is read from the file 'reSolveConf.txt'
 - cross-platform, open-source
 - GUI, see image below
 
@@ -43,19 +43,19 @@ reSolve -h | --help
    show the command line syntax
 reSolve
    search commercial resistances that best match the formula:
-   "9=1.25*(1+b/a)" reversed high partitor formula (LM317) with 9 Volt output.
+   '9=1.25*(1+b/a)' reversed high partitor formula (LM317) with 9 Volt output.
 reSolve 5
    search commercial resistances that best match the formula:
-   "5=1.25*(1+b/a)" reversed high partitor formula (LM317) with 5 Volt output.
-reSolve 20 "a/b"
+   '5=1.25*(1+b/a)' reversed high partitor formula (LM317) with 5 Volt output.
+reSolve 20 'a/b'
    search commercial resistances that best match the formula:
-   "20=a/b" useful with OpAmp gain in inverting configuration
-reSolve 750 "a*b/(a+b)"
+   '20=a/b' useful with OpAmp gain in inverting configuration
+reSolve 750 'a*b/(a+b)'
    search commercial resistances that best match the parallel:
-   "750=a//b"
-reSolve 3.3 "15*b/(a+b)" 50
+   '750=a//b'
+reSolve 3.3 '15*b/(a+b)' 50
    search commercial resistances that best match the formula:
-   "3.3=12*b/(a+b)" direct low partitor formula with 12V in and 3.3V output.
+   '3.3=12*b/(a+b)' direct low partitor formula with 12V in and 3.3V output.
    Show the best 50 resistances couples.
 ```
 System requirements:
@@ -213,7 +213,7 @@ v0.06.06b 2012/06/26
   - avoid double indication of values in some remaining cases
   - show all values if asked to print more than available results
 
-V0.06.07b 2014/05/08
+v0.06.07b 2014/05/08
 * Added:
   - help on customizing configuration code
   - measured memory allocation in many configurations
@@ -221,45 +221,45 @@ V0.06.07b 2014/05/08
   - new arbitrary values
   - better debug code
 
-V0.06.07c 2014/08/28
+v0.06.07c 2014/08/28
 * Cosmetic:
   - better formatting of output
 
-V0.06.08c 2016/02/09
+v0.06.08c 2016/02/09
 * Added:
   - compatibility with Msys2 32/64 bit
   - corrected range values description for E96 and E192
 
-V0.07.08c 2016/02/10
+v0.07.08c 2016/02/10
 * Added:
   - dynamic allocation of memory instead of runtime static allocation
 
-V0.08.08c 2016/11/22
+v0.08.08c 2016/11/22
 * Added:
   - read base parameters (Eseries, Decades, MaxRp) from config file 'reSolveConf.txt'
   - read other params (DesiredDefault, ExpressionDefault, NumberResDefault)
   - read ListNumber/baseR[] custom list values from config file 'reSolveConf.txt'
   - better cross-platform to x64, MinGw/MSys2, Cygwin64
 
-V0.08.08d 2020/01/25
+v0.08.08d 2020/01/25
 * Fix:
   - support for more than 127 values in baseR custom list from 'reSolveConf.txt'
 
-V0.08.08e 2022/09/30
+v0.08.08e 2022/09/30
 * Added:
   - when Desired Value is not specified on command line, get it from 'reSolveConf.txt'
   - command line option -h to show syntax help
 * Fix:
   - use 'uintptr_t' instead of 'long unsigned int' for better portability
 
-V0.08.09e 2023/01/05
+v0.08.09e 2023/01/05
 * Added:
   - separate LIB from CLI in preparation for GUI version
   - show current Desired Value and Applied Formula when -h is used
 * Fix:
   - can read float values for 'desided' from "reSolveConf.txt"
 
-V0.08.09f 2023/02/06
+v0.08.09f 2023/02/06
 * Added:
   - read 'numberOfResults' from config file
   - support for poor E1, E3, E6 series like KiCad
@@ -267,28 +267,30 @@ V0.08.09f 2023/02/06
 * Cosmetic:
   - showed 'up to 4 resistors' also with maxRp=1
 
-V0.08.09g 2023/02/08
+v0.08.09g 2023/02/08
 * Added:
   - support for all IEC 60063 Eseries, so added E48 series
 * Cosmetic:
   - compared with https://en.wikipedia.org/wiki/E_series_of_preferred_numbers
 
-V0.09.09g 2023/02/12
+v0.09.09g 2023/02/12
 * Added:
   - first version with a demo GUI
   - more separation of LIB from CLI in preparation for GUI version
 * Cosmetic:
   - removed "curses.h" as is obsolete with current MinGw64/Msys2
 
-V0.09.09h 2023/03/12
+v0.09.09h 2023/03/14
 * Added:
   - GUI: working for inputs settings, circuits shown and results
          GUI debug output still goes to CLI
+  - GUI: solved a freeze on Windows on force refreshing
   - GUI: read custom formula from text entry
   - GUI: read custom values from text entry
   - GUI: extend textView vertically when window increase height
   - GUI: force refresh output while heavy calculation
   - GUI: autoscroll to last line
+  - show delta sign and error percentage sign
   - show allocated memory with SI prefix k,M,G,T
   - show calc and sort progress as percentage
   - generation of Linux AppImage
@@ -300,7 +302,7 @@ ToDo:
 - On memory low: save block of results to disk and deallocate memory
 - remove duplicated triangular solutions with MaxRp=2
 - print exact results, separated by approximate results
-- separate value below and over the target value (show delta sign)
+- separate value below and over the target value
 - support for 0 Ohm value in formula denominator (division by 0)
 - add support for variables with an index number. Es. R1, R2
 - add support for variables/letters other than a-b. Autoinit values

@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/12 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/14 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -562,26 +562,12 @@ int guiInit(int argc, char *argv[]) {
 int backVal() { // backup 'expr' and 'baseR'
    strcpy(exprConf, expr);
    int size=sizeof(double)*listNumberConf;
-   //printf("size:%u\n", size);
-   //printf("listNumber:%u\n", listNumber);
-   //printf("listNumberConf:%u\n", listNumberConf);
-   //printf("baseR[r]:");
-   //for (uint16_t r=0; r<listNumberConf; r++) {
-   //   printf("%0.f,", baseR[r]);
-   //}
-   //printf("\n");
 
    baseRconf=malloc(size);
-   //memcpy(baseRconf, baseR, size);
    for (uint16_t r=0; r<listNumberConf; r++) {
       baseRconf[r]=baseR[r];
    }
 
-   //printf("baseRconf[r]:");
-   //for (uint16_t r=0; r<listNumberConf; r++) {
-   //   printf("%0.f,", baseRconf[r]);
-   //}
-   //printf("\n");
    return 0;
 } // backVal()
 
@@ -600,13 +586,20 @@ int guiUpdateOut(char* txtPtr, int l) { // update widgets with results values
       widgetPtr = gtk_builder_get_object (builderPtr, "textview");
       gtk_text_view_scroll_to_iter ((GtkTextView*)widgetPtr,&iter,0,0,1,1);
    }
-   while (gtk_events_pending ()) // force GUI update
-      gtk_main_iteration ();
+   int c=0;
+   while(gtk_events_pending()) { // while is TRUE, force GUI update
+      #ifdef _WIN32
+         if (c>0 && winGuiLoop==0) break; // on Win skip next calls
+      #endif
+      gtk_main_iteration_do(0);
+      c++;
+   }
    return 0;
 } // guiUpdateOut()
 
 int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
    int  ret;
+   winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
    // clear output widget
    ret=guiUpdateOut(NULL, 0);
@@ -632,23 +625,25 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
 
    // 11 - print of results
    gprintf (gui, "Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
+   winGuiLoop=0; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
    if (maxRp==1) { // no need to showVal4,3,2 ...
       gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-      ret = showVal2 (numBestRes);
+      ret = showVal2 (numBestRes); // LIB: 
    } else {
       gprintf (gui, "Show %u solutions with up to 4 resistors:\n", numBestRes);
-      ret = showVal (first);
+      ret = showVal (first); // LIB: 
       gprintf (gui, "\n");
       gprintf (gui, "Show %u solutions with 4 resistors:\n", numBestRes);
-      ret = showVal4 (numBestRes);
+      ret = showVal4 (numBestRes); // LIB: 
       gprintf (gui, "\n");
       gprintf (gui, "Show %u solutions with 3 resistors:\n", numBestRes);
-      ret = showVal3 (numBestRes);
+      ret = showVal3 (numBestRes); // LIB: 
       gprintf (gui, "\n");
       gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-      ret = showVal2 (numBestRes);
+      ret = showVal2 (numBestRes); // LIB: 
    }
    //gprintf (gui, "\n");
+   winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
    // 12 - freeing dynamic allocated memory ...
    ret = freeMem(); // LIB: free memory
@@ -661,6 +656,7 @@ int main(int argc, char *argv[]) {
 
    gui=1; // mean gprintf() update GUI
    guiUpdateOutPtr = &guiUpdateOut; // function pointer to guiUpdateOut()
+   winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
    // 1 - load configuration file and params
    ret = baseInit(); // LIB: basic initialization: load config from file+memSize

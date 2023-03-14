@@ -1,4 +1,4 @@
-/* ReSolve V0.09.09h 2023/03/12 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/14 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 #include "exprParser.h" /* expression parser interface */
 
 #define SourceVersion "0.09.09h beta"
-#define SourceDate    "2023/03/12"
+#define SourceDate    "2023/03/14"
 
 #ifdef __MSVCRT__       /* CrossCompile to MinGw target */
 #define fsync _commit   /* msvcrt.dll miss fsync, that is present on unix */
@@ -73,7 +73,7 @@
     #define TotV (((u32)NumV)*((u32)NumV)) /* number of values to try */
 #endif
 /* default value for formula: reversed high partitor (LM317) */
-#define ExpressionDefault "1.25*(1+b/a)                                      "
+#define ExpressionDefault "1.25*(1+b/a)                              "
 /* Formula+spaces:        "        " */
 #define DesiredDefault     9 /* default value for desired */
 
@@ -92,30 +92,32 @@ extern u08 Eseries;    /* Exx: Series E12, E24, (E48), E96 or E192. Use 0 for cu
 extern u08 decades;    /* number of decades of interest, normally 6 or 7 */
 extern u32 numR;       /* number of existant values of resistance */
 extern u16 maxRp;      /* max number of resistances supported per position: as now 1 or 2 */
-extern u32 numV;       /* number of possible values x each position */
 extern u16 maxRc;      /* number of resistances (variables) in the circuit: 2 */
-extern u64 totV;       /* number of values to try */
+extern u32 numV;       /* number of input possible values (x each position) */
+extern u64 totV;       /* number of results values to try */
 extern u16 numBestRes; /* number of best results to show */
 extern u16 listNumber; // custom list quantity
 extern double* baseR;  // declare vector pointer, will be a vector of double baseR[listNumber]
 extern char baseRdesc[]; // description: reserve space for 65 chars
 struct rValuesTy { double* rp; /* will be a vector of values with [maxRp] elements */
-                    double  r;        /* resultant value, series or parallel */
-                    char    desc[25]; /* description of how is built (series or parallel) */
-                  }; /* struct declaration */
-extern struct rValuesTy* rValues; /* pointer to memory for single, series & parallel */
+                   double  r;        /* resultant value, series or parallel */
+                   char    desc[25]; /* description of how is built (series or parallel) */
+                 }; /* struct declaration */
+extern struct rValuesTy* rValues; /* pointer to memory for single, series & parallel rValues[numV] */
 struct resultsTy { u16   pos[MaxRc]; /* positions of each resistance, [maxRc] elements */
-                    float delta;      /* distance from desiderata */
-                  }; /* struct declaration */
-extern struct resultsTy* results; /* pointer to memory for results: [(12*7)^2] */
-extern u16  valTy, resTy;
-extern u64 allocatedB;
-extern u32 rValueSize;
-extern u64 resultSize;
-extern u32 first;
-extern int gui; // when not 0 gprintf() update the GUI
+                   float delta;     /* distance from desiderata */
+                 }; /* struct declaration */
+extern struct resultsTy* results; /* pointer to memory for results: [(12*7)^2] results[totV] */
+extern u16 valTy, resTy; // 
+extern u32 rValueSize; // sizeof vector of struct: rValues[numV]
+extern u64 resultSize; // sizeof vector of struct: results[totV]
+extern u64 allocatedB; // sizeof allocated memory in Bytes
+extern u32 first; // 
+extern int gui;   // when not 0 gprintf() update the GUI
 extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
+extern int winGuiLoop; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
+// public library functions:
 int fillConfigVars(void); // load and check users config file
 void showHelp(u64 allocatedB);
 void showHead(void);
@@ -135,5 +137,9 @@ int doCalc(); // fill inputs, calcs, sort solutions
 int freeMem(); // free memory
 int gprintf (int gui, const char* format, ...); // printf() or update GUI
 char* siMem(u64 sizeB); // convert an u64 to string using SI prefix
+
+int memLowAlloc(); // allocate low mem for results
+int memLowCalc(); // low memory size calculation
+int doLowMemCalc(); // fill inputs, low mem calcs+sort solutions
 
 #endif /* _INCh */
