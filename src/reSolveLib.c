@@ -751,20 +751,47 @@ int structQuickSort(struct resultsTy results[], s32 totNumber) {
 } // int structQuickSort(struct resultsTy results[], s32 totNumber)
 
 struct resultsTy* resultsLowPtr;
+int w=0; // worst solution index
+double deltaWorst = 45E9; // 45 GOhm
+
+int searchWorst() { // find worst (higher delta) solution
+   double max=0;
+   double delta = 45E9; // 45 GOhm
+   for (int s=0; s<numBestRes; s++) {
+      delta=fabs(resultsLowPtr[s].delta);
+      //printf("s:%d delta:%f\n", s, delta);
+      if (delta > max) {
+         //printf("old max:%f at:%d, new max:%f at:%d\n", max, w, delta, s);
+         w=s;
+         max=delta;
+      }
+   }
+   deltaWorst=max;
+   //printf("worst:%f at:%d\n", deltaWorst, w);
+   return 0;
+}
+
+bool definitelyGreaterThan(double a, double b, double epsilon) {
+   return (a - b) > ( (fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
+}
+
+bool is_double_le(double a, double b, double epsilon) {
+    return a < b + epsilon;
+}
 
 /* calculate best formula results using 'maxRc' resistances */
 int calcLowMemFvalues(void) {
-   float deltaMin = 45E9; // 45 GOhm
    u32 rc1, rc2;
    /*float res[maxRc];*/ /* single case, normally 2 resistances */
    register u64 per; // percentage progress
    register double val;
    register double delta = 0;
-   register u32 pos = 0;
+   //register u32 pos = 0;
    if (dbgLv>=PRINTDEBUG) printf ("numV:%u, totV:%llu\n", numV, totV);
    if (dbgLv>=PRINTDEBUG) printf ("expr:'%s'\n", expr);
    if (dbgLv>=PRINTF) gprintf (gui, "sol="); // here print something for user feedback (take time)
-printf ("\n");
+//printf ("numV:%u\n", numV);
+//printf ("\n");
    for (rc1=0; rc1<numV; rc1++) {
       exprVarsParser[0] = rValues[rc1].r; /* estract single case to try */
       if (dbgLv>=PRINTDEBUG) printf ("exprVarsParser[0]:%g\n", exprVarsParser[0]);
@@ -772,19 +799,21 @@ printf ("\n");
          exprVarsParser[1] = rValues[rc2].r; /* estract single case to try */
          if (dbgLv>=PRINTDEBUG) printf ("exprVarsParser[1]:%g\n", exprVarsParser[1]);
          val = evalExprParser (expr);
-         /*if (desired >= val) delta = desired - val;
-         if (val > desired) delta = val - desired;*/
          delta = val - desired;
          /*printf ("rc1:%u rc2:%u pos:%lu val:%g delta:%g\n", rc1, rc2, pos, val, delta);*/
-         if (fabs(delta) <= deltaMin) {
-            printf ("p:%u new better result:%f delta:%.4f oldDeltaMin:%.4f\n", pos, val, delta, deltaMin);
-            resultsLowPtr[0].pos[0] = rc1;   // always insert in worst pos=0
-            resultsLowPtr[0].pos[1] = rc2;   // always insert in worst pos=0
-            resultsLowPtr[0].delta  = delta; // always insert in worst pos=0
-            deltaMin = fabs(delta);
-            structQuickSort(resultsLowPtr, numBestRes);
+//         if (fabs(delta) <= deltaMin) {
+//         if (deltaMin > fabs(delta)) {
+//         if ( definitelyGreaterThan(deltaWorst, fabs(delta), 0.000000000001 )) {
+         if (is_double_le(fabs(delta), deltaWorst, 1.0E-14)) {
+            //printf ("p:%u new better result:%f delta:%.4f oldDeltaMin:%.4f\n", pos, val, delta, deltaMin);
+            //printf("rc1:%03u rc2:%03u old delta:%f fill at:%d with new delta:%f\n", rc1, rc2, deltaWorst, w, fabs(delta));
+            resultsLowPtr[w].pos[0] = rc1;   // always insert in worst pos
+            resultsLowPtr[w].pos[1] = rc2;   // always insert in worst pos
+            resultsLowPtr[w].delta  = delta; // always insert in worst pos
+            //deltaWorst = fabs(delta);
+            searchWorst(); // find worst (higher delta) solution
          }
-         pos++;
+         //pos++;
       }
       if (rc1%1000==0) { // here print something for user feedback (take time)
          //if (dbgLv>=PRINTF) gprintf (gui, "%u,", rc1*numV);
@@ -940,6 +969,7 @@ int showVal2(u32 numBestRes) { // Solutions with 2 resistors
    }
    for (best=count-1; best>=0; best--) { // [0] is the best solution
       pos=res[best];
+      //printf("pos:%d results[pos].pos[0]:%u, results[pos].pos[1]:%u\n", pos, results[pos].pos[0], results[pos].pos[1]);
       gprintf (gui, "a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
       gprintf (gui, "   val:%11G   delta:%11.4G", desired+results[pos].delta, results[pos].delta);
       gprintf (gui, " e%%:%6.3G\n", results[pos].delta/desired*100);
@@ -1138,7 +1168,7 @@ int doCalc() { // fill inputs, calcs, sort solutions
 //ret = showVal (first);
 
    // 10 - sorting of solutions
-   gprintf (gui, "Sorting all:%llu founded solutions ...\n", totV);
+   gprintf (gui, "Sorting all:%llu found solutions ...\n", totV);
    structQuickSort (results, totV); /* QuickSort on all results */
 
    return 0;
@@ -1168,10 +1198,10 @@ int doLowMemCalc() { // fill inputs, low mem calcs+sort solutions
    }
 
    // 9 - calculus of solutions
-   gprintf (gui, "Calculating best:%u/%llu solutions with a formula of:%u resistors ...\n", numBestRes, totV, maxRc);
+   gprintf (gui, "Calculating new:%u/%llu solutions with a formula of:%u resistors ...\n", numBestRes, totV, maxRc);
    ret = calcLowMemFvalues (); /* calculate best results and delta */
    if (ret==ERROR) {
-      printf ("calcFvalues returned ERROR\n");
+      printf ("calcLowMemFvalues returned ERROR\n");
       free (results);
       return (ERROR);
    }
@@ -1182,12 +1212,14 @@ int doLowMemCalc() { // fill inputs, low mem calcs+sort solutions
 //ret = showVal (first);
 
    // 10 - sorting of solutions
-   //gprintf (gui, "Sorting all:%llu founded solutions ...\n", totV);
-   //structQuickSort (results, totV); /* QuickSort on all results */
+   gprintf (gui, "Sorting new:%llu found solutions ...\n", numBestRes);
+   structQuickSort(resultsLowPtr, numBestRes); /* QuickSort on new results */
+
+   gprintf (gui, "Show new:%llu found solutions ...\n", numBestRes);
    for (int s=0; s<numBestRes; s++) {
       //printf("s:%02d results[].pos[0]:%03u results[].pos[1]:%03u results[].delta:%.5f\n", s, resultsLowPtr[s].pos[0], resultsLowPtr[s].pos[1], resultsLowPtr[s].delta);
       printf("a:%11G b:%11G", rValues[resultsLowPtr[s].pos[0]].r, rValues[resultsLowPtr[s].pos[1]].r);
-      printf("   val:%11G   delta:%11G", desired+resultsLowPtr[s].delta, resultsLowPtr[s].delta);
+      printf("   val:%11G   delta:%11.4G", desired+resultsLowPtr[s].delta, resultsLowPtr[s].delta);
       printf(" e%%:%6.3G\n", resultsLowPtr[s].delta/desired*100);
    }
 

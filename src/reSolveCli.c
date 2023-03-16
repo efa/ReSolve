@@ -37,7 +37,7 @@ int main(int numPar, char* param[]) {
    // 2 - read and set user request
    // 3 - calculate the needed memory
    ret = memCalc(); // LIB: calculate the needed memory
-//memLowCalc();
+ret = memLowCalc();
 
    // 4 - checking arguments syntax
    /*printf ("numPar:%u\n", numPar);*/
@@ -111,7 +111,7 @@ int main(int numPar, char* param[]) {
       printf ("memAlloc() returned:%u, quit\n", ret);
       return -1;
    }
-//memLowAlloc(); // allocate low mem for results
+ret = memLowAlloc(); // allocate low mem for results
 
    ret=showConf(); // LIB: show config set
 
@@ -119,7 +119,7 @@ int main(int numPar, char* param[]) {
    // 9 - calculus of solutions
    // 10 - sorting of solutions
    ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
-//doLowMemCalc();
+ret = doLowMemCalc();
 
    // 11 - print of results
    gprintf (gui, "Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
