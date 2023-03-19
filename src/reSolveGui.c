@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/14 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/19 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -610,7 +610,8 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
 
    // 6 - allocate the memory asking to the OS a malloc()
    // 7 - create the structure's vector inside the allocated memory
-   ret = memAlloc(); // LIB: memory allocation
+   ret = memValAlloc(); // LIB: memory allocation for input values
+   ret = memAlloc(); // LIB: memory allocation for results
    if (ret != 0) {
       printf ("memAlloc() returned:%u, quit\n", ret);
       return -1;
@@ -623,7 +624,7 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
    // 10 - sorting of solutions
    ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
 
-   // 11 - print of results
+   // 11 - print results
    gprintf (gui, "Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
    winGuiLoop=0; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
    if (maxRp==1) { // no need to showVal4,3,2 ...
@@ -659,7 +660,7 @@ int main(int argc, char *argv[]) {
    winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
    // 1 - load configuration file and params
-   ret = baseInit(); // LIB: basic initialization: load config from file+memSize
+   ret = baseInit(); // LIB: basic initialization: load config from file
    if (ret != 0) {
       printf ("baseInit returned:%u, quit\n", ret);
       return -1;

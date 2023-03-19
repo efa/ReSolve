@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/14 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/19 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -21,20 +21,21 @@
 
 //#define _XOPEN_SOURCE 600
 #define _GNU_SOURCE     /* vasprintf() */
-#include <stdio.h>      /* printf */
-#include <string.h>     /* strcpy, strlen, strcspn */
+#include <stdio.h>      /* printf() */
+#include <string.h>     /* strcpy(), strlen(), strcspn() */
 #include <stdint.h>     /* uintptr_t */
-#include <stdlib.h>     /* qsort, atof, exit */
+#include <stdlib.h>     /* qsort(), atof(), exit() */
 #include <stdarg.h>     /* va_list, va_start(), va_end() */
-#include <math.h>       /* pow, fabs */
-#include <ctype.h>      /* isdigit */
-#include <malloc.h>     /* malloc */
+#include <math.h>       /* pow(), fabs() */
+#include <ctype.h>      /* isdigit() */
+#include <malloc.h>     /* malloc() */
+#include <unistd.h>     /* fsync() */
 #include "comType.h"    /* common type */
 #include "fileIo.h"     /* file Input/Output */
 #include "exprParser.h" /* expression parser interface */
 
 #define SourceVersion "0.09.09h beta"
-#define SourceDate    "2023/03/14"
+#define SourceDate    "2023/03/19"
 
 #ifdef __MSVCRT__       /* CrossCompile to MinGw target */
 #define fsync _commit   /* msvcrt.dll miss fsync, that is present on unix */
@@ -76,6 +77,8 @@
 #define ExpressionDefault "1.25*(1+b/a)                              "
 /* Formula+spaces:        "        " */
 #define DesiredDefault     9 /* default value for desired */
+#define MaxValue 50E9 // 50 G(Ohm) should be greather than any practical value
+#define Epsilon 1.0E-14 // used to compare double/float numbers
 
 #define NumberResDefault  20  /* default number of results to print */
 #define NumberResMax     512000 /* the limit depends on compiler */
@@ -100,14 +103,14 @@ extern u16 listNumber; // custom list quantity
 extern double* baseR;  // declare vector pointer, will be a vector of double baseR[listNumber]
 extern char baseRdesc[]; // description: reserve space for 65 chars
 struct rValuesTy { double* rp; /* will be a vector of values with [maxRp] elements */
-                   double  r;        /* resultant value, series or parallel */
-                   char    desc[25]; /* description of how is built (series or parallel) */
+                   double  r;        /* resultant value, single, series & parallel */
+                   char    desc[25]; /* description of how is built (single, series or parallel) */
                  }; /* struct declaration */
-extern struct rValuesTy* rValues; /* pointer to memory for single, series & parallel rValues[numV] */
-struct resultsTy { u16   pos[MaxRc]; /* positions of each resistance, [maxRc] elements */
+extern struct rValuesTy* rValues; /* pointer to rValues[numV] for single, series & parallel rValues[numV] */
+struct resultsTy { u16   pos[MaxRc]; /* positions in rValues of each resistance, [maxRc] elements */
                    float delta;     /* distance from desiderata */
                  }; /* struct declaration */
-extern struct resultsTy* results; /* pointer to memory for results: [(12*7)^2] results[totV] */
+extern struct resultsTy* results; /* pointer to results[totV] for results: [(12*7)^2] results[totV] */
 extern u16 valTy, resTy; // 
 extern u32 rValueSize; // sizeof vector of struct: rValues[numV]
 extern u64 resultSize; // sizeof vector of struct: results[totV]
@@ -116,6 +119,11 @@ extern u32 first; //
 extern int gui;   // when not 0 gprintf() update the GUI
 extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 extern int winGuiLoop; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
+extern struct resultsTy* resultsLowPtr; // low mem results[numBestRes], all kind solutions
+extern struct resultsTy* results4LowPtr; // low mem results[numBestRes], 4R solutions
+extern struct resultsTy* results3LowPtr; // low mem results[numBestRes], 3R solutions
+extern struct resultsTy* results2LowPtr; // low mem results[numBestRes], 2R solutions
+extern size_t sizeLow; // size of low mem vectors
 
 // public library functions:
 int fillConfigVars(void); // load and check users config file
@@ -129,17 +137,19 @@ int showVal4(u32 numBestRes); // Solutions with 4 resistors
 int showVal3(u32 numBestRes); // Solutions with 3 resistors
 int showVal2(u32 numBestRes); // Solutions with 2 resistors
 int updateRdesc(); // update Rdesc
-int baseInit(); // basic initialization: load config from file+memSize
+int baseInit(); // basic initialization: load config from file
 int memCalc();  // memory size calculation
-int memAlloc(); // memory allocation
+int memValAlloc(); // memory allocation for input values
+int memAlloc(); // memory allocation for results
 int showConf(); // show config set
 int doCalc(); // fill inputs, calcs, sort solutions
 int freeMem(); // free memory
 int gprintf (int gui, const char* format, ...); // printf() or update GUI
 char* siMem(u64 sizeB); // convert an u64 to string using SI prefix
 
-int memLowAlloc(); // allocate low mem for results
 int memLowCalc(); // low memory size calculation
+int memLowAlloc(); // allocate low mem for results
 int doLowMemCalc(); // fill inputs, low mem calcs+sort solutions
+int showValLowMem(u32 numBestRes, struct resultsTy* resultsLowPtr); // Solutions
 
 #endif /* _INCh */

@@ -79,7 +79,7 @@ With 2 E96  resistances per position and 1 decades the search time is 1 min 46 s
 ```
 The required memory depends on how many resistances are used.
 ```
-Theoretical value with Rp=1 :(d*s)^2*8(=StructSize)
+Theoretical value with Rp=1 : (d*s)           ^2*8(=StructSize)
 Theoretical value with Rp=2 :((d*s)^2+2*(d*s))^2*8(=StructSize)
 where 'd' is the number of decades and 's' is the E series
 With 1 E12  resistance  per position and 7 decades need   0.1 MB
@@ -128,6 +128,9 @@ With 2 E192 resistances per position and 5 decades need   6.2 TB core dump
 With 2 E192 resistances per position and 6 decades need  12.9 TB core dump
 With 2 E192 resistances per position and 7 decades need  23.8 TB core dump
 ```
+Using the alternative strategy on memory allocation introduced on 2023/03/19,
+the required size can be much less but will increase the compute time
+
 History:
 --------
 When I was at lower school I wrote a Basic program called 'Ohmico',
@@ -295,6 +298,11 @@ v0.09.09h 2023/03/14
   - show calc and sort progress as percentage
   - generation of Linux AppImage
 
+v0.09.09h 2023/03/19
+* Added:
+  - a new strategy searching results to save memory
+    as now used only in CLI
+
 ToDo:
 -----
 - On memory low: option to keep only the first N best results and discard
@@ -309,6 +317,7 @@ ToDo:
 - Made generic the number of total values, based on variables number in formula
 - For each position of resistance in circuit, add support for 'Rp' resistances
   in series or parallel. Probably not possible with current resources.
+- add opAmp (not)inverting and standard 4 pin regulators circuit
 - make a distribution package for macOS
 - GUI: working Stop and About buttons
 - GUI: better circuit images

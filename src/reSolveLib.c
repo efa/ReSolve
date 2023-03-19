@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/14 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/19 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -121,6 +121,8 @@ u32 rValueSize; // sizeof vector of struct: rValues[numV]
 u64 resultSize; // sizeof vector of struct: results[totV]
 u64 allocatedB; // sizeof allocated memory in Bytes
 u32 first; // 
+size_t sizeLow=0; // size of low mem vectors
+
 int gui;   // when not 0 gprintf() update the GUI
 int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 int winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
@@ -147,6 +149,27 @@ int gprintf (int gui, const char* format, ...) {
    va_end(ap);
    return len;
 } // gprintf ()
+
+char* siMem(u64 sizeB) { // convert an u64 to string using SI prefix
+   int len=0;
+   char* stringPtr;
+   if      (sizeB>1E12) len = asprintf (&stringPtr, "%.1f TB", (float)sizeB/1E12);
+   else if (sizeB>1E9)  len = asprintf (&stringPtr, "%.1f GB", (float)sizeB/1E9);
+   else if (sizeB>1E6)  len = asprintf (&stringPtr, "%.1f MB", (float)sizeB/1E6);
+   else if (sizeB>1E3)  len = asprintf (&stringPtr, "%.1f kB", (float)sizeB/1E3);
+   else                 len = asprintf (&stringPtr, "%.0f B ", (float)sizeB);
+   if (len==0) return NULL;
+   return stringPtr; // remember caller to free ptr
+} // siMem(u64 sizeB)
+
+u64 powll(u32 base, u32 exp) { /* like pow() in math.h but return u64 */
+    register u32 c;
+    register u64 res = 1;
+    for (c=0; c<exp; c++) {
+       res = res * base;
+    }
+    return (res);
+} // u64 powll(u64 base, u64 exp)
 
 void showHead(void) {
    printf ("ReSolve v%s %s by Valerio Messina users.iol.it/efa\n", SourceVersion, SourceDate);
@@ -468,7 +491,7 @@ int updateRdesc() { // update Rdesc
    return 0;
 } // int updateRdesc()
 
-int baseInit() { // basic initialization: load config from file+memSize
+int baseInit() { // basic initialization: load config from file
    int ret;
 
    // Use of dynamic memory allocation
@@ -483,17 +506,185 @@ int baseInit() { // basic initialization: load config from file+memSize
    return 0;
 } // int baseInit()
 
-u32 powlmy(u32 base, u32 exp) { /* substitute the pow() in math.h but use u32 */
-    register u32 c;
-    register u32 res = 1;
-    for (c=0; c<exp; c++) {
-       res = res * base;
-    }
-    return (res);
-} // u32 powlmy(u32 base, u32 exp)
+int memCalc() { // memory size calculation
+   // 2 - read and set user request
+   if (Eseries>0) {
+      numR=(u32)Eseries*decades; /* number of existant values of resistances */
+      listNumber=0; // not used with Eseries
+   } else { /* custom list */
+      // listNumber=57; /* insert here custom list quantity */
+      numR=(u32)listNumber; /* number of existant values of resistances */
+   }
+   strcpy (Exx, "E");
+   char series[4];
+   sprintf (series, "%u", Eseries);
+   strcat (Exx, series);
+   strcat (Exx, " series"); // 11 chars
+   //maxRp=1; /* max number of resistances supported per position: as now 1 or 2 */
+
+   // 3 - calculate the needed memory
+   if (maxRp==1) {
+      numV=numR; /* possible values x each position */
+   }
+   if (maxRp==2) {
+      numV=numR+numR*numR+numR; /* number of possible values x each position */
+   }
+   //maxRc=2; /* number of resistances (variables) in the circuit: 2 */
+   if (maxRc==2) {   /* as now 2 is the only supported value */
+      totV=((u64)numV)*((u64)numV); /* number of values to try */
+      // compile&doNotStart with 3'882'988'894 max. Start with 917'797'375 max.
+      // compile&doNotStart with   268'402'689 max. Start with 59'954'049 max.
+      // RunWell                                          with 59'954'049 max.
+   }
+   valTy = sizeof(struct rValuesTy);
+   rValueSize=numV*valTy; // expected no more than '1344x48=64512'
+   if (dbgLev>=PRINTDEBUG) printf ("numV:%u X valTy:%u = rValueSize:%u\n", numV, valTy, rValueSize);
+
+   resTy = sizeof(struct resultsTy);
+   resultSize=(u64)totV*resTy;
+   if (dbgLev>=PRINTDEBUG) printf ("totV:%llu X resTy:%u = resultSize:%llu\n", totV, resTy, resultSize);
+   //printf ("Will allocate about %f MB of RAM for val\n", rValueSize/1048576.0);
+   //printf ("size of struct resultsTy:%u\n", resTy);
+   //printf ("Will allocate about %f MB of RAM for res\n", resultSize/1048576.0);
+   allocatedB = rValueSize+resultSize;
+   //printf("will allocateMB:'%.1f'\n", allocatedB);
+
+   return 0;
+} // int memCalc()
+
+int memLowCalc() { // low memory size calculation
+   size_t structsize;
+   structsize=sizeof(struct resultsTy);
+   if (maxRp==1) {
+      sizeLow=numBestRes*structsize;
+   }
+   if (maxRp==2) {
+      sizeLow=4*numBestRes*structsize;
+   }
+   //printf("will allocate low mem: structsize:%zu numBestRes:%u size:%zu\n", structsize, numBestRes, sizeLow);
+   return 0;
+} // memLowCalc()
+
+int memValAlloc() { // memory allocation for input values
+   // 6 - allocate the memory asking to the OS a malloc()
+   /* allocated memory for all R: [12*7]+([12*7]*[12*7])+[12*7] : */
+   //struct rValuesTy rValues[numV]; /* single, series & parallel */
+   //struct rValuesTy* rValues; /* pointer to memory for single, series & parallel */
+   char* stringPtr;
+   stringPtr=siMem(rValueSize);
+   //printf ("allocat:'%s'\n", stringPtr);
+   gprintf (gui, "Allocating about %s of RAM for inputs ...\n", stringPtr);
+   free(stringPtr);
+   rValues=malloc(rValueSize); // numV*sizeof(struct rValuesTy)
+   // allocation fail with 2'930'000'000 on a 4 GB RAM, 8 GB swap, 32 bit OS
+   if (!rValues) {
+      printf ("Dynamic allocation of:%u Bytes failed:0x%8p\n", rValueSize, rValues);
+      return (ERROR);
+   }
+   // 7 - create the structure's vector inside the allocated memory
+   for (u32 e=0; e<numV; e++) {
+      rValues[e].rp = (double*) malloc (maxRp*sizeof (double));
+      if (!rValues[e].rp) {
+         printf ("Dynamic allocation of:%zu Bytes failed:0x%8p\n", maxRp*sizeof (double), rValues[e].rp);
+         return (ERROR);
+      }
+   }
+   // now can use global rValues[].rp[], rValues[].r for input values
+   return 0;
+}
+
+int memAlloc() { // memory allocation for results
+   char* stringPtr;
+   stringPtr=siMem(resultSize);
+   gprintf (gui, "Allocating about %s of RAM for results ...\n", stringPtr);
+   free(stringPtr);
+   //printf ("size_t size:%u Bytes ptr:%lu\n", sizeof (size_t), (u32) pow(2, 8*sizeof (size_t)));
+   if (resultSize > pow(2, 8*sizeof (size_t))) {
+      printf ("ERROR: This machine cannot handle allocation of:%llu Bytes\n", resultSize);
+      return (ERROR);
+   }
+   results=malloc(resultSize); // (u64)totV*sizeof(struct resultsTy)
+   if (dbgLev>=PRINTDEBUG) printf ("allocated %llu Bytes at:0x%8p\n", resultSize, results);
+   if (!results) {
+      printf ("Dynamic allocation of:%llu Bytes failed:0x%8p\n", resultSize, results);
+      return (ERROR);
+   }
+   // now can use global results[].pos[], results[].delta for results
+   if (dbgLev>=PRINTDEBUG) printf ("Done. Dynamically allocated 'results' at:%p\n", results);
+   return 0;
+} // int memAlloc()
+
+int memLowAlloc() { // allocate low mem for results
+   size_t size, structsize;
+   structsize=sizeof(struct resultsTy);
+   size=numBestRes*structsize;
+   if (maxRp==1) {
+      printf("Allocating low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, size);
+      results2LowPtr=malloc(size); // (u64)numBestRes*sizeof(struct resultsTy)
+      if (results2LowPtr==NULL) {
+         printf("malloc error, quit\n");
+         return 1;
+      }
+      printf("Allocated low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, size);
+   }
+   if (maxRp==2) {
+      printf("Allocating low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, 4*size);
+      resultsLowPtr=malloc(size); // (u64)numBestRes*sizeof(struct resultsTy)
+      if (resultsLowPtr==NULL) {
+         printf("malloc error, quit\n");
+         return 1;
+      }
+      results4LowPtr=malloc(size); // (u64)numBestRes*sizeof(struct resultsTy)
+      if (results4LowPtr==NULL) {
+         printf("malloc error, quit\n");
+         return 1;
+      }
+      results3LowPtr=malloc(size); // (u64)numBestRes*sizeof(struct resultsTy)
+      if (results3LowPtr==NULL) {
+         printf("malloc error, quit\n");
+         return 1;
+      }
+      results2LowPtr=malloc(size); // (u64)numBestRes*sizeof(struct resultsTy)
+      if (results2LowPtr==NULL) {
+         printf("malloc error, quit\n");
+         return 1;
+      }
+      printf("Allocated low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, 4*size);
+   }
+   return 0;
+} // memLowAlloc()
+
+int showConf() { // show config set
+   gprintf (gui, "Target Value : %0.3f\n", desired);
+   gprintf (gui, "Solve Formula: %s\n", expr);
+   exprVarsParser[0]=10.0; exprVarsParser[1]=1.0;
+   evalExprParser (expr); /* formula syntax test */
+   exprVarsParser[0]=0.0; exprVarsParser[1]=0.0;
+   //printf ("sizeof (rValuesTy):%u\n", valTy);
+   //printf ("sizeof (rValues[%lu]):%lu\n", numV, val);
+   //printf ("sizeof (resultsTy):%u\n", resTy);
+   //printf ("sizeof (results[%lu]):%lu\n", totV, res);
+   if (Eseries>0) {
+      gprintf (gui, "Resistors Series:E%u, Decades:%u\n", Eseries, decades);
+      //printf ("Allocated about %lu MB of RAM\n", 220*powlmy(2, decades-5));
+   } else {
+      gprintf (gui, "Resistors custom list of %u values\n", numR);
+      /*maxRc = 2;
+      maxRp = 1; // as now with custom list of values, we support only 1 resistor
+      numR = listNumber;
+      numV = listNumber;
+      totV = numV * numV;*/
+   }
+   char* stringPtr;
+   stringPtr=siMem(allocatedB);
+   gprintf (gui, "Allocated about %s of total RAM\n", stringPtr);
+   free(stringPtr);
+
+   return 0;
+} // showConf()
 
 /* using one decade values and 'decades', calculate all standard Exx series values */
-// use 'baseRxx[Eseries/listNumber]' and generate ==> rValues[pos].r, rValues[pos].rp[p]
+// 'baseRxx[Eseries/listNumber]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].desc
 s16 calcEseries(void) { // or fill with the custom list of values when Eseries=0
    u08 decade;
    u08 rBase;
@@ -507,35 +698,35 @@ s16 calcEseries(void) { // or fill with the custom list of values when Eseries=0
             switch (Eseries) {
             case (1):
                /*printf ("rBase:%u baseR1[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR1[rBase], decade, pos);*/
-               val = baseR1[rBase] * (double)powlmy (10, decade);
+               val = baseR1[rBase] * (double)powll (10, decade);
                break;
             case (3):
                /*printf ("rBase:%u baseR3[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR3[rBase], decade, pos);*/
-               val = baseR3[rBase] * (double)powlmy (10, decade);
+               val = baseR3[rBase] * (double)powll (10, decade);
                break;
             case (6):
                /*printf ("rBase:%u baseR6[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR6[rBase], decade, pos);*/
-               val = baseR6[rBase] * (double)powlmy (10, decade);
+               val = baseR6[rBase] * (double)powll (10, decade);
                break;
             case (12):
                /*printf ("rBase:%u baseR12[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR12[rBase], decade, pos);*/
-               val = baseR12[rBase] * (double)powlmy (10, decade);
+               val = baseR12[rBase] * (double)powll (10, decade);
                break;
             case (24):
                /*printf ("rBase:%u baseR24[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR24[rBase], decade, pos);*/
-               val = baseR24[rBase] * (double)powlmy (10, decade);
+               val = baseR24[rBase] * (double)powll (10, decade);
                break;
             case (48):
                /*printf ("rBase:%u baseR48[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR48[rBase], decade, pos);*/
-               val = baseR48[rBase] * (double)powlmy (10, decade);
+               val = baseR48[rBase] * (double)powll (10, decade);
                break;
             case (96):
                /*printf ("rBase:%u baseR96[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR96[rBase], decade, pos);*/
-               val = baseR96[rBase] * (double)powlmy (10, decade);
+               val = baseR96[rBase] * (double)powll (10, decade);
                break;
             case (192):
                /*printf ("rBase:%u baseR192[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR192[rBase], decade, pos);*/
-               val = baseR192[rBase] * (double)powlmy (10, decade);
+               val = baseR192[rBase] * (double)powll (10, decade);
                break;
             default:
                printf ("Unsupported Series:%u. Supported are 1, 3, 6, 12, 24, 48, 96 and 192\n", Eseries);
@@ -546,7 +737,7 @@ s16 calcEseries(void) { // or fill with the custom list of values when Eseries=0
                rValues[pos].rp[p] = val;
             }
             //strcpy (rValues[pos].desc, "Exx series"); // 11 chars
-            strcpy (rValues[pos].desc, Exx);
+            strcpy (rValues[pos].desc, Exx); // description
             if (dbgLv>=PRINTDEBUG) printf ("rValue:%g\n", val);
          }
       }
@@ -561,29 +752,31 @@ s16 calcEseries(void) { // or fill with the custom list of values when Eseries=0
          if (dbgLv>=PRINTVERBOSE) printf ("rValue:%g\n", val);
       }
    }
-   if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
+   if (dbgLv>=PRINTDEBUG) printf ("calcEseries pos:%d\n", pos);
    return (pos);
 } // s16 calcEseries(void)
 
 /* calculate all possible resistive values using 'MaxRp' resistances */
-int calcRvalues(void) { /* in series or parallel, support MaxRp=2 only */
-   s16 pos;
+// 'baseRxx[Eseries/listNumber]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].desc
+int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
+   s32 pos;
    register double val;
    u16 rp1, rp2;
    u08 p;
    /* at first calculate the single values (Eseries) or fill custom values */
-   pos = calcEseries ();
+   pos = calcEseries (); // calculate all standard Exx series values
    if (pos==ERROR) {
       printf ("calcEseries returned ERROR\n");
       return (ERROR);
    }
+   //printf ("numR:%u numV:%u totV:%llu numBestRes:%u\n", numR, numV, totV, numBestRes);
    if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
    if (maxRp==2) { // as now support only maxRp=2 resistances per position
       /* now calculate all series values with 2 resistances per position */
       pos = numR;
       for (rp1=0; rp1<numR; rp1++) {
          for (rp2=0; rp2<numR; rp2++) {
-            if (rp1<rp2) continue; /* triangular matrix */
+            if (rp1<rp2) continue; /* skip triangular matrix */
             val = rValues[rp1].r + rValues[rp2].r;
             rValues[pos].r = val;
             rValues[pos].rp[0] = rValues[rp1].r;
@@ -594,13 +787,14 @@ int calcRvalues(void) { /* in series or parallel, support MaxRp=2 only */
 /*            printf ("r1:%g + r2:%g = ", rValues[rp1].r, rValues[rp2].r);
             printf ("rValue:%g\n", val);*/
             pos++;
+            //printf ("here rp1:%u rp2:%u pos:%u\n", rp1, rp2, pos);
          }
       }
-      if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
+      if (dbgLv>=PRINTDEBUG) printf ("calcRvalues pos:%d\n", pos);
       /* now calculate all parallel values with 2 resistances per position */
       for (rp1=0; rp1<numR; rp1++) {
          for (rp2=0; rp2<numR; rp2++) {
-            if (rp1<rp2) continue; /* triangular matrix */
+            if (rp1<rp2) continue; /* skip triangular matrix */
             val = rValues[rp1].r * rValues[rp2].r / (rValues[rp1].r + rValues[rp2].r);
             rValues[pos].r = val;
             rValues[pos].rp[0] = rValues[rp1].r;
@@ -618,11 +812,18 @@ int calcRvalues(void) { /* in series or parallel, support MaxRp=2 only */
       printf ("Unsupported maxRp:%u. Supported maxRp 1 or 2\n", maxRp);
       return (ERROR);
    }
-   if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
+   if (dbgLv>=PRINTDEBUG) printf ("calcRvalues pos:%d end\n", pos);
+   //firstSingle  =0;
+   //lastSingle   =numR-1;
+   //firstSeries  =numR;
+   //lastSeries   =numR+(numR*numR+numR)/2-1;
+   //firstParallel=numR+(numR*numR+numR)/2;
+   //lastParallel =numV-1;
+   //rValues[   lastSingle:firstSingle ] are single (Exx or custom)
+   //rValues[  firstSeries:lastSeries  ] are series
+   //rValues[firstParallel:lastParallel] are parallel
    return (OK);
 } // int calcRvalues(void)
-
-#include <unistd.h> // fsync
 
 /* calculate all formula results using 'maxRc' resistances */
 int calcFvalues(void) {
@@ -662,7 +863,161 @@ int calcFvalues(void) {
    return (OK);
 } // int calcFvalues(void) {
 
-s64 tot; // used for communication between 'structQuickSort' & 'qsStruct'
+struct resultsTy* resultsLowPtr; // low mem results[numBestRes], all kind solutions
+struct resultsTy* results4LowPtr; // low mem results[numBestRes], 4R solutions
+struct resultsTy* results3LowPtr; // low mem results[numBestRes], 3R solutions
+struct resultsTy* results2LowPtr; // low mem results[numBestRes], 2R solutions
+int w=0; // worst solution index
+int w4=0; // worst solution index
+int w3=0; // worst solution index
+int w2=0; // worst solution index
+double deltaWorst = MaxValue; // 50 GOhm
+double delta4Worst = MaxValue; // 50 GOhm
+double delta3Worst = MaxValue; // 50 GOhm
+double delta2Worst = MaxValue; // 50 GOhm
+
+// find worst (higher delta) low mem solution
+int findWorst(struct resultsTy* resultsNLowPtr, int* wNPtr, double* deltaNWorstPtr) {
+   double max=0;
+   double delta;
+   for (int s=0; s<numBestRes; s++) {
+      delta=fabs(resultsNLowPtr[s].delta);
+      //printf("s:%d delta:%f\n", s, delta);
+      if (delta > max) {
+         //printf("old max:%f at:%d, new max:%f at:%d\n", max, *wNPtr, delta, s);
+         *wNPtr=s;
+         max=delta;
+      }
+   }
+   *deltaNWorstPtr=max;
+   //printf("worst:%f max:%f at:%d\n", *deltaNWorstPtr, max, *wNPtr);
+   return 0;
+} // findWorst()
+
+bool is_double_le(double a, double b, double epsilon) {
+    return a < b + epsilon;
+}
+
+/* calculate best formula results using 'maxRc' resistances */
+int calcLowMemFvalues(void) {
+   u32 rc1, rc2;
+   register u64 per; // percentage progress
+   register double val;
+   register double delta = 0;
+   if (dbgLv>=PRINTDEBUG) printf ("numV:%u, totV:%llu\n", numV, totV);
+   if (dbgLv>=PRINTDEBUG) printf ("expr:'%s'\n", expr);
+   for (int s=0; s<numBestRes; s++) {
+      results2LowPtr[s].delta=MaxValue; // 50 GOhm
+   }
+   if (maxRp==2) { // 
+      for (int s=0; s<numBestRes; s++) {
+         resultsLowPtr[s].delta=MaxValue; // 50 GOhm
+      }
+      for (int s=0; s<numBestRes; s++) {
+         results4LowPtr[s].delta=MaxValue; // 50 GOhm
+      }
+      for (int s=0; s<numBestRes; s++) {
+         results3LowPtr[s].delta=MaxValue; // 50 GOhm
+      }
+   }
+   if (dbgLv>=PRINTF) gprintf (gui, "sol="); // here print something for user feedback (take time)
+//printf ("\n");
+//printf ("numR:%u numV:%u totV:%llu numBestRes:%u\n", numR, numV, totV, numBestRes);
+//printf ("rValues[numV:%u] results[totV:%llu] results4LowPtr[numBestRes:%u]\n", numV, totV, numBestRes);
+//printf ("rValues[numR                     = %u:                         0] '%s'\n", numR-1, Exx);
+//printf ("rValues[numR+(numR*numR+numR)/2-1=%u:numR                   = %u] '%s'\n", numR+(numR*numR+numR)/2-1, numR, rValues[numR].desc);
+//printf ("rValues[numV-1                   =%u:numR+(numR*numR+numR)/2=%u] '%s'\n", numV-1, numR+(numR*numR+numR)/2, rValues[numV-1].desc);
+//printf ("\n");
+//firstSeries  =numR;
+//lastSeries   =numR+(numR*numR+numR)/2-1;
+//firstParallel=numR+(numR*numR+numR)/2;
+//lastParallel =numV-1;
+   for (rc1=0; rc1<numV; rc1++) {
+      exprVarsParser[0] = rValues[rc1].r; /* estract single case to try */
+      if (dbgLv>=PRINTDEBUG) printf ("exprVarsParser[0]:%g\n", exprVarsParser[0]);
+      for (rc2=0; rc2<numV; rc2++) {
+         exprVarsParser[1] = rValues[rc2].r; /* estract single case to try */
+         if (dbgLv>=PRINTDEBUG) printf ("exprVarsParser[1]:%g\n", exprVarsParser[1]);
+         val = evalExprParser (expr);
+         delta = val - desired;
+         /*printf ("rc1:%u rc2:%u pos:%lu val:%g delta:%g\n", rc1, rc2, pos, val, delta);*/
+         if (maxRp==1) { // 
+//            if (fabs(delta) <= delta2Worst) {
+//            if (delta2Worst > fabs(delta)) {
+//            if ( definitelyGreaterThan(delta2Worst, fabs(delta), Epsilon )) {
+            if (is_double_le(fabs(delta), delta2Worst, Epsilon)) {
+               //printf ("new better result:%f delta:%.4f oldDeltaMin:%.4f\n", val, delta, deltaWorst);
+               //printf("rc1:%03u rc2:%03u old delta:%f fill at:%d with new delta:%f\n", rc1, rc2, deltaWorst, w, fabs(delta));
+               results2LowPtr[w2].pos[0] = rc1;   // always insert in worst pos
+               results2LowPtr[w2].pos[1] = rc2;   // always insert in worst pos
+               results2LowPtr[w2].delta  = delta; // always insert in worst pos
+               findWorst(results2LowPtr, &w2, &delta2Worst); // find worst (higher delta) solution
+            }
+         }
+         if (maxRp==2) { // 
+            if (is_double_le(fabs(delta), deltaWorst, Epsilon)) {
+               //printf ("new better result:%f delta:%.4f oldDeltaMin:%.4f\n", val, delta, deltaWorst);
+               //printf("rc1:%03u rc2:%03u old delta:%f fill at:%d with new delta:%f\n", rc1, rc2, deltaWorst, w, fabs(delta));
+               resultsLowPtr[w].pos[0] = rc1;   // always insert in worst pos
+               resultsLowPtr[w].pos[1] = rc2;   // always insert in worst pos
+               resultsLowPtr[w].delta  = delta; // always insert in worst pos
+               findWorst(resultsLowPtr, &w, &deltaWorst); // find worst (higher delta) solution
+            }
+            int cmp0, cmp1;
+            if (is_double_le(fabs(delta), delta4Worst, Epsilon)) {
+               //printf ("new better result:%.1f delta:%.4f oldDeltaMin:%.1f\n", val, delta, delta4Worst);
+               //printf("rc1:%03u rc2:%03u old delta:%.1f fill at:%d with new delta:%.1f\n", rc1, rc2, delta4Worst, w4, fabs(delta));
+               if (rc1<numR) cmp0 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+               else cmp0 = 1;
+               if (rc2<numR) cmp1 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+               else cmp1 = 1;
+               if (cmp0==0 || cmp1==0) goto n3; // skip when one is 0 (so skip when are less than 4 resistances, do when both are series/parallel)
+               //printf("pos:%d cmp0:%d cmp1:%d w4:%d\n", pos, cmp0, cmp1, w4);
+               results4LowPtr[w4].pos[0] = rc1;   // always insert in worst pos
+               results4LowPtr[w4].pos[1] = rc2;   // always insert in worst pos
+               results4LowPtr[w4].delta  = delta; // always insert in worst pos
+               findWorst(results4LowPtr, &w4, &delta4Worst); // find worst (higher delta) solution
+            }
+            n3:
+            if (is_double_le(fabs(delta), delta3Worst, Epsilon)) {
+               if (rc1<numR) cmp0 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+               else cmp0 = 1;
+               if (rc2<numR) cmp1 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+               else cmp1 = 1;
+               if (cmp0==cmp1) goto n2; // skip when both 0 or both 1 (both Exx/custom or both series/parallel, so do when are 3 resistances)
+               results3LowPtr[w3].pos[0] = rc1;   // always insert in worst pos
+               results3LowPtr[w3].pos[1] = rc2;   // always insert in worst pos
+               results3LowPtr[w3].delta  = delta; // always insert in worst pos
+               findWorst(results3LowPtr, &w3, &delta3Worst); // find worst (higher delta) solution
+            }
+            n2:
+            if (is_double_le(fabs(delta), delta2Worst, Epsilon)) {
+               if (rc1<numR) cmp0 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+               else cmp0 = 1;
+               if (rc2<numR) cmp1 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+               else cmp1 = 1;
+               if (cmp0!=0 || cmp1!=0) break; // skip when one is 1 (so skip when are more than 2 resistances, do when both are Exx/custom)
+               results2LowPtr[w2].pos[0] = rc1;   // always insert in worst pos
+               results2LowPtr[w2].pos[1] = rc2;   // always insert in worst pos
+               results2LowPtr[w2].delta  = delta; // always insert in worst pos
+               findWorst(results2LowPtr, &w2, &delta2Worst); // find worst (higher delta) solution
+            }
+         } // if (maxRp==2)
+      } // inner for ()
+      if (rc1%1000==0) { // here print something for user feedback (take time)
+         //if (dbgLv>=PRINTF) gprintf (gui, "%u,", rc1*numV);
+         per=(u64)rc1*numV*100/totV;
+         if (dbgLv>=PRINTF) gprintf (gui, "%d%%,", per);
+         fflush (NULL); // user space stdout flush
+         fsync (1);   // kernel space stdout flush
+      }
+   } // external for ()
+   //if (dbgLv>=PRINTF) gprintf (gui, "%u\n", rc1*numV-1); // here print something for user feedback (take time)
+   if (dbgLv>=PRINTF) gprintf (gui, "100%\n"); // here print something for user feedback (take time)
+   return (OK);
+} // int calcLowMemFvalues(void) {
+
+s64 tot; // used for debug link between 'structQuickSort()' & 'qsStruct()'
 
 /* QuickSort for vector of structs of type resultsTy. */
 /* Sorting criteria: field 'abs(delta)' */
@@ -749,84 +1104,6 @@ int structQuickSort(struct resultsTy results[], s32 totNumber) {
    }
    return (OK);
 } // int structQuickSort(struct resultsTy results[], s32 totNumber)
-
-struct resultsTy* resultsLowPtr;
-int w=0; // worst solution index
-double deltaWorst = 45E9; // 45 GOhm
-
-int searchWorst() { // find worst (higher delta) solution
-   double max=0;
-   double delta = 45E9; // 45 GOhm
-   for (int s=0; s<numBestRes; s++) {
-      delta=fabs(resultsLowPtr[s].delta);
-      //printf("s:%d delta:%f\n", s, delta);
-      if (delta > max) {
-         //printf("old max:%f at:%d, new max:%f at:%d\n", max, w, delta, s);
-         w=s;
-         max=delta;
-      }
-   }
-   deltaWorst=max;
-   //printf("worst:%f at:%d\n", deltaWorst, w);
-   return 0;
-}
-
-bool definitelyGreaterThan(double a, double b, double epsilon) {
-   return (a - b) > ( (fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
-}
-
-bool is_double_le(double a, double b, double epsilon) {
-    return a < b + epsilon;
-}
-
-/* calculate best formula results using 'maxRc' resistances */
-int calcLowMemFvalues(void) {
-   u32 rc1, rc2;
-   /*float res[maxRc];*/ /* single case, normally 2 resistances */
-   register u64 per; // percentage progress
-   register double val;
-   register double delta = 0;
-   //register u32 pos = 0;
-   if (dbgLv>=PRINTDEBUG) printf ("numV:%u, totV:%llu\n", numV, totV);
-   if (dbgLv>=PRINTDEBUG) printf ("expr:'%s'\n", expr);
-   if (dbgLv>=PRINTF) gprintf (gui, "sol="); // here print something for user feedback (take time)
-//printf ("numV:%u\n", numV);
-//printf ("\n");
-   for (rc1=0; rc1<numV; rc1++) {
-      exprVarsParser[0] = rValues[rc1].r; /* estract single case to try */
-      if (dbgLv>=PRINTDEBUG) printf ("exprVarsParser[0]:%g\n", exprVarsParser[0]);
-      for (rc2=0; rc2<numV; rc2++) {
-         exprVarsParser[1] = rValues[rc2].r; /* estract single case to try */
-         if (dbgLv>=PRINTDEBUG) printf ("exprVarsParser[1]:%g\n", exprVarsParser[1]);
-         val = evalExprParser (expr);
-         delta = val - desired;
-         /*printf ("rc1:%u rc2:%u pos:%lu val:%g delta:%g\n", rc1, rc2, pos, val, delta);*/
-//         if (fabs(delta) <= deltaMin) {
-//         if (deltaMin > fabs(delta)) {
-//         if ( definitelyGreaterThan(deltaWorst, fabs(delta), 0.000000000001 )) {
-         if (is_double_le(fabs(delta), deltaWorst, 1.0E-14)) {
-            //printf ("p:%u new better result:%f delta:%.4f oldDeltaMin:%.4f\n", pos, val, delta, deltaMin);
-            //printf("rc1:%03u rc2:%03u old delta:%f fill at:%d with new delta:%f\n", rc1, rc2, deltaWorst, w, fabs(delta));
-            resultsLowPtr[w].pos[0] = rc1;   // always insert in worst pos
-            resultsLowPtr[w].pos[1] = rc2;   // always insert in worst pos
-            resultsLowPtr[w].delta  = delta; // always insert in worst pos
-            //deltaWorst = fabs(delta);
-            searchWorst(); // find worst (higher delta) solution
-         }
-         //pos++;
-      }
-      if (rc1%1000==0) { // here print something for user feedback (take time)
-         //if (dbgLv>=PRINTF) gprintf (gui, "%u,", rc1*numV);
-         per=(u64)rc1*numV*100/totV;
-         if (dbgLv>=PRINTF) gprintf (gui, "%d%%,", per);
-         fflush (NULL); // user space stdout flush
-         fsync (1);   // kernel space stdout flush
-      }
-   }
-   //if (dbgLv>=PRINTF) gprintf (gui, "%u\n", rc1*numV-1); // here print something for user feedback (take time)
-   if (dbgLv>=PRINTF) gprintf (gui, "100%\n"); // here print something for user feedback (take time)
-   return (OK);
-} // int calcLowMemFvalues(void) {
 
 /* print last 'numBestRes=totV-first' results */
 int showVal(u32 first) { // solutions with up to 4 resistors
@@ -982,159 +1259,34 @@ int showVal2(u32 numBestRes) { // Solutions with 2 resistors
    return (OK);
 } // int showVal2(u32 numBestRes)
 
-int memCalc() { // memory size calculation
-   // 2 - read and set user request
-   if (Eseries>0) {
-      numR=(u32)Eseries*decades; /* number of existant values of resistances */
-      listNumber=0; // not used with Eseries
-   } else { /* custom list */
-      // listNumber=57; /* insert here custom list quantity */
-      numR=(u32)listNumber; /* number of existant values of resistances */
-   }
-   strcpy (Exx, "E");
-   char series[4];
-   sprintf (series, "%u", Eseries);
-   strcat (Exx, series);
-   strcat (Exx, " series"); // 11 chars
-   //maxRp=1; /* max number of resistances supported per position: as now 1 or 2 */
-
-   // 3 - calculate the needed memory
-   if (maxRp==1) {
-      numV=numR; /* possible values x each position */
-   }
-   if (maxRp==2) {
-      numV=numR+numR*numR+numR; /* number of possible values x each position */
-   }
-   //maxRc=2; /* number of resistances (variables) in the circuit: 2 */
-   if (maxRc==2) {   /* as now 2 is the only supported value */
-      totV=((u64)numV)*((u64)numV); /* number of values to try */
-      // compile&doNotStart with 3'882'988'894 max. Start with 917'797'375 max.
-      // compile&doNotStart with   268'402'689 max. Start with 59'954'049 max.
-      // RunWell                                          with 59'954'049 max.
-   }
-   valTy = sizeof(struct rValuesTy);
-   rValueSize=numV*valTy; // expected no more than '1344x48=64512'
-   if (dbgLev>=PRINTDEBUG) printf ("numV:%u X valTy:%u = rValueSize:%u\n", numV, valTy, rValueSize);
-
-   resTy = sizeof(struct resultsTy);
-   resultSize=(u64)totV*resTy;
-   if (dbgLev>=PRINTDEBUG) printf ("totV:%llu X resTy:%u = resultSize:%llu\n", totV, resTy, resultSize);
-   //printf ("Will allocate about %f MB of RAM for val\n", rValueSize/1048576.0);
-   //printf ("size of struct resultsTy:%u\n", resTy);
-   //printf ("Will allocate about %f MB of RAM for res\n", resultSize/1048576.0);
-   allocatedB = rValueSize+resultSize;
-   //printf("will allocateMB:'%.1f'\n", allocatedB);
-
-   return 0;
-} // int memCalc()
-
-char* siMem(u64 sizeB) { // convert an u64 to string using SI prefix
-   int len=0;
-   char* stringPtr;
-   if      (sizeB>1E12) len = asprintf (&stringPtr, "%.1f TB", (float)sizeB/1E12);
-   else if (sizeB>1E9)  len = asprintf (&stringPtr, "%.1f GB", (float)sizeB/1E9);
-   else if (sizeB>1E6)  len = asprintf (&stringPtr, "%.1f MB", (float)sizeB/1E6);
-   else if (sizeB>1E3)  len = asprintf (&stringPtr, "%.1f kB", (float)sizeB/1E3);
-   else                 len = asprintf (&stringPtr, "%.0f B ", (float)sizeB);
-   if (len==0) return NULL;
-   return stringPtr; // remember caller to free ptr
-}
-
-int memAlloc() { // memory allocation
-   // 6 - allocate the memory asking to the OS a malloc()
-   /* allocated memory for all R: [12*7]+([12*7]*[12*7])+[12*7] : */
-   //struct rValuesTy rValues[numV]; /* single, series & parallel */
-   //struct rValuesTy* rValues; /* pointer to memory for single, series & parallel */
-   char* stringPtr;
-   stringPtr=siMem(rValueSize);
-   //printf ("allocat:'%s'\n", stringPtr);
-   gprintf (gui, "Allocating about %s of RAM for inputs ...\n", stringPtr);
-   free(stringPtr);
-   rValues=malloc(rValueSize); // numV*sizeof(struct rValuesTy)
-   // allocation fail with 2'930'000'000 on a 4 GB RAM, 8 GB swap, 32 bit OS
-   if (!rValues) {
-      printf ("Dynamic allocation of:%u Bytes failed:0x%8p\n", rValueSize, rValues);
-      return (ERROR);
-   }
-   // 7 - create the structure's vector inside the allocated memory
-   for (u32 e=0; e<numV; e++) {
-      rValues[e].rp = (double*) malloc (maxRp*sizeof (double));
-      if (!rValues[e].rp) {
-         printf ("Dynamic allocation of:%zu Bytes failed:0x%8p\n", maxRp*sizeof (double), rValues[e].rp);
-         return (ERROR);
+/* print best 'numBestRes' LowMem results */
+int showValLowMem(u32 numBestRes, struct resultsTy* resultsLowPtr) { // Solutions
+   for (int s=0; s<numBestRes; s++) {
+      //printf("s:%02d results[].pos[0]:%03u results[].pos[1]:%03u results[].delta:%.5f\n", s, resultsLowPtr[s].pos[0], resultsLowPtr[s].pos[1], resultsLowPtr[s].delta);
+      gprintf(gui, "a:%11G b:%11G", rValues[resultsLowPtr[s].pos[0]].r, rValues[resultsLowPtr[s].pos[1]].r);
+      gprintf(gui, "   val:%11G   delta:%11.4G", desired+resultsLowPtr[s].delta, resultsLowPtr[s].delta);
+      gprintf(gui, " e%%:%6.3G\n", resultsLowPtr[s].delta/desired*100);
+      if (maxRp==2) { // 
+         int cmp0, cmp1;
+         cmp0 = (strcmp (rValues[resultsLowPtr[s].pos[0]].desc, "Custom list")!=0) &&
+                (strcmp (rValues[resultsLowPtr[s].pos[0]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+         cmp1 = (strcmp (rValues[resultsLowPtr[s].pos[1]].desc, "Custom list")!=0) &&
+                (strcmp (rValues[resultsLowPtr[s].pos[1]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+         if (cmp0==0) { // single resistors
+            gprintf (gui, "a:%-12s:%8g             ", rValues[resultsLowPtr[s].pos[0]].desc, rValues[resultsLowPtr[s].pos[0]].rp[0]);
+         } else { // 2 resistors in series or parallel
+            gprintf (gui, "a:%-12s:%8g & %8g  " , rValues[resultsLowPtr[s].pos[0]].desc, rValues[resultsLowPtr[s].pos[0]].rp[0], rValues[resultsLowPtr[s].pos[0]].rp[1]);
+         }
+         if (cmp1==0) { // single resistors
+            gprintf (gui, "b:%-12s:%8g"       , rValues[resultsLowPtr[s].pos[1]].desc, rValues[resultsLowPtr[s].pos[1]].rp[0]);
+         } else { // 2 resistors in series or parallel
+            gprintf (gui, "b:%-12s:%8g & %8g ", rValues[resultsLowPtr[s].pos[1]].desc, rValues[resultsLowPtr[s].pos[1]].rp[0], rValues[resultsLowPtr[s].pos[1]].rp[1]);
+         }
+         gprintf (gui, "\n");
       }
    }
-   // now can use global rValues[].rp[], rValues[].r for input values
-   stringPtr=siMem(resultSize);
-   gprintf (gui, "Allocating about %s of RAM for results ...\n", stringPtr);
-   free(stringPtr);
-   //printf ("size_t size:%u Bytes ptr:%lu\n", sizeof (size_t), (u32) pow(2, 8*sizeof (size_t)));
-   if (resultSize > pow(2, 8*sizeof (size_t))) {
-      printf ("ERROR: This machine cannot handle allocation of:%llu Bytes\n", resultSize);
-      return (ERROR);
-   }
-   results=malloc(resultSize); // (u64)totV*sizeof(struct resultsTy)
-   if (dbgLev>=PRINTDEBUG) printf ("allocated %llu Bytes at:0x%8p\n", resultSize, results);
-   if (!results) {
-      printf ("Dynamic allocation of:%llu Bytes failed:0x%8p\n", resultSize, results);
-      return (ERROR);
-   }
-   // now can use global results[].pos[], results[].delta for results
-   if (dbgLev>=PRINTDEBUG) printf ("Done. Dynamically allocated 'results' at:%p\n", results);
-
-   return 0;
-} // int memAlloc()
-
-int memLowCalc() { // low memory size calculation
-   size_t size, structsize;
-   structsize=sizeof(struct resultsTy);
-   size=numBestRes*structsize;
-   printf("will allocate low mem: structsize:%zu numBestRes:%u size:%zu\n", structsize, numBestRes, size);
-   return 0;
-}
-
-int memLowAlloc() { // allocate low mem for results
-   size_t size, structsize;
-   structsize=sizeof(struct resultsTy);
-   size=numBestRes*structsize;
-   printf("allocating low mem: structsize:%zu numBestRes:%u size:%zu\n", structsize, numBestRes, size);
-   resultsLowPtr=malloc(size); // (u64)numBestRes*sizeof(struct resultsTy)
-   if (resultsLowPtr==NULL) {
-      printf("malloc error, quit\n");
-      return 1;
-   }
-   printf("allocated low mem: structsize:%zu numBestRes:%u size:%zu\n", structsize, numBestRes, size);
-   return 0;
-}
-
-int showConf() { // show config set
-   gprintf (gui, "Desired Value  : %0.3f\n", desired);
-   gprintf (gui, "Solved Formula : %s\n", expr);
-   exprVarsParser[0]=10.0; exprVarsParser[1]=1.0;
-   evalExprParser (expr); /* formula syntax test */
-   exprVarsParser[0]=0.0; exprVarsParser[1]=0.0;
-   //printf ("sizeof (rValuesTy):%u\n", valTy);
-   //printf ("sizeof (rValues[%lu]):%lu\n", numV, val);
-   //printf ("sizeof (resultsTy):%u\n", resTy);
-   //printf ("sizeof (results[%lu]):%lu\n", totV, res);
-   if (Eseries>0) {
-      gprintf (gui, "Resistors Series:E%u, Decades:%u\n", Eseries, decades);
-      //printf ("Allocated about %lu MB of RAM\n", 220*powlmy(2, decades-5));
-   } else {
-      gprintf (gui, "Resistors custom list of %u values\n", numR);
-      /*maxRc = 2;
-      maxRp = 1; // as now with custom list of values, we support only 1 resistor
-      numR = listNumber;
-      numV = listNumber;
-      totV = numV * numV;*/
-   }
-   char* stringPtr;
-   stringPtr=siMem(allocatedB);
-   gprintf (gui, "Allocated about %s of total RAM\n", stringPtr);
-   free(stringPtr);
-
-   return 0;
-} // showConf()
+   return (OK);
+} // int showValLowMem(u32 numBestRes, struct resultsTy* resultsLowPtr)
 
 int doCalc() { // fill inputs, calcs, sort solutions
    int ret;
@@ -1163,9 +1315,6 @@ int doCalc() { // fill inputs, calcs, sort solutions
    }
    if (numBestRes>totV) numBestRes=totV;
    first = totV-numBestRes; /* 0 worse, 'first' 1st printed, 'totV' best, numBestRes # of best print */
-//printf ("best:%u results are [%lu-%lu=best]\n", numBestRes, first, totV-1);
-//printf ("Print last:%u founded results ...\n", numBestRes);
-//ret = showVal (first);
 
    // 10 - sorting of solutions
    gprintf (gui, "Sorting all:%llu found solutions ...\n", totV);
@@ -1179,22 +1328,15 @@ int doLowMemCalc() { // fill inputs, low mem calcs+sort solutions
 
    // 8 - fill the input vectors with needed data
    if (maxRp>1) {
-      gprintf (gui, "Calculating all:%u values with max:%u resistors per position ...\n", numV, maxRp);
+      gprintf (gui, "Calculating new:%u values with max:%u resistors per position ...\n", numV, maxRp);
    } else {
-      gprintf (gui, "Populating all:%u values with max:%u resistors per position ...\n", numV, maxRp);
+      gprintf (gui, "Populating new:%u values with max:%u resistors per position ...\n", numV, maxRp);
    }
    ret = calcRvalues (); /* populate with all possible resistance values */
    if (ret==ERROR) {
       printf ("calcRvalues returned ERROR\n");
       free (results);
       return (ERROR);
-   }
-   for (int s=0; s<numBestRes; s++) {
-      resultsLowPtr[s].delta=45E9; // 45 GOhm
-      //printf("s:%02d results[].pos[0]:%03u results[].pos[1]:%03u results[].delta:%.5f\n", s, resultsLowPtr[s].pos[0], resultsLowPtr[s].pos[1], resultsLowPtr[s].delta);
-      //printf("a:%11G b:%11G", rValues[resultsLowPtr[s].pos[0]].r, rValues[resultsLowPtr[s].pos[1]].r);
-      //printf("   val:%11G   delta:%11G", desired+resultsLowPtr[s].delta, resultsLowPtr[s].delta);
-      //printf(" e%%:%6.3G\n", fabs(resultsLowPtr[s].delta/desired*100));
    }
 
    // 9 - calculus of solutions
@@ -1207,20 +1349,14 @@ int doLowMemCalc() { // fill inputs, low mem calcs+sort solutions
    }
    if (numBestRes>totV) numBestRes=totV;
    first = totV-numBestRes; /* 0 worse, 'first' 1st printed, 'totV' best, numBestRes # of best print */
-//printf ("best:%u results are [%lu-%lu=best]\n", numBestRes, first, totV-1);
-//printf ("Print last:%u founded results ...\n", numBestRes);
-//ret = showVal (first);
 
    // 10 - sorting of solutions
    gprintf (gui, "Sorting new:%llu found solutions ...\n", numBestRes);
-   structQuickSort(resultsLowPtr, numBestRes); /* QuickSort on new results */
-
-   gprintf (gui, "Show new:%llu found solutions ...\n", numBestRes);
-   for (int s=0; s<numBestRes; s++) {
-      //printf("s:%02d results[].pos[0]:%03u results[].pos[1]:%03u results[].delta:%.5f\n", s, resultsLowPtr[s].pos[0], resultsLowPtr[s].pos[1], resultsLowPtr[s].delta);
-      printf("a:%11G b:%11G", rValues[resultsLowPtr[s].pos[0]].r, rValues[resultsLowPtr[s].pos[1]].r);
-      printf("   val:%11G   delta:%11.4G", desired+resultsLowPtr[s].delta, resultsLowPtr[s].delta);
-      printf(" e%%:%6.3G\n", resultsLowPtr[s].delta/desired*100);
+   structQuickSort(results2LowPtr, numBestRes); /* QuickSort on new results */
+   if (maxRp==2) { // 
+      structQuickSort(resultsLowPtr, numBestRes); /* QuickSort on new results */
+      structQuickSort(results4LowPtr, numBestRes); /* QuickSort on new results */
+      structQuickSort(results3LowPtr, numBestRes); /* QuickSort on new results */
    }
 
    return 0;

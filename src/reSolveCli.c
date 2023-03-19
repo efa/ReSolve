@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/14 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/19 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -29,7 +29,7 @@ int main(int numPar, char* param[]) {
    winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
    // 1 - load configuration file and params
-   ret = baseInit (); // LIB: basic initialization: load config from file+memSize
+   ret = baseInit (); // LIB: basic initialization: load config from file
    if (ret != 0) {
       printf ("baseInit returned:%u, quit\n", ret);
       return -1;
@@ -37,7 +37,7 @@ int main(int numPar, char* param[]) {
    // 2 - read and set user request
    // 3 - calculate the needed memory
    ret = memCalc(); // LIB: calculate the needed memory
-ret = memLowCalc();
+   ret = memLowCalc(); // LIB: calculate the needed memory
 
    // 4 - checking arguments syntax
    /*printf ("numPar:%u\n", numPar);*/
@@ -106,22 +106,28 @@ ret = memLowCalc();
 
    // 6 - allocate the memory asking to the OS a malloc()
    // 7 - create the structure's vector inside the allocated memory
-   ret = memAlloc(); // LIB: memory allocation
+   ret = memValAlloc(); // LIB: memory allocation for input values
    if (ret != 0) {
       printf ("memAlloc() returned:%u, quit\n", ret);
       return -1;
    }
-ret = memLowAlloc(); // allocate low mem for results
+   //ret = memAlloc(); // LIB: memory allocation for results
+   if (ret != 0) {
+      printf ("memAlloc() returned:%u, quit\n", ret);
+      return -1;
+   }
+   ret = memLowAlloc(); // LIB: allocate low mem for results
 
    ret=showConf(); // LIB: show config set
 
    // 8 - fill the input vectors with needed data
    // 9 - calculus of solutions
    // 10 - sorting of solutions
-   ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
-ret = doLowMemCalc();
+   //ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
+   ret = doLowMemCalc(); // LIB: fill inputs, calcs, sort solutions
 
-   // 11 - print of results
+   // 11 - print results
+#if 0
    gprintf (gui, "Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
    if (maxRp==1) { // no need to showVal4,3,2 ...
       gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
@@ -140,6 +146,24 @@ ret = doLowMemCalc();
       ret = showVal2 (numBestRes); // LIB: 
    }
    gprintf (gui, "\n");
+#endif
+   gprintf (gui, "Show new:%llu found solutions ...\n", numBestRes);
+   if (maxRp==1) { // no need to showVal4,3,2 ...
+      gprintf (gui, "Show new:%u solutions with 2 resistors:\n", numBestRes);
+      ret = showValLowMem (numBestRes, results2LowPtr); // LIB: 
+   } else {
+      gprintf (gui, "Show new:%u solutions with up to 4 resistors:\n", numBestRes);
+      ret = showValLowMem (numBestRes, resultsLowPtr); // LIB: 
+      gprintf (gui, "\n");
+      gprintf (gui, "Show new:%u solutions with 4 resistors:\n", numBestRes);
+      ret = showValLowMem (numBestRes, results4LowPtr); // LIB: 
+      gprintf (gui, "\n");
+      gprintf (gui, "Show new:%u solutions with 3 resistors:\n", numBestRes);
+      ret = showValLowMem (numBestRes, results3LowPtr); // LIB: 
+      gprintf (gui, "\n");
+      gprintf (gui, "Show new:%u solutions with 2 resistors:\n", numBestRes);
+      ret = showValLowMem (numBestRes, results2LowPtr); // LIB: 
+   }
 
    // 12 - freeing dynamic allocated memory ...
    ret = freeMem(); // LIB: free memory
