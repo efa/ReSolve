@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/19 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/22 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -111,7 +111,7 @@ int main(int numPar, char* param[]) {
       printf ("memAlloc() returned:%u, quit\n", ret);
       return -1;
    }
-   //ret = memAlloc(); // LIB: memory allocation for results
+   ret = memAlloc(); // LIB: memory allocation for results
    if (ret != 0) {
       printf ("memAlloc() returned:%u, quit\n", ret);
       return -1;
@@ -123,8 +123,37 @@ int main(int numPar, char* param[]) {
    // 8 - fill the input vectors with needed data
    // 9 - calculus of solutions
    // 10 - sorting of solutions
-   //ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
+clock_t start, stop;
+double time, time1, time2, time3;
+start = clock();
+   ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
+stop = clock();
+time1 = (double)(stop - start) / CLOCKS_PER_SEC;
+start = clock();
+   ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
+stop = clock();
+time2 = (double)(stop - start) / CLOCKS_PER_SEC;
+start = clock();
+   ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
+stop = clock();
+time3 = (double)(stop - start) / CLOCKS_PER_SEC;
+time = (time1+time2+time3)/3;
+printf ("time 1:%f s, 2:%f s, 3:%f s, m:%f <=======\n", time1, time2, time3, time);
+
+start = clock();
    ret = doLowMemCalc(); // LIB: fill inputs, calcs, sort solutions
+stop = clock();
+time1 = (double)(stop - start) / CLOCKS_PER_SEC;
+start = clock();
+   ret = doLowMemCalc(); // LIB: fill inputs, calcs, sort solutions
+stop = clock();
+time2 = (double)(stop - start) / CLOCKS_PER_SEC;
+start = clock();
+   ret = doLowMemCalc(); // LIB: fill inputs, calcs, sort solutions
+stop = clock();
+time3 = (double)(stop - start) / CLOCKS_PER_SEC;
+time = (time1+time2+time3)/3;
+printf ("time 1:%f s, 2:%f s, 3:%f s, m:%f <=======\n", time1, time2, time3, time);
 
    // 11 - print results
 #if 0

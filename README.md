@@ -298,16 +298,18 @@ v0.09.09h 2023/03/14
   - show calc and sort progress as percentage
   - generation of Linux AppImage
 
-v0.09.09h 2023/03/19
+v0.09.09h 2023/03/22
 * Added:
   - a new strategy searching results to save memory
     as now used only in CLI
+  - timing code in CLI to evaluate performance of new strategy
 
 ToDo:
 -----
 - On memory low: option to keep only the first N best results and discard
   others, autosorting of results while keeping first N best results
 - On memory low: save block of results to disk and deallocate memory
+- use multi-threading to speed-up calculation with multicore CPU
 - remove duplicated triangular solutions with MaxRp=2
 - print exact results, separated by approximate results
 - separate value below and over the target value
@@ -332,19 +334,21 @@ everytime the sources too.
 
 The package is composed of the following files that must be always present:
 ```
-comType.h                common definitions
-fileIo.h                 file I/O interface
-exprParser.h             expression parser interface
-reSolveLib.h             ReSolve lib interface
-fileIo.c                 file I/O handling
-exprParser.c             expression parser
-reSolveLib.c             ReSolve lib implementation
-reSolveCli.c             main CLI source
-reSolveGui.c             main GUI source
-Makefile                 Makefile
-Makefile32               Makefile to build from Linux64 to Linux32
-MakefileX                Makefile to cross-build from Linux to Win64
-MakefileX32              Makefile to cross-build from Linux to Win32
+src/comType.h            common definitions
+src/fileIo.h             file I/O interface
+src/exprParser.h         expression parser interface
+src/reSolveLib.h         ReSolve lib interface
+src/fileIo.c             file I/O handling
+src/exprParser.c         expression parser
+src/reSolveLib.c         ReSolve lib implementation
+src/reSolveCli.c         main CLI source
+src/reSolveGui.c         main GUI source
+src/Makefile             Makefile
+src/Makefile32           Makefile to build from Linux64 to Linux32
+src/MakefileX            Makefile to cross-build from Linux to Win64
+src/MakefileX32          Makefile to cross-build from Linux to Win32
+src/reSolve.desktop      Linux desktop integration file
+src/ReSolve.png          Linux icon file
 reSolveLinux32           CLI binary for Linux/x86
 reSolveGuiLinux32        GUI binary for Linux/x86
 reSolveLinux64           CLI binary for Linux/amd64
@@ -355,8 +359,6 @@ reSolveWin64.exe         CLI binary for Win64/amd64
 reSolveGuiWin64.exe      GUI binary for Win64/amd64
 circuitXX.png            Circuit images with example formula
 reSolveConf.txt          Configuration file
-reSolve.desktop          Linux desktop integration file
-ReSolve.png              Linux icon file
 reSolve.glade            GUI resource XML file
 reSolveReadme.txt        this file/manual
 ```
