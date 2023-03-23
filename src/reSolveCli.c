@@ -23,6 +23,8 @@ int main(int numPar, char* param[]) {
    u08  p;
    char c;
    int  ret;
+   clock_t start, stop;
+   double time;
 
    gui=0; // mean gprintf() do not update GUI
    guiUpdateOutPtr = NULL; // no function pointer to guiUpdateOut()
@@ -36,10 +38,13 @@ int main(int numPar, char* param[]) {
    }
    // 2 - read and set user request
    // 3 - calculate the needed memory
-   ret = memCalc(); // LIB: calculate the needed memory
-   ret = memLowCalc(); // LIB: calculate the needed memory
+   ret = memValCalc(); // LIB: memory size calculation for input values
+   if (algo==0) // 0 use old memory hungry strategy
+      ret = memCalc(); // LIB: calculate the needed memory
+   else // 1 use new mem low strategy
+      ret = memLowCalc(); // LIB: calculate the needed memory
 
-   // 4 - checking arguments syntax
+   // 4 - checking arguments syntax/config value validity
    /*printf ("numPar:%u\n", numPar);*/
    /*printf ("float:%u, double:%u\n", sizeof(float), sizeof (double));*/
    numPar--;
@@ -47,7 +52,7 @@ int main(int numPar, char* param[]) {
    if (numPar>0) {
       if (!strcmp(param[1],"-h") || !strcmp(param[1],"--help")) {
          showHelp (allocatedB);
-         return (ERROR);
+         return ERROR;
       }
    }
    if (param[1] != NULL) {
@@ -65,20 +70,20 @@ int main(int numPar, char* param[]) {
             if (pos!=len) { // filter out: !"#$&',:;<=>?@[\]_`{|}~�簧
                showHelp (allocatedB);
                printf ("Unsupported char: '%c'\n", *(param[2]+pos));
-               return (ERROR);
+               return ERROR;
             }
             for (p=0; p<len; p++) {
                c = *(param[2]+p);
                if ((u08)c>127) {
                   showHelp (allocatedB);
                   printf ("Unsupported char: '%c'\n", *(param[2]+pos));
-                  return (ERROR);
+                  return ERROR;
                }
                if (isalpha ((u08)c)) {
                   if ( (toupper ((u08)c)-'A') >= MaxRc ) {
                      showHelp (allocatedB);
                      printf ("ERROR: Unsupported Variable:'%c'\n\n", c);
-                     return (ERROR);
+                     return ERROR;
                   }
                }
             }
@@ -86,7 +91,7 @@ int main(int numPar, char* param[]) {
          } else {
             showHelp (allocatedB);
             printf ("Formula too long: %u chars\n", len);
-            return (ERROR);
+            return ERROR;
          }
       }
       if (numBestRes==0) numBestRes = NumberResDefault; /* letters case */
@@ -108,95 +113,76 @@ int main(int numPar, char* param[]) {
    // 7 - create the structure's vector inside the allocated memory
    ret = memValAlloc(); // LIB: memory allocation for input values
    if (ret != 0) {
-      printf ("memAlloc() returned:%u, quit\n", ret);
+      printf ("memValAlloc() returned:%u, quit\n", ret);
       return -1;
    }
-   ret = memAlloc(); // LIB: memory allocation for results
+   if (algo==0) // 0 use old memory hungry strategy
+      ret = memAlloc(); // LIB: memory allocation for results
+   else // 1 use new mem low strategy
+      ret = memLowAlloc(); // LIB: allocate low mem for results
    if (ret != 0) {
-      printf ("memAlloc() returned:%u, quit\n", ret);
+      printf ("memLowAlloc() returned:%u, quit\n", ret);
       return -1;
    }
-   ret = memLowAlloc(); // LIB: allocate low mem for results
 
    ret=showConf(); // LIB: show config set
 
    // 8 - fill the input vectors with needed data
    // 9 - calculus of solutions
    // 10 - sorting of solutions
-clock_t start, stop;
-double time, time1, time2, time3;
-start = clock();
-   ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
-stop = clock();
-time1 = (double)(stop - start) / CLOCKS_PER_SEC;
-start = clock();
-   ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
-stop = clock();
-time2 = (double)(stop - start) / CLOCKS_PER_SEC;
-start = clock();
-   ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
-stop = clock();
-time3 = (double)(stop - start) / CLOCKS_PER_SEC;
-time = (time1+time2+time3)/3;
-printf ("time 1:%f s, 2:%f s, 3:%f s, m:%f <=======\n", time1, time2, time3, time);
-
-start = clock();
-   ret = doLowMemCalc(); // LIB: fill inputs, calcs, sort solutions
-stop = clock();
-time1 = (double)(stop - start) / CLOCKS_PER_SEC;
-start = clock();
-   ret = doLowMemCalc(); // LIB: fill inputs, calcs, sort solutions
-stop = clock();
-time2 = (double)(stop - start) / CLOCKS_PER_SEC;
-start = clock();
-   ret = doLowMemCalc(); // LIB: fill inputs, calcs, sort solutions
-stop = clock();
-time3 = (double)(stop - start) / CLOCKS_PER_SEC;
-time = (time1+time2+time3)/3;
-printf ("time 1:%f s, 2:%f s, 3:%f s, m:%f <=======\n", time1, time2, time3, time);
+   start = clock();
+   if (algo==0) // 0 use old memory hungry strategy
+      ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
+   else // 1 use new mem low strategy
+      ret = doMemLowCalc(); // LIB: fill inputs, calcs, sort solutions
+   stop = clock();
+   time = (double)(stop - start) / CLOCKS_PER_SEC; time+=0;
+   //printf ("time:%f <=======\n", time);
 
    // 11 - print results
-#if 0
-   gprintf (gui, "Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
-   if (maxRp==1) { // no need to showVal4,3,2 ...
-      gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-      ret = showVal2 (numBestRes); // LIB: 
-   } else {
-      gprintf (gui, "Show %u solutions with up to 4 resistors:\n", numBestRes);
-      ret = showVal (first); // LIB: 
-      gprintf (gui, "\n");
-      gprintf (gui, "Show %u solutions with 4 resistors:\n", numBestRes);
-      ret = showVal4 (numBestRes); // LIB: 
-      gprintf (gui, "\n");
-      gprintf (gui, "Show %u solutions with 3 resistors:\n", numBestRes);
-      ret = showVal3 (numBestRes); // LIB: 
-      gprintf (gui, "\n");
-      gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-      ret = showVal2 (numBestRes); // LIB: 
+   if (algo==0) { // old memory hungry strategy
+      gprintf (gui, "Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
+      if (maxRp==1) { // no need to showVal4,3,2 ...
+         gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
+         ret = showVal2 (numBestRes); // LIB:
+      } else {
+         gprintf (gui, "Show %u solutions with up to 4 resistors:\n", numBestRes);
+         ret = showVal (first); // LIB:
+         gprintf (gui, "\n");
+         gprintf (gui, "Show %u solutions with 4 resistors:\n", numBestRes);
+         ret = showVal4 (numBestRes); // LIB:
+         gprintf (gui, "\n");
+         gprintf (gui, "Show %u solutions with 3 resistors:\n", numBestRes);
+         ret = showVal3 (numBestRes); // LIB:
+         gprintf (gui, "\n");
+         gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
+         ret = showVal2 (numBestRes); // LIB:
+      }
+   } else { // new mem low strategy
+      gprintf (gui, "Show best:%llu found solutions ...\n", numBestRes);
+      if (maxRp==1) { // no need to showVal4,3,2 ...
+         gprintf (gui, "Show best:%u solutions with 2 resistors:\n", numBestRes);
+         ret = showValMemLow (numBestRes, results2LowPtr); // LIB:
+      } else {
+         gprintf (gui, "Show best:%u solutions with up to 4 resistors:\n", numBestRes);
+         ret = showValMemLow (numBestRes, resultsLowPtr); // LIB:
+         gprintf (gui, "\n");
+         gprintf (gui, "Show best:%u solutions with 4 resistors:\n", numBestRes);
+         ret = showValMemLow (numBestRes, results4LowPtr); // LIB:
+printf ("here\n");
+         gprintf (gui, "\n");
+         gprintf (gui, "Show best:%u solutions with 3 resistors:\n", numBestRes);
+         ret = showValMemLow (numBestRes, results3LowPtr); // LIB:
+         gprintf (gui, "\n");
+         gprintf (gui, "Show best:%u solutions with 2 resistors:\n", numBestRes);
+         ret = showValMemLow (numBestRes, results2LowPtr); // LIB:
+      }
    }
    gprintf (gui, "\n");
-#endif
-   gprintf (gui, "Show new:%llu found solutions ...\n", numBestRes);
-   if (maxRp==1) { // no need to showVal4,3,2 ...
-      gprintf (gui, "Show new:%u solutions with 2 resistors:\n", numBestRes);
-      ret = showValLowMem (numBestRes, results2LowPtr); // LIB: 
-   } else {
-      gprintf (gui, "Show new:%u solutions with up to 4 resistors:\n", numBestRes);
-      ret = showValLowMem (numBestRes, resultsLowPtr); // LIB: 
-      gprintf (gui, "\n");
-      gprintf (gui, "Show new:%u solutions with 4 resistors:\n", numBestRes);
-      ret = showValLowMem (numBestRes, results4LowPtr); // LIB: 
-      gprintf (gui, "\n");
-      gprintf (gui, "Show new:%u solutions with 3 resistors:\n", numBestRes);
-      ret = showValLowMem (numBestRes, results3LowPtr); // LIB: 
-      gprintf (gui, "\n");
-      gprintf (gui, "Show new:%u solutions with 2 resistors:\n", numBestRes);
-      ret = showValLowMem (numBestRes, results2LowPtr); // LIB: 
-   }
 
    // 12 - freeing dynamic allocated memory ...
    ret = freeMem(); // LIB: free memory
    if (baseR) free (baseR); // free mem allocated by fillConfigVars()
 
-   return (OK);
+   return OK;
 }

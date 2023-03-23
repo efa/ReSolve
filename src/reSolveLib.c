@@ -23,7 +23,7 @@ u08 dbgLv  = DbgLv;
 
 char expr[LineLen] = ExpressionDefault;/* default value for formula: reversed high partitor (LM317) */
 double desired;        /* searched value */
-u08 Eseries = Series;  /* Exx: Series E12, E24, (E48), E96 or E192. Use 0 for custom list */
+u08 Eseries = Series;  /* Exx: Series E12, E24, E48, E96 or E192. Use 0 for custom list */
 u08 decades = Decades; /* number of decades of interest, normally 6 or 7 */
 u32 numR = NumR;   /* number of existant values of resistance */
 u16 maxRp = MaxRp; /* max number of resistances supported per position: as now 1 or 2 */
@@ -116,16 +116,30 @@ struct rValuesTy* rValues; /* pointer to memory for single, series & parallel rV
 //static struct resultsTy results[totV]; /* allocate memory for results: [(12*7)^2] */
 struct resultsTy* results; /* pointer to memory for results: [(12*7)^2] results[totV] */
 
-u16 valTy, resTy; // 
+u16 valTy, resTy; // sizeof struct
 u32 rValueSize; // sizeof vector of struct: rValues[numV]
 u64 resultSize; // sizeof vector of struct: results[totV]
 u64 allocatedB; // sizeof allocated memory in Bytes
-u32 first; // 
-size_t sizeLow=0; // size of low mem vectors
+u32 first; // first result to show
 
-int gui;   // when not 0 gprintf() update the GUI
+size_t resultLowSize=0; // size of mem low vectors resultsLow[numBestRes]
+struct resultsTy* resultsLowPtr; // low mem results[numBestRes], all kind solutions
+struct resultsTy* results4LowPtr; // low mem results[numBestRes], 4R solutions
+struct resultsTy* results3LowPtr; // low mem results[numBestRes], 3R solutions
+struct resultsTy* results2LowPtr; // low mem results[numBestRes], 2R solutions
+u32 w=0; // worst solution index
+u32 w4=0; // worst solution index
+u32 w3=0; // worst solution index
+u32 w2=0; // worst solution index
+double deltaWorst = MaxValue; // 50 GOhm
+double delta4Worst = MaxValue; // 50 GOhm
+double delta3Worst = MaxValue; // 50 GOhm
+double delta2Worst = MaxValue; // 50 GOhm
+
+bool algo=1; // 0 use old memory hungry strategy, 1 use new mem low strategy
+bool gui;    // when 1, gprintf() update the GUI
+bool winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
-int winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
 // gprintf(): selectable printf OR asprintf(autoalloc sprintf)
 // when first parameter is 0 is like printf()
@@ -157,22 +171,22 @@ char* siMem(u64 sizeB) { // convert an u64 to string using SI prefix
    else if (sizeB>1E9)  len = asprintf (&stringPtr, "%.1f GB", (float)sizeB/1E9);
    else if (sizeB>1E6)  len = asprintf (&stringPtr, "%.1f MB", (float)sizeB/1E6);
    else if (sizeB>1E3)  len = asprintf (&stringPtr, "%.1f kB", (float)sizeB/1E3);
-   else                 len = asprintf (&stringPtr, "%.0f B ", (float)sizeB);
+   else                 len = asprintf (&stringPtr, "%.0f  B", (float)sizeB);
    if (len==0) return NULL;
-   return stringPtr; // remember caller to free ptr
+   return stringPtr; // remember caller must free ptr
 } // siMem(u64 sizeB)
 
-u64 powll(u32 base, u32 exp) { /* like pow() in math.h but return u64 */
-    register u32 c;
-    register u64 res = 1;
+u64 powll(u32 base, u32 exp) { /* like math.h pow() but return u64 */
+    u32 c;
+    u64 res = 1;
     for (c=0; c<exp; c++) {
        res = res * base;
     }
-    return (res);
+    return res;
 } // u64 powll(u64 base, u64 exp)
 
 void showHead(void) {
-   printf ("ReSolve v%s %s by Valerio Messina users.iol.it/efa\n", SourceVersion, SourceDate);
+   printf ("ReSolve v%s %s by Valerio Messina github.com/efa/ReSolve\n", SourceVersion, SourceDate);
    printf ("\n");
 }
 
@@ -189,7 +203,7 @@ void showHelp(u64 allocatedB) {
    printf ("Note: use '.' as decimal separators for costants and desiredFloatValue\n");
    printf ("\n");
    printf ("Current configurations read from 'reSolveConf.txt':\n");
-   printf ("Desired Value:%11.5f\n", desired);
+   printf ("Target Value :%11.5f\n", desired);
    printf ("Solve Formula: %s\n", expr);
    printf ("Values list: '%s'", baseRdesc);
    if (Eseries>0) printf (" with %u decades", decades);
@@ -201,7 +215,11 @@ void showHelp(u64 allocatedB) {
    stringPtr=siMem(allocatedB);
    printf ("Will allocate about %s of total RAM for %llu solutions\n", stringPtr, totV);
    if (allocatedB>200E6) printf ("WARN: may allocate more than 200 MB RAM !\n");
-   printf ("Show the best:%u results\n", numBestRes);
+   printf ("Show the best:%u results with ", numBestRes);
+   if (algo==0)
+      printf ("old high memory allocation algorithm\n");
+   else
+      printf ("new low memory allocation algorithm\n");
    printf ("\n");
 } // showHelp(float allocatedMB)
 
@@ -216,11 +234,11 @@ int fillConfigVars(void) { // load and check users config file
    bufSize=readFile (fileConf, &bufferPtr);
    if (bufSize==ERROR) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot read file:%s\n", __FUNCTION__, fileConf);
-      return (ERROR);
+      return ERROR;
    }
    if (bufferPtr==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: returned NULL pointer\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    //printf ("bufSize=%lld\n", (s64)bufSize);
    //printf ("bufferPtr:'\n%s\n':bufferPtr\n", bufferPtr);
@@ -236,12 +254,12 @@ int fillConfigVars(void) { // load and check users config file
       int len=strlen(paramValue);
       if (len>=LineLen) {
          printf ("Parameter:'%s' len:%u, max supported len:%u\n", paramName, len, LineLen);
-         return (ERROR);
+         return ERROR;
       }
       endPtr = strcpy (expr, paramValue);
       if (endPtr==NULL) {
          if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
-         return (ERROR);
+         return ERROR;
       }
    }
    if (dbgLev>=PRINTDEBUG) printf ("expr='%s'\n", expr);
@@ -255,7 +273,7 @@ int fillConfigVars(void) { // load and check users config file
       desired = strtod (paramValue, &endPtr);
       if (endPtr==paramValue) {
          if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in desired='%s'\n", __FUNCTION__, paramValue);
-         return (ERROR);
+         return ERROR;
       }
    }
    if (dbgLev>=PRINTDEBUG) printf ("desired=%g\n", desired);
@@ -264,13 +282,13 @@ int fillConfigVars(void) { // load and check users config file
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
+      return ERROR;
    }
    //printf ("Eseries='%s'\n", paramValue);
    Eseries = strtol (paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in Eseries='%s'\n", __FUNCTION__, paramValue);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf ("Eseries=%u\n", Eseries);
 
@@ -278,13 +296,13 @@ int fillConfigVars(void) { // load and check users config file
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
+      return ERROR;
    }
    //printf ("decades='%s'\n", paramValue);
    decades = strtol (paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in decades='%s'\n", __FUNCTION__, paramValue);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf ("decades=%u\n", decades);
 
@@ -292,13 +310,13 @@ int fillConfigVars(void) { // load and check users config file
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
+      return ERROR;
    }
    //printf ("listNumber='%s'\n", paramValue);
    listNumber = strtol (paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in listNumber='%s'\n", __FUNCTION__, paramValue);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf ("listNumber=%u\n", listNumber);
 
@@ -306,7 +324,7 @@ int fillConfigVars(void) { // load and check users config file
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf ("paramValue='%s'\n", paramValue);
    /*for (u16 p=0; p<16; p++) {
@@ -319,7 +337,7 @@ int fillConfigVars(void) { // load and check users config file
    if (dbgLev>=PRINTDEBUG) printf ("array size:%u=0x%x\n", size, size);
    if (listNumber!=size) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: listNumber:%u <> baseR[size]:%u in config file\n", __FUNCTION__, listNumber, size);
-      return (ERROR);
+      return ERROR;
    }
    paramValue[18]='\0'; // clear comma/size overlapping with string terminator
    for (int p=0; p<=24; p++) {
@@ -336,7 +354,7 @@ int fillConfigVars(void) { // load and check users config file
    baseR=malloc(size*sizeof(double)); // allocate space for custom values
    if (!baseR) {
       printf ("Dynamic allocation of:%zu Bytes failed:0x%8p\n", size*sizeof(double), baseR);
-      return (ERROR);
+      return ERROR;
    }
    for (u16 p=0; p<size; p++) {
       if (dbgLev>=PRINTDEBUG) printf ("vectorPtr[%u]:%g\n", p, vectorPtr[p]);
@@ -354,13 +372,13 @@ int fillConfigVars(void) { // load and check users config file
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
+      return ERROR;
    }
    //printf ("baseRdesc='%s'\n", paramValue);
    endPtr = strcpy (baseRdesc, paramValue);
    if (endPtr==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf ("baseRdesc='%s'\n", baseRdesc);
 
@@ -368,13 +386,13 @@ int fillConfigVars(void) { // load and check users config file
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
+      return ERROR;
    }
    //printf ("numberOfResults='%s'\n", paramValue);
    numBestRes = strtol (paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf ("numberOfResults='%s'\n", baseRdesc);
 
@@ -382,13 +400,13 @@ int fillConfigVars(void) { // load and check users config file
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
+      return ERROR;
    }
    //printf ("maxRp='%s'\n", paramValue);
    maxRp = strtol (paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in maxRp='%s'\n", __FUNCTION__, paramValue);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf ("maxRp=%u\n", maxRp);
 
@@ -396,13 +414,13 @@ int fillConfigVars(void) { // load and check users config file
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      return (ERROR);
+      return ERROR;
    }
    //printf ("maxRc='%s'\n", paramValue);
    maxRc = strtol (paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in maxRc='%s'\n", __FUNCTION__, paramValue);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf ("maxRc=%u\n", maxRc);
 
@@ -418,34 +436,34 @@ int fillConfigVars(void) { // load and check users config file
       break;
    default:
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: unsupported Eseries:%u\n", __FUNCTION__, Eseries);
-      return (ERROR);
+      return ERROR;
    }
    //decades=7; // ignored when Eseries=0
    if (decades==0 || decades>7) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: unsupported decades:%u\n", __FUNCTION__, decades);
-      return (ERROR);
+      return ERROR;
    }
    if (listNumber==0 || listNumber>1344) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: unsupported listNumber:%u\n", __FUNCTION__, listNumber);
-      return (ERROR);
+      return ERROR;
    }
    if (maxRp==0 || maxRp>2) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: unsupported maxRp:%u\n", __FUNCTION__, maxRp);
-      return (ERROR);
+      return ERROR;
    }
    if (maxRc<2 || maxRc>2) { // as now only two variables are supported
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: unsupported maxRc:%u\n", __FUNCTION__, maxRc);
-      return (ERROR);
+      return ERROR;
    }
    if (baseRdesc[0]=='\0') {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: empty string 'baseRdesc'\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    for (u16 p=0; p<size; p++) {
       //if (dbgLev>=PRINTF) printf ("%g, ", baseR[p]);
       if (baseR[0]==0) {
          if (dbgLev>=PRINTERROR) printf ("ERROR %s: value 0 in 'baseR' not allowed\n", __FUNCTION__);
-         return (ERROR);
+         return ERROR;
       }
    }
    return  (OK);
@@ -499,14 +517,13 @@ int baseInit() { // basic initialization: load config from file
    ret = fillConfigVars (); // load and check users config file
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: fillConfigVars returned not OK\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    updateRdesc();
-
    return 0;
 } // int baseInit()
 
-int memCalc() { // memory size calculation
+int memValCalc() { // memory size calculation for input values
    // 2 - read and set user request
    if (Eseries>0) {
       numR=(u32)Eseries*decades; /* number of existant values of resistances */
@@ -532,14 +549,14 @@ int memCalc() { // memory size calculation
    //maxRc=2; /* number of resistances (variables) in the circuit: 2 */
    if (maxRc==2) {   /* as now 2 is the only supported value */
       totV=((u64)numV)*((u64)numV); /* number of values to try */
-      // compile&doNotStart with 3'882'988'894 max. Start with 917'797'375 max.
-      // compile&doNotStart with   268'402'689 max. Start with 59'954'049 max.
-      // RunWell                                          with 59'954'049 max.
    }
    valTy = sizeof(struct rValuesTy);
    rValueSize=numV*valTy; // expected no more than '1344x48=64512'
    if (dbgLev>=PRINTDEBUG) printf ("numV:%u X valTy:%u = rValueSize:%u\n", numV, valTy, rValueSize);
+   return 0;
+} // int memValCalc()
 
+int memCalc() { // memory size calculation for results
    resTy = sizeof(struct resultsTy);
    resultSize=(u64)totV*resTy;
    if (dbgLev>=PRINTDEBUG) printf ("totV:%llu X resTy:%u = resultSize:%llu\n", totV, resTy, resultSize);
@@ -548,20 +565,20 @@ int memCalc() { // memory size calculation
    //printf ("Will allocate about %f MB of RAM for res\n", resultSize/1048576.0);
    allocatedB = rValueSize+resultSize;
    //printf("will allocateMB:'%.1f'\n", allocatedB);
-
    return 0;
 } // int memCalc()
 
-int memLowCalc() { // low memory size calculation
+int memLowCalc() { // low memory size calculation for results
    size_t structsize;
    structsize=sizeof(struct resultsTy);
    if (maxRp==1) {
-      sizeLow=numBestRes*structsize;
+      resultLowSize=numBestRes*structsize;
    }
    if (maxRp==2) {
-      sizeLow=4*numBestRes*structsize;
+      resultLowSize=4*numBestRes*structsize;
    }
-   //printf("will allocate low mem: structsize:%zu numBestRes:%u size:%zu\n", structsize, numBestRes, sizeLow);
+   //printf("will allocate low mem: structsize:%zu numBestRes:%u size:%zu\n", structsize, numBestRes, resultLowSize);
+   allocatedB=rValueSize+resultLowSize;
    return 0;
 } // memLowCalc()
 
@@ -570,8 +587,7 @@ int memValAlloc() { // memory allocation for input values
    /* allocated memory for all R: [12*7]+([12*7]*[12*7])+[12*7] : */
    //struct rValuesTy rValues[numV]; /* single, series & parallel */
    //struct rValuesTy* rValues; /* pointer to memory for single, series & parallel */
-   char* stringPtr;
-   stringPtr=siMem(rValueSize);
+   char* stringPtr=siMem(rValueSize);
    //printf ("allocat:'%s'\n", stringPtr);
    gprintf (gui, "Allocating about %s of RAM for inputs ...\n", stringPtr);
    free(stringPtr);
@@ -579,19 +595,19 @@ int memValAlloc() { // memory allocation for input values
    // allocation fail with 2'930'000'000 on a 4 GB RAM, 8 GB swap, 32 bit OS
    if (!rValues) {
       printf ("Dynamic allocation of:%u Bytes failed:0x%8p\n", rValueSize, rValues);
-      return (ERROR);
+      return ERROR;
    }
    // 7 - create the structure's vector inside the allocated memory
    for (u32 e=0; e<numV; e++) {
       rValues[e].rp = (double*) malloc (maxRp*sizeof (double));
       if (!rValues[e].rp) {
          printf ("Dynamic allocation of:%zu Bytes failed:0x%8p\n", maxRp*sizeof (double), rValues[e].rp);
-         return (ERROR);
+         return ERROR;
       }
    }
    // now can use global rValues[].rp[], rValues[].r for input values
    return 0;
-}
+} // memValAlloc()
 
 int memAlloc() { // memory allocation for results
    char* stringPtr;
@@ -601,13 +617,13 @@ int memAlloc() { // memory allocation for results
    //printf ("size_t size:%u Bytes ptr:%lu\n", sizeof (size_t), (u32) pow(2, 8*sizeof (size_t)));
    if (resultSize > pow(2, 8*sizeof (size_t))) {
       printf ("ERROR: This machine cannot handle allocation of:%llu Bytes\n", resultSize);
-      return (ERROR);
+      return ERROR;
    }
    results=malloc(resultSize); // (u64)totV*sizeof(struct resultsTy)
    if (dbgLev>=PRINTDEBUG) printf ("allocated %llu Bytes at:0x%8p\n", resultSize, results);
    if (!results) {
       printf ("Dynamic allocation of:%llu Bytes failed:0x%8p\n", resultSize, results);
-      return (ERROR);
+      return ERROR;
    }
    // now can use global results[].pos[], results[].delta for results
    if (dbgLev>=PRINTDEBUG) printf ("Done. Dynamically allocated 'results' at:%p\n", results);
@@ -618,17 +634,22 @@ int memLowAlloc() { // allocate low mem for results
    size_t size, structsize;
    structsize=sizeof(struct resultsTy);
    size=numBestRes*structsize;
+   char* stringPtr=NULL;
    if (maxRp==1) {
-      printf("Allocating low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, size);
+      stringPtr=siMem(size);
+      //printf("Allocating low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, size);
+      gprintf(gui, "Allocating about %s of RAM for results ...\n", stringPtr);
       results2LowPtr=malloc(size); // (u64)numBestRes*sizeof(struct resultsTy)
       if (results2LowPtr==NULL) {
          printf("malloc error, quit\n");
          return 1;
       }
-      printf("Allocated low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, size);
+      //printf("Allocated low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, size);
    }
    if (maxRp==2) {
+      stringPtr=siMem(4*size);
       printf("Allocating low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, 4*size);
+      gprintf(gui, "Allocating about %s of RAM for results ...\n", stringPtr);
       resultsLowPtr=malloc(size); // (u64)numBestRes*sizeof(struct resultsTy)
       if (resultsLowPtr==NULL) {
          printf("malloc error, quit\n");
@@ -649,8 +670,13 @@ int memLowAlloc() { // allocate low mem for results
          printf("malloc error, quit\n");
          return 1;
       }
-      printf("Allocated low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, 4*size);
+      printf("Allocated low mem: structsize:%zu numBestRes:%u size:%zu 4size:%zu for results ...\n", structsize, numBestRes, size, 4*size);
+      printf("resultsLowPtr :%p\n", resultsLowPtr);
+      printf("results4LowPtr:%p\n", results4LowPtr);
+      printf("results3LowPtr:%p\n", results3LowPtr);
+      printf("results2LowPtr:%p\n", results2LowPtr);
    }
+   free(stringPtr);
    return 0;
 } // memLowAlloc()
 
@@ -679,7 +705,6 @@ int showConf() { // show config set
    stringPtr=siMem(allocatedB);
    gprintf (gui, "Allocated about %s of total RAM\n", stringPtr);
    free(stringPtr);
-
    return 0;
 } // showConf()
 
@@ -689,48 +714,49 @@ s16 calcEseries(void) { // or fill with the custom list of values when Eseries=0
    u08 decade;
    u08 rBase;
    s16 pos = 0; // expected max 7*192=1344
-   register double val;
+   double val;
    u08 p;
    if (Eseries>0) { // standard Exx series resistors
       for (decade=0; decade<decades; decade++) {
+         double powDecade = powll (10, decade);
          for (rBase=0; rBase<Eseries; rBase++) {
             pos = rBase + decade*Eseries;
             switch (Eseries) {
             case (1):
                /*printf ("rBase:%u baseR1[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR1[rBase], decade, pos);*/
-               val = baseR1[rBase] * (double)powll (10, decade);
+               val = baseR1[rBase] * powDecade;
                break;
             case (3):
                /*printf ("rBase:%u baseR3[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR3[rBase], decade, pos);*/
-               val = baseR3[rBase] * (double)powll (10, decade);
+               val = baseR3[rBase] * powDecade;
                break;
             case (6):
                /*printf ("rBase:%u baseR6[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR6[rBase], decade, pos);*/
-               val = baseR6[rBase] * (double)powll (10, decade);
+               val = baseR6[rBase] * powDecade;
                break;
             case (12):
                /*printf ("rBase:%u baseR12[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR12[rBase], decade, pos);*/
-               val = baseR12[rBase] * (double)powll (10, decade);
+               val = baseR12[rBase] * powDecade;
                break;
             case (24):
                /*printf ("rBase:%u baseR24[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR24[rBase], decade, pos);*/
-               val = baseR24[rBase] * (double)powll (10, decade);
+               val = baseR24[rBase] * powDecade;
                break;
             case (48):
                /*printf ("rBase:%u baseR48[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR48[rBase], decade, pos);*/
-               val = baseR48[rBase] * (double)powll (10, decade);
+               val = baseR48[rBase] * powDecade;
                break;
             case (96):
                /*printf ("rBase:%u baseR96[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR96[rBase], decade, pos);*/
-               val = baseR96[rBase] * (double)powll (10, decade);
+               val = baseR96[rBase] * powDecade;
                break;
             case (192):
                /*printf ("rBase:%u baseR192[rBase]:%lu decade:%u pos:%ld\n", rBase, baseR192[rBase], decade, pos);*/
-               val = baseR192[rBase] * (double)powll (10, decade);
+               val = baseR192[rBase] * powDecade;
                break;
             default:
                printf ("Unsupported Series:%u. Supported are 1, 3, 6, 12, 24, 48, 96 and 192\n", Eseries);
-               return (ERROR);
+               return ERROR;
             }
             rValues[pos].r = val;
             for (p=0; p<maxRp; p++) {
@@ -753,21 +779,21 @@ s16 calcEseries(void) { // or fill with the custom list of values when Eseries=0
       }
    }
    if (dbgLv>=PRINTDEBUG) printf ("calcEseries pos:%d\n", pos);
-   return (pos);
+   return pos;
 } // s16 calcEseries(void)
 
 /* calculate all possible resistive values using 'MaxRp' resistances */
 // 'baseRxx[Eseries/listNumber]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].desc
 int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
    s32 pos;
-   register double val;
+   double val;
    u16 rp1, rp2;
    u08 p;
    /* at first calculate the single values (Eseries) or fill custom values */
    pos = calcEseries (); // calculate all standard Exx series values
    if (pos==ERROR) {
       printf ("calcEseries returned ERROR\n");
-      return (ERROR);
+      return ERROR;
    }
    //printf ("numR:%u numV:%u totV:%llu numBestRes:%u\n", numR, numV, totV, numBestRes);
    if (dbgLv>=PRINTDEBUG) printf ("pos:%d\n", pos);
@@ -810,7 +836,7 @@ int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
    }
    if (maxRp>2) {
       printf ("Unsupported maxRp:%u. Supported maxRp 1 or 2\n", maxRp);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLv>=PRINTDEBUG) printf ("calcRvalues pos:%d end\n", pos);
    //firstSingle  =0;
@@ -822,17 +848,17 @@ int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
    //rValues[   lastSingle:firstSingle ] are single (Exx or custom)
    //rValues[  firstSeries:lastSeries  ] are series
    //rValues[firstParallel:lastParallel] are parallel
-   return (OK);
+   return OK;
 } // int calcRvalues(void)
 
 /* calculate all formula results using 'maxRc' resistances */
 int calcFvalues(void) {
    u32 rc1, rc2;
    /*float res[maxRc];*/ /* single case, normally 2 resistances */
-   register u64 per; // percentage progress
-   register double val;
-   register double delta = 0;
-   register u32 pos = 0;
+   u64 per; // percentage progress
+   double val;
+   double delta = 0;
+   u32 pos = 0;
    if (dbgLv>=PRINTDEBUG) printf ("numV:%u, totV:%llu\n", numV, totV);
    if (dbgLv>=PRINTDEBUG) printf ("expr:'%s'\n", expr);
    if (dbgLv>=PRINTF) gprintf (gui, "sol="); // here print something for user feedback (take time)
@@ -859,25 +885,12 @@ int calcFvalues(void) {
       }
    }
    //if (dbgLv>=PRINTF) gprintf (gui, "%u\n", rc1*numV-1); // here print something for user feedback (take time)
-   if (dbgLv>=PRINTF) gprintf (gui, "100%\n"); // here print something for user feedback (take time)
-   return (OK);
+   if (dbgLv>=PRINTF) gprintf (gui, "100%%\n"); // here print something for user feedback (take time)
+   return OK;
 } // int calcFvalues(void) {
 
-struct resultsTy* resultsLowPtr; // low mem results[numBestRes], all kind solutions
-struct resultsTy* results4LowPtr; // low mem results[numBestRes], 4R solutions
-struct resultsTy* results3LowPtr; // low mem results[numBestRes], 3R solutions
-struct resultsTy* results2LowPtr; // low mem results[numBestRes], 2R solutions
-int w=0; // worst solution index
-int w4=0; // worst solution index
-int w3=0; // worst solution index
-int w2=0; // worst solution index
-double deltaWorst = MaxValue; // 50 GOhm
-double delta4Worst = MaxValue; // 50 GOhm
-double delta3Worst = MaxValue; // 50 GOhm
-double delta2Worst = MaxValue; // 50 GOhm
-
 // find worst (higher delta) low mem solution
-int findWorst(struct resultsTy* resultsNLowPtr, int* wNPtr, double* deltaNWorstPtr) {
+int findWorst(struct resultsTy* resultsNLowPtr, u32* wNPtr, double* deltaNWorstPtr) {
    double max=0;
    double delta;
    for (int s=0; s<numBestRes; s++) {
@@ -899,24 +912,20 @@ bool is_double_le(double a, double b, double epsilon) {
 }
 
 /* calculate best formula results using 'maxRc' resistances */
-int calcLowMemFvalues(void) {
+int calcMemLowFvalues(void) {
    u32 rc1, rc2;
-   register u64 per; // percentage progress
-   register double val;
-   register double delta = 0;
+   u64 per; // percentage progress
+   double val;
+   double delta = 0;
    if (dbgLv>=PRINTDEBUG) printf ("numV:%u, totV:%llu\n", numV, totV);
    if (dbgLv>=PRINTDEBUG) printf ("expr:'%s'\n", expr);
-   for (int s=0; s<numBestRes; s++) {
+   for (u32 s=0; s<numBestRes; s++) {
       results2LowPtr[s].delta=MaxValue; // 50 GOhm
    }
    if (maxRp==2) { // 
-      for (int s=0; s<numBestRes; s++) {
+      for (u32 s=0; s<numBestRes; s++) {
          resultsLowPtr[s].delta=MaxValue; // 50 GOhm
-      }
-      for (int s=0; s<numBestRes; s++) {
          results4LowPtr[s].delta=MaxValue; // 50 GOhm
-      }
-      for (int s=0; s<numBestRes; s++) {
          results3LowPtr[s].delta=MaxValue; // 50 GOhm
       }
    }
@@ -924,10 +933,6 @@ int calcLowMemFvalues(void) {
 //printf ("\n");
 //printf ("numR:%u numV:%u totV:%llu numBestRes:%u\n", numR, numV, totV, numBestRes);
 //printf ("rValues[numV:%u] results[totV:%llu] results4LowPtr[numBestRes:%u]\n", numV, totV, numBestRes);
-//printf ("rValues[numR                     = %u:                         0] '%s'\n", numR-1, Exx);
-//printf ("rValues[numR+(numR*numR+numR)/2-1=%u:numR                   = %u] '%s'\n", numR+(numR*numR+numR)/2-1, numR, rValues[numR].desc);
-//printf ("rValues[numV-1                   =%u:numR+(numR*numR+numR)/2=%u] '%s'\n", numV-1, numR+(numR*numR+numR)/2, rValues[numV-1].desc);
-//printf ("\n");
 //firstSeries  =numR;
 //lastSeries   =numR+(numR*numR+numR)/2-1;
 //firstParallel=numR+(numR*numR+numR)/2;
@@ -963,7 +968,7 @@ int calcLowMemFvalues(void) {
                resultsLowPtr[w].delta  = delta; // always insert in worst pos
                findWorst(resultsLowPtr, &w, &deltaWorst); // find worst (higher delta) solution
             }
-            int cmp0, cmp1;
+            bool cmp0, cmp1;
             if (is_double_le(fabs(delta), delta4Worst, Epsilon)) {
                //printf ("new better result:%.1f delta:%.4f oldDeltaMin:%.1f\n", val, delta, delta4Worst);
                //printf("rc1:%03u rc2:%03u old delta:%.1f fill at:%d with new delta:%.1f\n", rc1, rc2, delta4Worst, w4, fabs(delta));
@@ -1013,17 +1018,17 @@ int calcLowMemFvalues(void) {
       }
    } // external for ()
    //if (dbgLv>=PRINTF) gprintf (gui, "%u\n", rc1*numV-1); // here print something for user feedback (take time)
-   if (dbgLv>=PRINTF) gprintf (gui, "100%\n"); // here print something for user feedback (take time)
-   return (OK);
-} // int calcLowMemFvalues(void) {
+   if (dbgLv>=PRINTF) gprintf (gui, "100%%\n"); // here print something for user feedback (take time)
+   return OK;
+} // int calcMemLowFvalues(void) {
 
 s64 tot; // used for debug link between 'structQuickSort()' & 'qsStruct()'
 
 /* QuickSort for vector of structs of type resultsTy. */
 /* Sorting criteria: field 'abs(delta)' */
 void qsStruct(struct resultsTy results[], s32 left, s32 right) {
-   register s32 l, r, m; /* position left, right and median */
-   register u64 per; // percentage progress
+   s32 l, r, m; /* position left, right and median */
+   u64 per; // percentage progress
    float  mp; /* will contain data in center position */
    struct resultsTy temp;            /* temp struct for swap */
    static u64 qs;
@@ -1087,7 +1092,7 @@ void qsStruct(struct resultsTy results[], s32 left, s32 right) {
 /* QuickSort for vector of structs of type resultsTy, using field 'abs(delta)' */
 /* put results[0] the greatest(worst), results[totNumber-1] the smallest(best) */
 int structQuickSort(struct resultsTy results[], s32 totNumber) {
-   if (totNumber==0) return (ERROR);
+   if (totNumber==0) return ERROR;
    tot = totNumber;
    if (dbgLv>=PRINTF) {
       gprintf (gui, "qs="); // here print something for user feedback (take time)
@@ -1102,7 +1107,7 @@ int structQuickSort(struct resultsTy results[], s32 totNumber) {
          printf ("f[%2lld]=%11G\n", c, results[c].delta);
       }
    }
-   return (OK);
+   return OK;
 } // int structQuickSort(struct resultsTy results[], s32 totNumber)
 
 /* print last 'numBestRes=totV-first' results */
@@ -1132,7 +1137,7 @@ int showVal(u32 first) { // solutions with up to 4 resistors
          gprintf (gui, "\n");
       }
    }
-   return (OK);
+   return OK;
 } // int showVal(u32 first)
 
 /* print best 'numBestRes' results */
@@ -1179,7 +1184,7 @@ int showVal4(u32 numBestRes) { // Solutions with 4 resistors
          gprintf (gui, "\n");
       }
    }
-   return (OK);
+   return OK;
 } // int showVal4(u32 numBestRes)
 
 /* print best 'numBestRes' results */
@@ -1223,7 +1228,7 @@ int showVal3(u32 numBestRes) { // Solutions with 3 resistors
          gprintf (gui, "\n");
       }
    }
-   return (OK);
+   return OK;
 } // int showVal3(u32 numBestRes)
 
 /* print best 'numBestRes' results */
@@ -1256,13 +1261,13 @@ int showVal2(u32 numBestRes) { // Solutions with 2 resistors
          gprintf (gui, "\n");
       }
    }
-   return (OK);
+   return OK;
 } // int showVal2(u32 numBestRes)
 
 /* print best 'numBestRes' LowMem results */
-int showValLowMem(u32 numBestRes, struct resultsTy* resultsLowPtr) { // Solutions
+int showValMemLow(u32 numBestRes, struct resultsTy* resultsLowPtr) { // Solutions
    for (int s=0; s<numBestRes; s++) {
-      //printf("s:%02d results[].pos[0]:%03u results[].pos[1]:%03u results[].delta:%.5f\n", s, resultsLowPtr[s].pos[0], resultsLowPtr[s].pos[1], resultsLowPtr[s].delta);
+printf("s:%02d results[].pos[0]:%03u results[].pos[1]:%03u results[].delta:%.5f\n", s, resultsLowPtr[s].pos[0], resultsLowPtr[s].pos[1], resultsLowPtr[s].delta);
       gprintf(gui, "a:%11G b:%11G", rValues[resultsLowPtr[s].pos[0]].r, rValues[resultsLowPtr[s].pos[1]].r);
       gprintf(gui, "   val:%11G   delta:%11.4G", desired+resultsLowPtr[s].delta, resultsLowPtr[s].delta);
       gprintf(gui, " e%%:%6.3G\n", resultsLowPtr[s].delta/desired*100);
@@ -1285,8 +1290,8 @@ int showValLowMem(u32 numBestRes, struct resultsTy* resultsLowPtr) { // Solution
          gprintf (gui, "\n");
       }
    }
-   return (OK);
-} // int showValLowMem(u32 numBestRes, struct resultsTy* resultsLowPtr)
+   return OK;
+} // int showValMemLow(u32 numBestRes, struct resultsTy* resultsLowPtr)
 
 int doCalc() { // fill inputs, calcs, sort solutions
    int ret;
@@ -1302,7 +1307,7 @@ int doCalc() { // fill inputs, calcs, sort solutions
    if (ret==ERROR) {
       printf ("calcRvalues returned ERROR\n");
       free (results);
-      return (ERROR);
+      return ERROR;
    }
 
    // 9 - calculus of solutions
@@ -1311,7 +1316,7 @@ int doCalc() { // fill inputs, calcs, sort solutions
    if (ret==ERROR) {
       printf ("calcFvalues returned ERROR\n");
       free (results);
-      return (ERROR);
+      return ERROR;
    }
    if (numBestRes>totV) numBestRes=totV;
    first = totV-numBestRes; /* 0 worse, 'first' 1st printed, 'totV' best, numBestRes # of best print */
@@ -1319,56 +1324,62 @@ int doCalc() { // fill inputs, calcs, sort solutions
    // 10 - sorting of solutions
    gprintf (gui, "Sorting all:%llu found solutions ...\n", totV);
    structQuickSort (results, totV); /* QuickSort on all results */
-
    return 0;
 } // int doCalc()
 
-int doLowMemCalc() { // fill inputs, low mem calcs+sort solutions
+int doMemLowCalc() { // fill inputs, low mem calcs+sort solutions
    int ret;
 
    // 8 - fill the input vectors with needed data
    if (maxRp>1) {
-      gprintf (gui, "Calculating new:%u values with max:%u resistors per position ...\n", numV, maxRp);
+      gprintf (gui, "Calculating all:%u values with max:%u resistors per position ...\n", numV, maxRp);
    } else {
-      gprintf (gui, "Populating new:%u values with max:%u resistors per position ...\n", numV, maxRp);
+      gprintf (gui, "Populating all:%u values with max:%u resistors per position ...\n", numV, maxRp);
    }
    ret = calcRvalues (); /* populate with all possible resistance values */
    if (ret==ERROR) {
       printf ("calcRvalues returned ERROR\n");
       free (results);
-      return (ERROR);
+      return ERROR;
    }
 
    // 9 - calculus of solutions
-   gprintf (gui, "Calculating new:%u/%llu solutions with a formula of:%u resistors ...\n", numBestRes, totV, maxRc);
-   ret = calcLowMemFvalues (); /* calculate best results and delta */
+   gprintf (gui, "Calculating best:%u/%llu solutions with a formula of:%u resistors ...\n", numBestRes, totV, maxRc);
+   ret = calcMemLowFvalues (); /* calculate best results and delta */
    if (ret==ERROR) {
-      printf ("calcLowMemFvalues returned ERROR\n");
+      printf ("calcMemLowFvalues returned ERROR\n");
       free (results);
-      return (ERROR);
+      return ERROR;
    }
    if (numBestRes>totV) numBestRes=totV;
    first = totV-numBestRes; /* 0 worse, 'first' 1st printed, 'totV' best, numBestRes # of best print */
 
    // 10 - sorting of solutions
-   gprintf (gui, "Sorting new:%llu found solutions ...\n", numBestRes);
+   gprintf (gui, "Sorting best:%llu found solutions ...\n", numBestRes);
    structQuickSort(results2LowPtr, numBestRes); /* QuickSort on new results */
    if (maxRp==2) { // 
       structQuickSort(resultsLowPtr, numBestRes); /* QuickSort on new results */
       structQuickSort(results4LowPtr, numBestRes); /* QuickSort on new results */
       structQuickSort(results3LowPtr, numBestRes); /* QuickSort on new results */
    }
-
    return 0;
-} // int doLowMemCalc()
+} // int doMemLowCalc()
 
 int freeMem() { // free memory
    // 12 - freeing dynamic allocated memory ...
    for (u32 e=0; e<numV; e++) {
       if (rValues[e].rp) free (rValues[e].rp);
    }
-   if (results) free (results);
-   if (maxRp==1) return (OK);
    if (rValues) free (rValues); // only with parallel/series
+   if (algo==0) { // old memory hungry strategy
+      if (results) free (results);
+   } else { // new mem low strategy
+      if (results2LowPtr) free (results2LowPtr);
+      if (maxRp==2) {
+         if (resultsLowPtr) free (resultsLowPtr);
+         if (results4LowPtr) free (results4LowPtr);
+         if (results3LowPtr) free (results3LowPtr);
+      }
+   }
    return 0;
 } // int freeMem()

@@ -112,19 +112,20 @@ struct resultsTy { u16   pos[MaxRc]; /* positions in rValues of each resistance,
                    float delta;     /* distance from desiderata */
                  }; /* struct declaration */
 extern struct resultsTy* results; /* pointer to results[totV] for results: [(12*7)^2] results[totV] */
-extern u16 valTy, resTy; // 
+extern u16 valTy, resTy; // sizeof struct
 extern u32 rValueSize; // sizeof vector of struct: rValues[numV]
 extern u64 resultSize; // sizeof vector of struct: results[totV]
 extern u64 allocatedB; // sizeof allocated memory in Bytes
-extern u32 first; // 
-extern int gui;   // when not 0 gprintf() update the GUI
-extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
-extern int winGuiLoop; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
+extern u32 first; // first result to show
+extern size_t resultLowSize; // size of mem low vectors resultsLow[numBestRes]
 extern struct resultsTy* resultsLowPtr; // low mem results[numBestRes], all kind solutions
 extern struct resultsTy* results4LowPtr; // low mem results[numBestRes], 4R solutions
 extern struct resultsTy* results3LowPtr; // low mem results[numBestRes], 3R solutions
 extern struct resultsTy* results2LowPtr; // low mem results[numBestRes], 2R solutions
-extern size_t sizeLow; // size of low mem vectors
+extern bool algo; // 0 use old memory hungry strategy, 1 use new mem low strategy
+extern bool gui;  // when 1, gprintf() update the GUI
+extern bool winGuiLoop; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
+extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 
 // public library functions:
 int fillConfigVars(void); // load and check users config file
@@ -139,7 +140,8 @@ int showVal3(u32 numBestRes); // Solutions with 3 resistors
 int showVal2(u32 numBestRes); // Solutions with 2 resistors
 int updateRdesc(); // update Rdesc
 int baseInit(); // basic initialization: load config from file
-int memCalc();  // memory size calculation
+int memValCalc(); // memory size calculation for input values
+int memCalc();  // memory size calculation for results
 int memValAlloc(); // memory allocation for input values
 int memAlloc(); // memory allocation for results
 int showConf(); // show config set
@@ -150,7 +152,7 @@ char* siMem(u64 sizeB); // convert an u64 to string using SI prefix
 
 int memLowCalc(); // low memory size calculation
 int memLowAlloc(); // allocate low mem for results
-int doLowMemCalc(); // fill inputs, low mem calcs+sort solutions
-int showValLowMem(u32 numBestRes, struct resultsTy* resultsLowPtr); // Solutions
+int doMemLowCalc(); // fill inputs, low mem calcs+sort solutions
+int showValMemLow(u32 numBestRes, struct resultsTy* resultsLowPtr); // Solutions
 
 #endif /* _INCh */

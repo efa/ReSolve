@@ -78,13 +78,13 @@ void serror(int error) {
 /* Return true if c is a delimiter */
 int isdelim(char c) {
    if (strchr (" +-/*%^=()", c) || c==9 || c=='\r' || c==0)
-      return (1);
-   return (0);
+      return 1;
+   return 0;
 } // isdelim()
 
 /* Return the next token */
 void getToken(void) {
-   register char* temp;
+   char* temp;
    tokType = 0;
    temp = token;
    *temp = '\0';
@@ -110,9 +110,9 @@ void getToken(void) {
 double findVar(char* s) {
    if (!isalpha ((u08)*s)) {
       serror (1);
-      return (0.0);
+      return 0.0;
    }
-   return (exprVarsParser[toupper ((u08)*token)-'A']);
+   return exprVarsParser[toupper ((u08)*token)-'A'];
 } // findVar()
 
 /* Get the value of a number or a variable */
@@ -152,7 +152,7 @@ void evalExp6(double* answer) {
 
 /* Evaluate an unary + or - */
 void evalExp5(double* answer) {
-   register char op;
+   char op;
    op = 0;
    if ( ((tokType == DELIMITER) && *token=='+') || (*token == '-') ) {
       op = *token;
@@ -165,7 +165,7 @@ void evalExp5(double* answer) {
 /* Process an exponent */
 void evalExp4(double* answer) {
    double temp, ex;
-   register int t;
+   int t;
    evalExp5 (answer);
    if (*token == '^') {
       getToken ();
@@ -182,7 +182,7 @@ void evalExp4(double* answer) {
 
 /* Multiply or divide two factors */
 void evalExp3(double* answer) {
-   register char op;
+   char op;
    double temp;
    evalExp4 (answer);
    while ((op = *token) == '*' || op == '/' || op == '%') {
@@ -210,7 +210,7 @@ void evalExp3(double* answer) {
 
 /* Add or subtract two terms */
 void evalExp2(double* answer) {
-   register char op;
+   char op;
    double temp;
    evalExp3 (answer);
    while ((op = *token) == '+' || op == '-') {
@@ -274,5 +274,5 @@ double evalExprParser(char* expressionPtr) {
       serror (4);
    }
    evalExp0 (&val);
-   return (val);
+   return val;
 } // evalExprParser()

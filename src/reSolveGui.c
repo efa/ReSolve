@@ -383,8 +383,8 @@ static void aboutButton(GtkWidget* widgetPtr, gpointer dataPtr) {
 int quit() { // called also on Window destroy
    // free mem allocated by fillConfigVars()
    if (baseR) free (baseR);
-   if (baseRconf) free (baseRconf);
-   if (baseRuser) free (baseRuser);
+   if (baseRconf) free (baseRconf); // only when GUI
+   if (baseRuser) free (baseRuser); // only when GUI
    gtk_main_quit();
    return 0;
 } // quit()
@@ -606,14 +606,25 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
 
    // 2 - read and set user request
    // 3 - calculate the needed memory
-   ret = memCalc(); // LIB: calculate the needed memory
+   ret = memValCalc(); // LIB: memory size calculation for input values
+   if (algo==0) // 0 use old memory hungry strategy
+      ret = memCalc(); // LIB: calculate the needed memory
+   else // 1 use new mem low strategy
+      ret = memLowCalc(); // LIB: calculate the needed memory
 
    // 6 - allocate the memory asking to the OS a malloc()
    // 7 - create the structure's vector inside the allocated memory
    ret = memValAlloc(); // LIB: memory allocation for input values
-   ret = memAlloc(); // LIB: memory allocation for results
    if (ret != 0) {
-      printf ("memAlloc() returned:%u, quit\n", ret);
+      printf ("memValAlloc() returned:%u, quit\n", ret);
+      return -1;
+   }
+   if (algo==0) // 0 use old memory hungry strategy
+      ret = memAlloc(); // LIB: memory allocation for results
+   else // 1 use new mem low strategy
+      ret = memLowAlloc(); // LIB: allocate low mem for results
+   if (ret != 0) {
+      printf ("memLowAlloc() returned:%u, quit\n", ret);
       return -1;
    }
 
@@ -622,26 +633,50 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
    // 8 - fill the input vectors with needed data
    // 9 - calculus of solutions
    // 10 - sorting of solutions
-   ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
+   if (algo==0) // 0 use old memory hungry strategy
+      ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
+   else // 1 use new mem low strategy
+      ret = doMemLowCalc(); // LIB: fill inputs, calcs, sort solutions
 
    // 11 - print results
-   gprintf (gui, "Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
    winGuiLoop=0; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
-   if (maxRp==1) { // no need to showVal4,3,2 ...
-      gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-      ret = showVal2 (numBestRes); // LIB: 
-   } else {
-      gprintf (gui, "Show %u solutions with up to 4 resistors:\n", numBestRes);
-      ret = showVal (first); // LIB: 
-      gprintf (gui, "\n");
-      gprintf (gui, "Show %u solutions with 4 resistors:\n", numBestRes);
-      ret = showVal4 (numBestRes); // LIB: 
-      gprintf (gui, "\n");
-      gprintf (gui, "Show %u solutions with 3 resistors:\n", numBestRes);
-      ret = showVal3 (numBestRes); // LIB: 
-      gprintf (gui, "\n");
-      gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-      ret = showVal2 (numBestRes); // LIB: 
+   if (algo==0) { // old memory hungry strategy
+      gprintf (gui, "Printing best:%u solutions (top worst, botton best) in all configurations ...\n\n", numBestRes);
+      if (maxRp==1) { // no need to showVal4,3,2 ...
+         gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
+         ret = showVal2 (numBestRes); // LIB:
+      } else {
+         gprintf (gui, "Show %u solutions with up to 4 resistors:\n", numBestRes);
+         ret = showVal (first); // LIB:
+         gprintf (gui, "\n");
+         gprintf (gui, "Show %u solutions with 4 resistors:\n", numBestRes);
+         ret = showVal4 (numBestRes); // LIB:
+         gprintf (gui, "\n");
+         gprintf (gui, "Show %u solutions with 3 resistors:\n", numBestRes);
+         ret = showVal3 (numBestRes); // LIB:
+         gprintf (gui, "\n");
+         gprintf (gui, "Show %u solutions with 2 resistors:\n", numBestRes);
+         ret = showVal2 (numBestRes); // LIB:
+      }
+   } else { // new mem low strategy
+      gprintf (gui, "Show best:%llu found solutions ...\n", numBestRes);
+      if (maxRp==1) { // no need to showVal4,3,2 ...
+         gprintf (gui, "Show best:%u solutions with 2 resistors:\n", numBestRes);
+         ret = showValMemLow (numBestRes, results2LowPtr); // LIB:
+      } else {
+         gprintf (gui, "Show best:%u solutions with up to 4 resistors:\n", numBestRes);
+         ret = showValMemLow (numBestRes, resultsLowPtr); // LIB:
+         gprintf (gui, "\n");
+         gprintf (gui, "Show best:%u solutions with 4 resistors:\n", numBestRes);
+         ret = showValMemLow (numBestRes, results4LowPtr); // LIB:
+         gprintf (gui, "\n");
+         gprintf (gui, "Show best:%u solutions with 3 resistors:\n", numBestRes);
+         ret = showValMemLow (numBestRes, results3LowPtr); // LIB:
+         gprintf (gui, "\n");
+         gprintf (gui, "Show best:%u solutions with 2 resistors:\n", numBestRes);
+printf ("here\n");
+         //ret = showValMemLow (numBestRes, results2LowPtr); // LIB:
+      }
    }
    //gprintf (gui, "\n");
    winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
@@ -668,9 +703,13 @@ int main(int argc, char *argv[]) {
    // 2 - read and set user request
    // 3 - calculate the needed memory
    listNumberConf=listNumber;
-   ret = memCalc(); // LIB: calculate the needed memory
+   ret = memValCalc(); // LIB: memory size calculation for input values
+   if (algo==0) // 0 use old memory hungry strategy
+      ret = memCalc(); // LIB: calculate the needed memory
+   else // 1 use new mem low strategy
+      ret = memLowCalc(); // LIB: calculate the needed memory
 
-   // 4 - checking config value validity
+   // 4 - checking arguments syntax/config value validity
 
    // 5 - show config values
    showHead (); // LIB: show header

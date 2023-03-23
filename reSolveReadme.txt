@@ -129,7 +129,7 @@ With 2 E192 resistances per position and 6 decades need  12.9 TB core dump
 With 2 E192 resistances per position and 7 decades need  23.8 TB core dump
 ```
 Using the alternative strategy on memory allocation introduced on 2023/03/19,
-the required size can be much less but will increase the compute time
+the required size can be much less
 
 History:
 --------
@@ -361,6 +361,8 @@ circuitXX.png            Circuit images with example formula
 reSolveConf.txt          Configuration file
 reSolve.glade            GUI resource XML file
 reSolveReadme.txt        this file/manual
+README.md                github readme/manual
+LICENSE                  GNU GPL v3 license file
 ```
 Sources and precompiled binaries can be found at:
 [GitHub](https://github.com/efa/ReSolve)

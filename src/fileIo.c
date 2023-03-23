@@ -28,11 +28,11 @@ int printNchar(char* startPtr, u64 num) { /* print N wchar from start */
    u64 pos;
    if (startPtr == NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: startPtr point to NULL\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    if (num == 0) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: num must be >0\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTVERBOSE) printf ("%2lluChar:'%s'\n", num, startPtr);
    for (pos=0; pos<num; pos++) {
@@ -41,7 +41,7 @@ int printNchar(char* startPtr, u64 num) { /* print N wchar from start */
    }
    if (dbgLev>=PRINTDEBUG) printf ("@%p\n", startPtr);
    if (dbgLev>=PRINTVERBOSE) printf ("\n");
-   return (OK);
+   return OK;
 } // printNchar()
 
 /* open a fileName in ReadOnly and return the filePtr or NULL on ERROR */
@@ -49,13 +49,13 @@ FILE* openRead(char* fileName) {
    FILE* out;
    if (fileName==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: fileName point to NULL\n", __FUNCTION__);
-      return (NULL);
+      return NULL;
    }
    out = fopen (fileName, "r");
    if (out == NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot open File:\"%s\"\n", __FUNCTION__, fileName);
    }
-   return (out);
+   return out;
 } // openRead()
 
 /* open a fileName in WriteOnly and return the filePtr or NULL on ERROR */
@@ -63,13 +63,13 @@ FILE* openWrite(char* fileName) {
    FILE* out;
    if (fileName==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: fileName point to NULL\n", __FUNCTION__);
-      return (NULL);
+      return NULL;
    }
    out = fopen (fileName, "w");
    if (out == NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot open File:\"%s\"\n", __FUNCTION__, fileName);
    }
-   return (out);
+   return out;
 } // openWrite()
 
 /* support 64 bit systems and file size greather than 4 GB, require C99 */
@@ -81,41 +81,41 @@ off_t getFileSize(char* fileName, FILE** filePtrPtr) {
    off_t len;  /* SUS: off_t is signed long long, so max 9223372036854775801 */
    if (fileName==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: fileName point to NULL\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    if (filePtrPtr==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: filePtrPtr point to NULL\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    filePtr = openRead (fileName);
    if (filePtr==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: openRead returned NULL on File:\"%s\"\n", __FUNCTION__, fileName);
-      return (ERROR);
+      return ERROR;
    }
    // ftello is in SingleUnixSpecification not Posix, so no support in old Cygwin
    prev = ftello (filePtr); // read current position (start)
    if (prev<0) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: ftell failed on File:\"%s\"\n", __FUNCTION__, fileName);
-      return (ERROR);
+      return ERROR;
    }
    out = fseeko (filePtr, 0, SEEK_END); // go to end of file
    if (out!=0) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: seek failed on File:\"%s\"\n", __FUNCTION__, fileName);
-      return (ERROR);
+      return ERROR;
    }
    len = ftello (filePtr); // read current position (end)
    if (dbgLev>=PRINTVERBOSE) printf ("File length:\"%s\" is %lld\n", fileName, (s64)len);
    if (len<0) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: ftell failed on File:\"%s\"\n", __FUNCTION__, fileName);
-      return (ERROR);
+      return ERROR;
    }
    out = fseeko (filePtr, prev, SEEK_SET); // seek to start
    if (out != prev) {
       if (dbgLev>=PRINTWARN) printf ("WARN %s: seek to prev:%lld failed on File:\"%s\"\n", __FUNCTION__, (s64)prev, fileName);
-      return (ERROR);
+      return ERROR;
    }
    *filePtrPtr = filePtr;
-   return (len);
+   return len;
 } // getFileSize()
 
 /* support 64 bit systems, but not file size greather than 4 GB, require C99 */
@@ -128,37 +128,37 @@ off_t readFile(char* fileName, char** bufferPtrPtr) {
    int out;
    if (fileName==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: fileName point to NULL\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    if (bufferPtrPtr==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: bufferPtrPtr point to NULL\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    len = getFileSize (fileName, &filePtr);
    if (len<0) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: getFileSize returned:%lld on File:\"%s\"\n", __FUNCTION__, (s64)len, fileName);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTVERBOSE) printf ("file length:\"%s\" is %lld\n", fileName, (s64)len);
    if (len>MaxSize32) { /* limit memory allocation to 2 GB */
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: file \"%s\" too big:%lld\n", __FUNCTION__, fileName, (s64)len);
-      return (ERROR);
+      return ERROR;
    }
    *bufferPtrPtr = (char*) malloc (len+1);               /* room for NULL */
    //printf ("allocated %lld Bytes @%p\n", (s64)len+1, *bufferPtrPtr);
    if (*bufferPtrPtr==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot allocate %lld bytes of memory\n", __FUNCTION__, (s64)len);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTVERBOSE) printf ("%s: buffer allocated at %p\n", __FUNCTION__, *bufferPtrPtr);
    if (len >= MaxSize32) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot read so much:%lld with size_t fread(3)\n", __FUNCTION__, (s64)len);
-      return (ERROR);
+      return ERROR;
    }
    Nch = fread (*bufferPtrPtr, 1, len, filePtr);
    if (Nch != len) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot read Nch/len:%zu/%ld from file:\"%s\"\n", __FUNCTION__, Nch, len, fileName);
-      return (Nch);
+      return Nch;
    }
    if (dbgLev>=PRINTVERBOSE) printf ("%s(): file:'%s' of '%zu' chars readed in buffer\n", __FUNCTION__, fileName, Nch);
    //if (dbgLev>=PRINTVERBOSE) printNchar ( ((*bufferPtrPtr)+len-5), 5 );
@@ -167,9 +167,9 @@ off_t readFile(char* fileName, char** bufferPtrPtr) {
    out = fclose (filePtr);
    if (out != 0) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot close file:\"%s\"\n", __FUNCTION__, fileName);
-      return (ERROR);
+      return ERROR;
    }
-   return (len);
+   return len;
 } // readFile()
 
 /* support 64 bit systems, but not file size greather than 4 GB, require C99 */
@@ -181,29 +181,29 @@ size_t writeFile(char* fileName, char* bufferPtr) { /* copy from RAM to file */
    int out;
    if (fileName==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: fileName point to NULL\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    if (bufferPtr==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: bufferPtr point to NULL\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    filePtr = openWrite (fileName);
    if (filePtr==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: Cannot write to file:\"%s\"\n", __FUNCTION__, fileName);
-      return (ERROR);
+      return ERROR;
    }
    len = strlen (bufferPtr);
    if (dbgLev>=PRINTVERBOSE) printf ("File:\"%s\" lenght is %zu\n", fileName, len);
    if (dbgLev>=PRINTVERBOSE) printf ("Buffer to transfer at %p\n", bufferPtr);
    if (len >= MaxSize32) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot write so much:%lld with size_t fwrite(3)\n", __FUNCTION__, (s64)len);
-      return (ERROR);
+      return ERROR;
    }
    if (dbgLev>=PRINTVERBOSE) printf ("Buffer to transfer at %p\n", bufferPtr);
    Nblk = fwrite (bufferPtr, 1, len, filePtr);
    if (Nblk != len) {
       if (dbgLev>=PRINTERROR) printf ("WARN %s: Cannot write Nblk/len:%zd/%lld to file:\"%s\"\n", __FUNCTION__, Nblk, (s64)len, fileName);
-      return (Nblk);
+      return Nblk;
    }
    if (dbgLev>=PRINTVERBOSE) printf ("File of '%zd' char written from buffer\n", Nblk);
    if (dbgLev>=PRINTVERBOSE) printNchar ( ((bufferPtr)+len-5), 5 );
@@ -212,9 +212,9 @@ size_t writeFile(char* fileName, char* bufferPtr) { /* copy from RAM to file */
    out = fclose (filePtr);
    if (out != 0) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: Cannot close file:\"%s\"\n", __FUNCTION__, fileName);
-      return (ERROR);
+      return ERROR;
    }
-   return (Nblk);
+   return Nblk;
 } // writeFile()
 
 /* parse of configuration buffer for parameter value. Return value or ERROR */
@@ -225,20 +225,20 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
    char ch;
    if (bufPtr==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: bufPtr point to NULL\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    if (paramPtr==NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: paramPtr point to NULL\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    len = strlen (paramPtr);
    if (len==0) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: paramPtr len is zero\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    if (len>LineLen) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: paramPtr len>%u unsupported\n", __FUNCTION__, LineLen);
-      return (ERROR);
+      return ERROR;
    }
    //printf ("'@%p\n", bufPtr);
    //printf ("bufPtr:'%s'\n", bufPtr);
@@ -248,7 +248,7 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
    chPtr = strstr (bufPtr, paramPtr); // find start of parameter
    if (chPtr == NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: param:'%s' not found\n", __FUNCTION__, paramPtr);
-      return (ERROR);
+      return ERROR;
    }
    //printNchar (chPtr, 5); printf ("\n");
    chPtr+=len; // go to end of searched parameter
@@ -267,7 +267,7 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
    chPtr = strstr (chPtr, "=");
    if (chPtr == NULL) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: configFile syntax error, miss '='\n", __FUNCTION__);
-      return (ERROR);
+      return ERROR;
    }
    //if (dbgLev>=PRINTDEBUG) printNchar (chPtr, 5);
 
@@ -310,7 +310,7 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
          vectorVal[p] = strtod (val, &chPos);
          if (vectorVal[p]==0 && chPos==val) {
             if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in val='%s'\n", __FUNCTION__, val);
-            return (ERROR);
+            return ERROR;
          }
          chPtr=chPtr+sizeChr+1;
       }
@@ -336,7 +336,7 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
          if (dbgLev>=PRINTDEBUG) printf ("@:%p paramValue[%02u]=0x%02x='%c'\n", &paramValue[p], p, paramValue[p], paramValue[p]);
       } // check there is the terminator NULL @ pos 25
       if (dbgLev>=PRINTDEBUG) printf ("@:%p paramValue[25]=0x%02x='%c'\n", &paramValue[25], paramValue[25], paramValue[25]);
-      return (OK);
+      return OK;
    } // end extract vector of double
 
    chPos = strstr (chPtr, "\""); // if present it is text string
@@ -365,5 +365,5 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
       }
    }
    if (dbgLev>=PRINTDEBUG) printf ("'%s'\n", paramValue);
-   return (OK);
+   return OK;
 } // parseConf()
