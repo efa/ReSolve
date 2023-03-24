@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/22 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/23 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -569,15 +569,15 @@ int memCalc() { // memory size calculation for results
 } // int memCalc()
 
 int memLowCalc() { // low memory size calculation for results
-   size_t structsize;
-   structsize=sizeof(struct resultsTy);
+   size_t structSize;
+   structSize=sizeof(struct resultsTy);
    if (maxRp==1) {
-      resultLowSize=numBestRes*structsize;
+      resultLowSize=numBestRes*structSize;
    }
    if (maxRp==2) {
-      resultLowSize=4*numBestRes*structsize;
+      resultLowSize=4*numBestRes*structSize;
    }
-   //printf("will allocate low mem: structsize:%zu numBestRes:%u size:%zu\n", structsize, numBestRes, resultLowSize);
+   //printf("will allocate low mem: structSize:%zu numBestRes:%u size:%zu\n", structSize, numBestRes, resultLowSize);
    allocatedB=rValueSize+resultLowSize;
    return 0;
 } // memLowCalc()
@@ -631,24 +631,24 @@ int memAlloc() { // memory allocation for results
 } // int memAlloc()
 
 int memLowAlloc() { // allocate low mem for results
-   size_t size, structsize;
-   structsize=sizeof(struct resultsTy);
-   size=numBestRes*structsize;
+   size_t size, structSize;
+   structSize=sizeof(struct resultsTy);
+   size=numBestRes*structSize;
    char* stringPtr=NULL;
    if (maxRp==1) {
       stringPtr=siMem(size);
-      //printf("Allocating low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, size);
+      //printf("Allocating low mem: structSize:%zu numBestRes:%u size:%zu for results ...\n", structSize, numBestRes, size);
       gprintf(gui, "Allocating about %s of RAM for results ...\n", stringPtr);
       results2LowPtr=malloc(size); // (u64)numBestRes*sizeof(struct resultsTy)
       if (results2LowPtr==NULL) {
          printf("malloc error, quit\n");
          return 1;
       }
-      //printf("Allocated low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, size);
+      //printf("Allocated low mem: structSize:%zu numBestRes:%u size:%zu for results ...\n", structSize, numBestRes, size);
    }
    if (maxRp==2) {
       stringPtr=siMem(4*size);
-      printf("Allocating low mem: structsize:%zu numBestRes:%u size:%zu for results ...\n", structsize, numBestRes, 4*size);
+      //printf("Allocating low mem: structSize:%zu numBestRes:%u 4size:%zu for results ...\n", structSize, numBestRes, 4*size);
       gprintf(gui, "Allocating about %s of RAM for results ...\n", stringPtr);
       resultsLowPtr=malloc(size); // (u64)numBestRes*sizeof(struct resultsTy)
       if (resultsLowPtr==NULL) {
@@ -670,11 +670,11 @@ int memLowAlloc() { // allocate low mem for results
          printf("malloc error, quit\n");
          return 1;
       }
-      printf("Allocated low mem: structsize:%zu numBestRes:%u size:%zu 4size:%zu for results ...\n", structsize, numBestRes, size, 4*size);
-      printf("resultsLowPtr :%p\n", resultsLowPtr);
-      printf("results4LowPtr:%p\n", results4LowPtr);
-      printf("results3LowPtr:%p\n", results3LowPtr);
-      printf("results2LowPtr:%p\n", results2LowPtr);
+      //printf("Allocated low mem: structSize:%zu numBestRes:%u size:%zu 4size:%zu for results ...\n", structSize, numBestRes, size, 4*size);
+      //printf("resultsLowPtr :%p\n", resultsLowPtr);
+      //printf("results4LowPtr:%p dist:%td dec:%llu\n", results4LowPtr, results4LowPtr-resultsLowPtr, (u64)results4LowPtr-(u64)resultsLowPtr);
+      //printf("results3LowPtr:%p dist:%td dec:%llu\n", results3LowPtr, results3LowPtr-results4LowPtr, (u64)results3LowPtr-(u64)results4LowPtr);
+      //printf("results2LowPtr:%p dist:%td dec:%llu\n", results2LowPtr, results2LowPtr-results3LowPtr, (u64)results2LowPtr-(u64)results3LowPtr);
    }
    free(stringPtr);
    return 0;
@@ -977,7 +977,7 @@ int calcMemLowFvalues(void) {
                if (rc2<numR) cmp1 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
                else cmp1 = 1;
                if (cmp0==0 || cmp1==0) goto n3; // skip when one is 0 (so skip when are less than 4 resistances, do when both are series/parallel)
-               //printf("pos:%d cmp0:%d cmp1:%d w4:%d\n", pos, cmp0, cmp1, w4);
+               //printf("rc1:%d rc2:%d cmp0:%d cmp1:%d w4:%d\n", rc1, rc2, cmp0, cmp1, w4);
                results4LowPtr[w4].pos[0] = rc1;   // always insert in worst pos
                results4LowPtr[w4].pos[1] = rc2;   // always insert in worst pos
                results4LowPtr[w4].delta  = delta; // always insert in worst pos
@@ -1267,7 +1267,12 @@ int showVal2(u32 numBestRes) { // Solutions with 2 resistors
 /* print best 'numBestRes' LowMem results */
 int showValMemLow(u32 numBestRes, struct resultsTy* resultsLowPtr) { // Solutions
    for (int s=0; s<numBestRes; s++) {
-printf("s:%02d results[].pos[0]:%03u results[].pos[1]:%03u results[].delta:%.5f\n", s, resultsLowPtr[s].pos[0], resultsLowPtr[s].pos[1], resultsLowPtr[s].delta);
+      //printf("s:%02d resultsLowPtr[].pos[0]:%03u resultsLowPtr[].pos[1]:%03u\n", s, resultsLowPtr[s].pos[0], resultsLowPtr[s].pos[1]);
+      //printf("s:%02d resultsLowPtr[].delta:%.5f val:%.5f\n", s, resultsLowPtr[s].delta, desired+resultsLowPtr[s].delta);
+      //printf("s:%02d numV:%u\n", s, numV);
+      if (resultsLowPtr[s].pos[0] >= numV || resultsLowPtr[s].pos[1] >= numV) break;
+      //printf("s:%02d delta:%.5f MaxValue/2:%.5f\n", s, resultsLowPtr[s].delta, MaxValue/2);
+      if (resultsLowPtr[s].delta>MaxValue/2) break;
       gprintf(gui, "a:%11G b:%11G", rValues[resultsLowPtr[s].pos[0]].r, rValues[resultsLowPtr[s].pos[1]].r);
       gprintf(gui, "   val:%11G   delta:%11.4G", desired+resultsLowPtr[s].delta, resultsLowPtr[s].delta);
       gprintf(gui, " e%%:%6.3G\n", resultsLowPtr[s].delta/desired*100);
@@ -1277,6 +1282,7 @@ printf("s:%02d results[].pos[0]:%03u results[].pos[1]:%03u results[].delta:%.5f\
                 (strcmp (rValues[resultsLowPtr[s].pos[0]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
          cmp1 = (strcmp (rValues[resultsLowPtr[s].pos[1]].desc, "Custom list")!=0) &&
                 (strcmp (rValues[resultsLowPtr[s].pos[1]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+         //printf("s:%d cmp0:%d cmp1:%d\n", s, cmp0, cmp1);
          if (cmp0==0) { // single resistors
             gprintf (gui, "a:%-12s:%8g             ", rValues[resultsLowPtr[s].pos[0]].desc, rValues[resultsLowPtr[s].pos[0]].rp[0]);
          } else { // 2 resistors in series or parallel
