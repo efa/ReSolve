@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/23 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/25 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* exprParser.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -25,9 +25,8 @@
 #define VARIABLE  2
 #define NUMBER    3
 
+#include "comType.h"
 #include "exprParser.h" /* pubblic variables and functions */
-
-typedef unsigned char u08;
 
 // public variables:
 /* put values in exprVarsParser[]: a=[0], b=[1], ..., z=[25],
@@ -72,14 +71,14 @@ void serror(int error) {
          "Formula: Null pointer"
    };
    printf ("\n%s\n", e[error]);
-   exit (-1);
+   exit (ERROR);
 } // serror()
 
 /* Return true if c is a delimiter */
 int isdelim(char c) {
    if (strchr (" +-/*%^=()", c) || c==9 || c=='\r' || c==0)
-      return 1;
-   return 0;
+      return 1; // true
+   return 0; // false
 } // isdelim()
 
 /* Return the next token */

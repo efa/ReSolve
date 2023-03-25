@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/23 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/25 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -40,7 +40,7 @@ int runReSolve(); // memSize, memAlloc, doCalc, show output, freeMem
 int updateLabelDesc() {
    widgetPtr = gtk_builder_get_object (builderPtr, "description");
    gtk_label_set_text ((GtkLabel*)widgetPtr, baseRdesc);
-   return 0;
+   return OK;
 }
 
 int updateLabelMem() {
@@ -53,7 +53,7 @@ int updateLabelMem() {
    GObject* widget2Ptr = gtk_builder_get_object (builderPtr, "allocate");
    gtk_label_set_text ((GtkLabel*)widget2Ptr, strPtr);
    free(strPtr);
-   return 0;
+   return OK;
 }
 
 static void formulaPre(GtkWidget* widgetPtr, gpointer dataPtr) {
@@ -386,7 +386,7 @@ int quit() { // called also on Window destroy
    if (baseRconf) free (baseRconf); // only when GUI
    if (baseRuser) free (baseRuser); // only when GUI
    gtk_main_quit();
-   return 0;
+   return OK;
 } // quit()
 
 static void quitButton(GtkWidget* widgetPtr, gpointer dataPtr) {
@@ -452,7 +452,7 @@ int guiUpdateIn() { // update widgets with input/config values
       break;
    default:
       printf ("Unsupported Series:%u. Supported are 0, 1, 3, 6, 12, 24, 48, 96 and 192\n", Eseries);
-      return 1;
+      return ERROR;
    }
 
    widgetPtr = gtk_builder_get_object (builderPtr, "decades");
@@ -493,7 +493,7 @@ int guiUpdateIn() { // update widgets with input/config values
 
    updateLabelMem();
 
-   return 0;
+   return OK;
 } // guiUpdateIn()
 
 int guiInit(int argc, char *argv[]) {
@@ -509,7 +509,7 @@ int guiInit(int argc, char *argv[]) {
       //g_printerr ("Error loading file: %s\n", errorPtr->message);
       //g_clear_error (&errorPtr);
       printf ("'reSolve.glade' not found, quit\n");
-      return 1;
+      return ERROR;
    }
 #endif
    GError* errorPtr = NULL;
@@ -518,7 +518,7 @@ int guiInit(int argc, char *argv[]) {
    if (bit == 0) {
       g_printerr ("Error loading file: %s\n", errorPtr->message);
       g_clear_error (&errorPtr);
-      return 1;
+      return ERROR;
    }
    //printf ("'reSolve.glade' loaded\n");
 
@@ -556,7 +556,7 @@ int guiInit(int argc, char *argv[]) {
 
    //gtk_widget_show(GTK_WIDGET(windowPtr)); // seems unnecessary
 
-   return 0;
+   return OK;
 } // guiInit()
 
 int backVal() { // backup 'expr' and 'baseR'
@@ -568,7 +568,7 @@ int backVal() { // backup 'expr' and 'baseR'
       baseRconf[r]=baseR[r];
    }
 
-   return 0;
+   return OK;
 } // backVal()
 
 int guiUpdateOut(char* txtPtr, int l) { // update widgets with results values
@@ -594,7 +594,7 @@ int guiUpdateOut(char* txtPtr, int l) { // update widgets with results values
       gtk_main_iteration_do(0);
       c++;
    }
-   return 0;
+   return OK;
 } // guiUpdateOut()
 
 int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
@@ -617,7 +617,7 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
    ret = memValAlloc(); // LIB: memory allocation for input values
    if (ret != 0) {
       printf ("memValAlloc() returned:%u, quit\n", ret);
-      return -1;
+      return ERROR;
    }
    if (algo==0) // 0 use old memory hungry strategy
       ret = memAlloc(); // LIB: memory allocation for results
@@ -625,7 +625,7 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
       ret = memLowAlloc(); // LIB: allocate low mem for results
    if (ret != 0) {
       printf ("memLowAlloc() returned:%u, quit\n", ret);
-      return -1;
+      return ERROR;
    }
 
    ret=showConf(); // LIB: show config set
@@ -674,16 +674,16 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
          ret = showValMemLow (numBestRes, results3LowPtr); // LIB:
          gprintf (gui, "\n");
          gprintf (gui, "Show best:%u solutions with 2 resistors:\n", numBestRes);
-         //ret = showValMemLow (numBestRes, results2LowPtr); // LIB:
+         ret = showValMemLow (numBestRes, results2LowPtr); // LIB:
       }
    }
-   //gprintf (gui, "\n");
+   gprintf (gui, "\n");
    winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
    // 12 - freeing dynamic allocated memory ...
    ret = freeMem(); // LIB: free memory
 
-   return 0;
+   return OK;
 } // runReSolve()
 
 int main(int argc, char *argv[]) {
@@ -697,7 +697,7 @@ int main(int argc, char *argv[]) {
    ret = baseInit(); // LIB: basic initialization: load config from file
    if (ret != 0) {
       printf ("baseInit returned:%u, quit\n", ret);
-      return -1;
+      return ERROR;
    }
    // 2 - read and set user request
    // 3 - calculate the needed memory

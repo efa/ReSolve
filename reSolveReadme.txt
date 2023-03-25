@@ -287,22 +287,22 @@ v0.09.09h 2023/03/14
 * Added:
   - GUI: working for inputs settings, circuits shown and results
          GUI debug output still goes to CLI
+  - GUI: force refresh output while heavy calculation
   - GUI: solved a freeze on Windows on force refreshing
   - GUI: read custom formula from text entry
   - GUI: read custom values from text entry
   - GUI: extend textView vertically when window increase height
-  - GUI: force refresh output while heavy calculation
   - GUI: autoscroll to last line
   - show delta sign and error percentage sign
   - show allocated memory with SI prefix k,M,G,T
   - show calc and sort progress as percentage
   - generation of Linux AppImage
 
-v0.09.09h 2023/03/22
+v0.09.09h 2023/03/25
 * Added:
-  - a new strategy searching results to save memory
-    as now used only in CLI
+  - new save memory strategy searching results, thanks @Marco for hints
   - timing code in CLI to evaluate performance of new strategy
+  - thanks @Luca for hints
 
 ToDo:
 -----
@@ -321,6 +321,8 @@ ToDo:
   in series or parallel. Probably not possible with current resources.
 - add opAmp (not)inverting and standard 4 pin regulators circuit
 - make a distribution package for macOS
+- different packages for different OSs
+- release binaries, remove binaries from github main
 - GUI: working Stop and About buttons
 - GUI: better circuit images
 - GUI: show best results value in circuit

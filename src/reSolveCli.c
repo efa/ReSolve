@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/23 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/25 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@ int main(int numPar, char* param[]) {
    ret = baseInit (); // LIB: basic initialization: load config from file
    if (ret != 0) {
       printf ("baseInit returned:%u, quit\n", ret);
-      return -1;
+      return ERROR;
    }
    // 2 - read and set user request
    // 3 - calculate the needed memory
@@ -114,7 +114,7 @@ int main(int numPar, char* param[]) {
    ret = memValAlloc(); // LIB: memory allocation for input values
    if (ret != 0) {
       printf ("memValAlloc() returned:%u, quit\n", ret);
-      return -1;
+      return ERROR;
    }
    if (algo==0) // 0 use old memory hungry strategy
       ret = memAlloc(); // LIB: memory allocation for results
@@ -122,7 +122,7 @@ int main(int numPar, char* param[]) {
       ret = memLowAlloc(); // LIB: allocate low mem for results
    if (ret != 0) {
       printf ("memLowAlloc() returned:%u, quit\n", ret);
-      return -1;
+      return ERROR;
    }
 
    ret=showConf(); // LIB: show config set
@@ -183,5 +183,5 @@ int main(int numPar, char* param[]) {
    ret = freeMem(); // LIB: free memory
    if (baseR) free (baseR); // free mem allocated by fillConfigVars()
 
-   return OK;
+   return EXIT_SUCCESS;
 }

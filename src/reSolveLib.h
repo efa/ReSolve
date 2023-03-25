@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/23 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/25 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -36,7 +36,7 @@
 #include "exprParser.h" /* expression parser interface */
 
 #define SourceVersion "0.09.09h beta"
-#define SourceDate    "2023/03/23"
+#define SourceDate    "2023/03/25"
 
 #ifdef __MSVCRT__       /* CrossCompile to MinGw target */
 #define fsync _commit   /* msvcrt.dll miss fsync, that is present on unix */
@@ -128,31 +128,30 @@ extern bool winGuiLoop; // Win loop gtk_events_pending/gtk_main_iteration to upd
 extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 
 // public library functions:
+int gprintf (int gui, const char* format, ...); // printf() or update GUI
+char* siMem(u64 sizeB); // convert an u64 to string using SI prefix
 int fillConfigVars(void); // load and check users config file
 void showHelp(u64 allocatedB);
 void showHead(void);
-int calcRvalues(void); /* in series or parallel, support MaxRp=2 only */
-int calcFvalues(void); /* calculate all formula results using 'maxRc' resistances */
-int structQuickSort(struct resultsTy results[], s32 totNumber);/* QuickSort for vector of structs of type resultsTy, using field 'abs(delta)' */
-int showVal(u32 first); // solutions with up to 4 resistors
-int showVal4(u32 numBestRes); // Solutions with 4 resistors
-int showVal3(u32 numBestRes); // Solutions with 3 resistors
-int showVal2(u32 numBestRes); // Solutions with 2 resistors
 int updateRdesc(); // update Rdesc
 int baseInit(); // basic initialization: load config from file
 int memValCalc(); // memory size calculation for input values
 int memCalc();  // memory size calculation for results
+int memLowCalc(); // low memory size calculation
 int memValAlloc(); // memory allocation for input values
 int memAlloc(); // memory allocation for results
-int showConf(); // show config set
-int doCalc(); // fill inputs, calcs, sort solutions
-int freeMem(); // free memory
-int gprintf (int gui, const char* format, ...); // printf() or update GUI
-char* siMem(u64 sizeB); // convert an u64 to string using SI prefix
-
-int memLowCalc(); // low memory size calculation
 int memLowAlloc(); // allocate low mem for results
+int showConf(); // show config set
+int calcRvalues(void); /* in series or parallel, support MaxRp=2 only */
+int calcFvalues(void); /* calculate all formula results using 'maxRc' resistances */
+int structQuickSort(struct resultsTy results[], s32 totNumber);/* QuickSort for vector of structs of type resultsTy, using field 'abs(delta)' */
+int doCalc(); // fill inputs, calcs, sort solutions
 int doMemLowCalc(); // fill inputs, low mem calcs+sort solutions
-int showValMemLow(u32 numBestRes, struct resultsTy* resultsLowPtr); // Solutions
+int showVal(u32 first); // solutions with up to 4 resistors
+int showVal4(u32 numBestRes); // Solutions with 4 resistors
+int showVal3(u32 numBestRes); // Solutions with 3 resistors
+int showVal2(u32 numBestRes); // Solutions with 2 resistors
+int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr); // Solutions
+int freeMem(); // free memory
 
 #endif /* _INCh */
