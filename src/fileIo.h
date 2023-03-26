@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/25 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/26 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* fileIo.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 
 //#define _FILE_OFFSET_BITS 64 // set off_t to 64 bit
 #include <stdio.h> // to have 'off_t' require compilation with -std=gnu99
-#include <stdint.h>     /* uintptr_t */
+#include <stdint.h>    /* uintptr_t */
 #include <stdlib.h>
 #include <string.h>
 #include "comType.h"

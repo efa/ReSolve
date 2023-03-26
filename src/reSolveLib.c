@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/25 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/26 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -468,6 +468,26 @@ int fillConfigVars(void) { // load and check users config file
    }
    return  (OK);
 } // int fillConfigVars()
+
+int updateEseries(char* EseriePtr) { // update Eseries
+   if (EseriePtr==NULL) {
+      printf ("updateEseries() called with EseriePtr==NULL\n");
+      return ERROR;
+   }
+   if      ( !strcmp(EseriePtr,"E1"  ) ) Eseries=1;
+   else if ( !strcmp(EseriePtr,"E3"  ) ) Eseries=3;
+   else if ( !strcmp(EseriePtr,"E6"  ) ) Eseries=6;
+   else if ( !strcmp(EseriePtr,"E12" ) ) Eseries=12;
+   else if ( !strcmp(EseriePtr,"E24" ) ) Eseries=24;
+   else if ( !strcmp(EseriePtr,"E48" ) ) Eseries=48;
+   else if ( !strcmp(EseriePtr,"E96" ) ) Eseries=96;
+   else if ( !strcmp(EseriePtr,"E192") ) Eseries=192;
+   else {
+      printf ("Unsupported Series:'%s'. Supported are 1, 3, 6, 12, 24, 48, 96 and 192\n", EseriePtr);
+      return ERROR;
+   }
+   return OK;
+} // updateEseries()
 
 int updateRdesc() { // update Rdesc
    switch (Eseries) {
@@ -1345,16 +1365,15 @@ int showVal2(u32 numBestRes) { // Solutions with 2 resistors
 
 /* print best 'numBestRes' LowMem results */
 int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr) { // Solutions
-   if (dbgLv>=PRINTDEBUG) printf ("numR:%u, numV:%u, totV:%llu, numBestRes:%u\n", numR, numV, totV, numBestRes);
-   if (dbgLv>=PRINTF) gprintf (gui, "numR:%u, numV:%u, totV:%llu, numBestRes:%u\n", numR, numV, totV, numBestRes);
+   if (dbgLv>=PRINTDEBUG) gprintf (gui, "numR:%u, numV:%u, totV:%llu, numBestRes:%u\n", numR, numV, totV, numBestRes);
    for (int s=0; s<numBestRes; s++) {
       //printf("s:%02d resultsNLowPtr[].pos[0]:%03u resultsNLowPtr[].pos[1]:%03u\n", s, resultsNLowPtr[s].pos[0], resultsNLowPtr[s].pos[1]);
       //printf("s:%02d resultsNLowPtr[].delta:%.5f val:%.5f\n", s, resultsNLowPtr[s].delta, desired+resultsNLowPtr[s].delta);
       //printf("s:%02d numV:%u\n", s, numV);
-      //gprintf (gui, "-\n");
       if (resultsNLowPtr[s].pos[0] >= numV || resultsNLowPtr[s].pos[1] >= numV) continue;
       //printf("s:%02d delta:%.5f MaxValue/2:%.5f\n", s, resultsNLowPtr[s].delta, MaxValue/2);
-      if (resultsNLowPtr[s].delta>MaxValue/2) continue;
+      //gprintf (gui, "-\n");
+      //if (resultsNLowPtr[s].delta>MaxValue/2) continue;
       //printf("valid s:%02d resultsNLowPtr[].pos[0]:%03u resultsNLowPtr[].pos[1]:%03u\n", s, resultsNLowPtr[s].pos[0], resultsNLowPtr[s].pos[1]);
       gprintf(gui, "a:%11G b:%11G", rValues[resultsNLowPtr[s].pos[0]].r, rValues[resultsNLowPtr[s].pos[1]].r);
       gprintf(gui, "   val:%11G   delta:%11.4G", desired+resultsNLowPtr[s].delta, resultsNLowPtr[s].delta);
@@ -1365,7 +1384,7 @@ int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr) { // Solutio
                 (strcmp (rValues[resultsNLowPtr[s].pos[0]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
          cmp1 = (strcmp (rValues[resultsNLowPtr[s].pos[1]].desc, "Custom list")!=0) &&
                 (strcmp (rValues[resultsNLowPtr[s].pos[1]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-         gprintf(gui, "s:%d cmp0:%d cmp1:%d\n", s, cmp0, cmp1);
+         if (dbgLv>=PRINTDEBUG) gprintf(gui, "s:%d cmp0:%d cmp1:%d\n", s, cmp0, cmp1);
          if (cmp0==0) { // single resistors
             gprintf (gui, "a:%-12s:%8g             ", rValues[resultsNLowPtr[s].pos[0]].desc, rValues[resultsNLowPtr[s].pos[0]].rp[0]);
          } else { // 2 resistors in series or parallel

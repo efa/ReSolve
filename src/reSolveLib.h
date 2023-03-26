@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/25 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/26 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -36,7 +36,7 @@
 #include "exprParser.h" /* expression parser interface */
 
 #define SourceVersion "0.09.09h beta"
-#define SourceDate    "2023/03/25"
+#define SourceDate    "2023/03/26"
 
 #ifdef __MSVCRT__       /* CrossCompile to MinGw target */
 #define fsync _commit   /* msvcrt.dll miss fsync, that is present on unix */
@@ -133,6 +133,7 @@ char* siMem(u64 sizeB); // convert an u64 to string using SI prefix
 int fillConfigVars(void); // load and check users config file
 void showHelp(u64 allocatedB);
 void showHead(void);
+int updateEseries(char* EseriePtr); // update Eseries
 int updateRdesc(); // update Rdesc
 int baseInit(); // basic initialization: load config from file
 int memValCalc(); // memory size calculation for input values

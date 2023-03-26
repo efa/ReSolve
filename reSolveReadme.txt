@@ -298,18 +298,16 @@ v0.09.09h 2023/03/14
   - show calc and sort progress as percentage
   - generation of Linux AppImage
 
-v0.09.09h 2023/03/25
+v0.09.09h 2023/03/26
 * Added:
-  - new save memory strategy searching results, thanks @Marco for hints
+  - new save memory strategy searching results, thanks @mvimercati for hints
+    keep only the first N best results
   - timing code in CLI to evaluate performance of new strategy
-  - thanks @Luca for hints
+  - thanks @lcavalli for hints
 
 ToDo:
 -----
-- On memory low: option to keep only the first N best results and discard
-  others, autosorting of results while keeping first N best results
-- On memory low: save block of results to disk and deallocate memory
-- use multi-threading to speed-up calculation with multicore CPU
+- use multi-threading to speed-up calculation with multicore CPU/GPU
 - remove duplicated triangular solutions with MaxRp=2
 - print exact results, separated by approximate results
 - separate value below and over the target value
@@ -359,7 +357,7 @@ reSolveWin32.exe         CLI binary for Win32/x86
 reSolveGuiWin32.exe      GUI binary for Win32/x86
 reSolveWin64.exe         CLI binary for Win64/amd64
 reSolveGuiWin64.exe      GUI binary for Win64/amd64
-circuitXX.png            Circuit images with example formula
+circuit??.png            Circuit images with example formula
 reSolveConf.txt          Configuration file
 reSolve.glade            GUI resource XML file
 reSolveReadme.txt        this file/manual

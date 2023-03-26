@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/25 solve math expressions using discrete values*/
+/* ReSolve v0.09.09h 2023/03/26 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -16,9 +16,9 @@
 
 /* reSolveCli.c This is the main CLI source */
 
-#include "reSolveLib.h"    /* main source include */
+#include "reSolveLib.h"   /* main source include */
 
-int main(int numPar, char* param[]) {
+int main(int numPar, char* param[]) { // CLI entry point
    u08  len, pos;
    u08  p;
    char c;
