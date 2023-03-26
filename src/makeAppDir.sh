@@ -192,7 +192,12 @@ if (test "$PKG" = "Linux") then
       mv ReSolveGui-i386.AppImage ..
    fi
 fi
-cd ../..
+ver=`grep SourceVersion reSolveLib.h | cut -d' ' -f3 | tr -d '."'`
+echo ver:$ver
 date=`date -I`
-if (test -f reSolve00909h_$date.tgz) then { rm reSolve00909h_$date.tgz ; } fi
-tar --exclude-vcs --exclude=AppDir --exclude=appimagetool* --exclude=textView.ods --exclude=reSolveBack.glade --exclude=notes.txt -cvaf reSolve00909h_$date.tgz ReSolve
+file=reSolve${ver}_$date.tgz
+echo "Creating package file:'$file' ..."
+cd ../..
+if (test -f $file) then { rm $file ; } fi
+tar --exclude-vcs --exclude=AppDir --exclude=appimagetool* --exclude=ReSolve.ods --exclude=reSolveBack.glade --exclude=reSolve_.glade --exclude=notes.txt -cvaf $file ReSolve
+echo "Package file:'$file' done"

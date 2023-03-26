@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/26 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/03/26 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -120,7 +120,7 @@ static void formulaPre(GtkWidget* widgetPtr, gpointer dataPtr) { // called on dr
       widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "formula");
       gtk_entry_set_text ((GtkEntry*)widgetPtr, "");
    }
-   //printf("expr:'%s'\n", expr);
+   printf("expr:'%s'\n", expr);
    //printf("exprConf:'%s'\n", exprConf);
    //printf("exprUser:'%s'\n", exprUser);
    g_free(comboValPtr);
@@ -175,16 +175,16 @@ static void standardSeries(GtkWidget* widgetPtr, gpointer dataPtr) { // called o
    ret = updateLabelDesc();
    // 3 - calculate the needed memory
    ret = memValCalc(); // LIB: memory size calculation for input values
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    if (algo==0) { // 0 use old memory hungry strategy
       ret = memCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    } else { // 1 use new mem low strategy
       ret = memLowCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    }
    ret = updateLabelMem();
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "customList");
    gtk_entry_set_text ((GtkEntry*)widgetPtr, "");
 } // standardSeries()
@@ -203,16 +203,16 @@ static void EseriesList(GtkWidget* widgetPtr, gpointer dataPtr) { // called on E
    updateLabelDesc();
    // 3 - calculate the needed memory
    ret = memValCalc(); // LIB: memory size calculation for input values
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    if (algo==0) { // 0 use old memory hungry strategy
       ret = memCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    } else { // 1 use new mem low strategy
       ret = memLowCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    }
    ret = updateLabelMem();
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    //widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "standardSeries");
    //gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, TRUE);
    //widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "customValues");
@@ -228,16 +228,16 @@ static void decadesFct(GtkWidget* widgetPtr, gpointer dataPtr) { // called on De
    printf("decades:%u\n", decades);
    // 3 - calculate the needed memory
    ret = memValCalc(); // LIB: memory size calculation for input values
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    if (algo==0) { // 0 use old memory hungry strategy
       ret = memCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    } else { // 1 use new mem low strategy
       ret = memLowCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    }
    ret = updateLabelMem();
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
 } // decadesFct()
 
 static void customValues(GtkWidget* widgetPtr, gpointer dataPtr) { // called on radio button custom values
@@ -292,19 +292,20 @@ static void customValues(GtkWidget* widgetPtr, gpointer dataPtr) { // called on 
    updateLabelDesc();
    // 3 - calculate the needed memory
    ret = memValCalc(); // LIB: memory size calculation for input values
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    if (algo==0) { // 0 use old memory hungry strategy
       ret = memCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    } else { // 1 use new mem low strategy
       ret = memLowCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    }
    ret = updateLabelMem();
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
 } // customValues()
 
 static void customList(GtkWidget* widgetPtr, gpointer dataPtr) { // called on custom list type values
+   int ret;
    g_print("CustomList editbox\n");
    const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetPtr);
    g_print("text:'%s'\n", textPtr);
@@ -371,8 +372,19 @@ static void customList(GtkWidget* widgetPtr, gpointer dataPtr) { // called on cu
 
    //widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "customValues");
    //gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, TRUE);
+
+   // 3 - calculate the needed memory
+   ret = memValCalc(); // LIB: memory size calculation for input values
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
+   if (algo==0) { // 0 use old memory hungry strategy
+      ret = memCalc(); // LIB: calculate the needed memory
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
+   } else { // 1 use new mem low strategy
+      ret = memLowCalc(); // LIB: calculate the needed memory
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
+   }
+   ret = updateLabelMem();
    g_free(txtPtr);
-   // CHECK: update memCalc?
 } // customList()
 
 static void Rp(GtkWidget* widgetPtr, gpointer dataPtr) { // called on series/parallel tick
@@ -400,16 +412,16 @@ static void Rp(GtkWidget* widgetPtr, gpointer dataPtr) { // called on series/par
    }
    // 3 - calculate the needed memory
    ret = memValCalc(); // LIB: memory size calculation for input values
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    if (algo==0) { // 0 use old memory hungry strategy
       ret = memCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    } else { // 1 use new mem low strategy
       ret = memLowCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    }
    ret = updateLabelMem();
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
 } // Rp()
 
 static void resultsFct(GtkWidget* widgetPtr, gpointer dataPtr) { // called on Results shown edit
@@ -424,19 +436,18 @@ static void resultsFct(GtkWidget* widgetPtr, gpointer dataPtr) { // called on Re
    }
    printf("numBestRes:%u\n", numBestRes);
    //g_free(textPtr);
-   // CHECK: update memCalc?
    // 3 - calculate the needed memory
    ret = memValCalc(); // LIB: memory size calculation for input values
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    if (algo==0) { // 0 use old memory hungry strategy
       ret = memCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    } else { // 1 use new mem low strategy
       ret = memLowCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    }
    ret = updateLabelMem();
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
 } // resultsFct()
 
 static void resolveButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on ReSolve button
@@ -452,6 +463,10 @@ static void resolveButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on
 static void aboutButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on about button
    g_print("About button\n");
 } // aboutButton()
+
+static void stopButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on stop button
+   g_print("Stop button\n");
+} // stopButton()
 
 int quit() { // called also on Window destroy
    // free mem allocated by fillConfigVars()
@@ -624,6 +639,8 @@ int guiInit(int argc, char *argv[]) {
    g_signal_connect (widgetPtr, "clicked", G_CALLBACK(resolveButton), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "aboutButton");
    g_signal_connect (widgetPtr, "clicked", G_CALLBACK(aboutButton), NULL);
+   widgetPtr = gtk_builder_get_object (builderPtr, "stopButton");
+   g_signal_connect (widgetPtr, "clicked", G_CALLBACK(stopButton), NULL);
    widgetPtr = gtk_builder_get_object (builderPtr, "quitButton");
    g_signal_connect (widgetPtr, "clicked", G_CALLBACK(quitButton), NULL);
 
@@ -668,16 +685,16 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
    // 2 - read and set user request
    // 3 - calculate the needed memory
    ret = memValCalc(); // LIB: memory size calculation for input values
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ERROR; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ERROR; }
    if (algo==0) { // 0 use old memory hungry strategy
       ret = memCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ERROR; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ERROR; }
    } else { // 1 use new mem low strategy
       ret = memLowCalc(); // LIB: calculate the needed memory
-      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ERROR; }
+      if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ERROR; }
    }
    ret = updateLabelMem();
-   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __func__, __LINE__); return ERROR; }
+   if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ERROR; }
 
    // 6 - allocate the memory asking to the OS a malloc()
    // 7 - create the structure's vector inside the allocated memory

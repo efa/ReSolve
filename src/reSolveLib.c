@@ -1,4 +1,4 @@
-/* ReSolve v0.09.09h 2023/03/26 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/03/26 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 
 /* reSolveLib.c This is the main lib source code */
 
-#include "reSolveLib.h"    /* main source include */
+#include "reSolveLib.h"   /* LIB: include */
 
 u08 dbgLev = DbgLv;
 u08 dbgLv  = DbgLv;
@@ -424,6 +424,20 @@ int fillConfigVars(void) { // load and check users config file
    }
    if (dbgLev>=PRINTDEBUG) printf ("maxRc=%u\n", maxRc);
 
+   strcpy (paramName, "algo");
+   ret=parseConf (bufferPtr, paramName, paramValue);
+   if (ret!=OK) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
+      return ERROR;
+   }
+   //printf ("algo='%s'\n", paramValue);
+   algo = strtol (paramValue, &endPtr, 10);
+   if (endPtr==paramValue) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in algo='%s'\n", __FUNCTION__, paramValue);
+      return ERROR;
+   }
+   if (dbgLev>=PRINTDEBUG) printf ("algo=%u\n", algo);
+
    //dbgLev=PRINTF;
    //printf ("Freeing buffer ...\n");
    free (bufferPtr);
@@ -455,6 +469,10 @@ int fillConfigVars(void) { // load and check users config file
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: unsupported maxRc:%u\n", __FUNCTION__, maxRc);
       return ERROR;
    }
+   //if (algo>1) {
+   //   if (dbgLev>=PRINTERROR) printf ("ERROR %s: unsupported algo:%u\n", __FUNCTION__, algo);
+   //   return ERROR;
+   //}
    if (baseRdesc[0]=='\0') {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: empty string 'baseRdesc'\n", __FUNCTION__);
       return ERROR;
@@ -721,6 +739,10 @@ int showConf() { // show config set
       numV = listNumber;
       totV = numV * numV;*/
    }
+   if (algo==0) // 0 use old memory hungry strategy
+      gprintf (gui, "Using the old memory hungry strategy ...\n");
+   else // 1 use new mem low strategy
+      gprintf (gui, "Using the new memory save strategy ...\n");
    char* stringPtr;
    stringPtr=siMem(allocatedB);
    gprintf (gui, "Allocated about %s of total RAM\n", stringPtr);
@@ -925,7 +947,7 @@ int findWorst(struct resultsTy* resultsNLowPtr, u32* wNPtr, double* deltaNWorstP
       }
    }
    *deltaNWorstPtr=max; // take note of worst value
-   if (dbgLv>=PRINTDEBUG) printf("worst:%f max:%f at:%d\n", *deltaNWorstPtr, max, *wNPtr);
+   if (dbgLv>=PRINTDEBUG) gprintf(gui, "worst:%f max:%f at:%d\n", *deltaNWorstPtr, max, *wNPtr);
    return OK;
 } // findWorst()
 
@@ -941,10 +963,16 @@ int calcMemLowFvalues(void) {
    double delta = 0;
    if (dbgLv>=PRINTDEBUG) printf ("numR:%u, numV:%u, totV:%llu\n", numR, numV, totV);
    if (dbgLv>=PRINTDEBUG) printf ("expr:'%s'\n", expr);
+   w2=0;
+   delta2Worst = MaxValue; // 50 GOhm
    for (u32 s=0; s<numBestRes; s++) {
       results2LowPtr[s].delta=MaxValue; // 50 GOhm
    }
    if (maxRp==2) { // 
+      w=0; w4=0; w3=0;
+      deltaWorst = MaxValue; // 50 GOhm
+      delta4Worst = MaxValue; // 50 GOhm
+      delta3Worst = MaxValue; // 50 GOhm
       for (u32 s=0; s<numBestRes; s++) {
          resultsLowPtr[s].delta=MaxValue; // 50 GOhm
          results4LowPtr[s].delta=MaxValue; // 50 GOhm
@@ -973,9 +1001,10 @@ int calcMemLowFvalues(void) {
 //            if (fabs(delta) <= delta2Worst) {
 //            if (delta2Worst > fabs(delta)) {
 //            if ( definitelyGreaterThan(delta2Worst, fabs(delta), Epsilon )) {
+            //gprintf(gui, "rc1:%d rc2:%d val:%.1f delta:%f delta2Worst:%f, w2:%u\n", rc1, rc2, val, fabs(delta), delta2Worst, w2);
             if (is_double_le(fabs(delta), delta2Worst, Epsilon)) {
                //printf ("new better result:%f delta:%.4f oldDeltaMin:%.4f\n", val, delta, deltaWorst);
-               //printf("rc1:%03u rc2:%03u old delta:%f fill at:%d with new delta:%f\n", rc1, rc2, deltaWorst, w, fabs(delta));
+               //gprintf(gui, "rc1:%03u rc2:%03u old delta:%f fill at:%d with new delta:%f\n", rc1, rc2, delta2Worst, w2, fabs(delta));
                results2LowPtr[w2].pos[0] = rc1;   // always insert in worst pos
                results2LowPtr[w2].pos[1] = rc2;   // always insert in worst pos
                results2LowPtr[w2].delta  = delta; // always insert in worst pos
@@ -1374,7 +1403,7 @@ int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr) { // Solutio
       //printf("s:%02d delta:%.5f MaxValue/2:%.5f\n", s, resultsNLowPtr[s].delta, MaxValue/2);
       //gprintf (gui, "-\n");
       //if (resultsNLowPtr[s].delta>MaxValue/2) continue;
-      //printf("valid s:%02d resultsNLowPtr[].pos[0]:%03u resultsNLowPtr[].pos[1]:%03u\n", s, resultsNLowPtr[s].pos[0], resultsNLowPtr[s].pos[1]);
+      if (dbgLv>=PRINTDEBUG) gprintf(gui, "valid s:%02d resultsNLowPtr[].pos[0]:%03u resultsNLowPtr[].pos[1]:%03u\n", s, resultsNLowPtr[s].pos[0], resultsNLowPtr[s].pos[1]);
       gprintf(gui, "a:%11G b:%11G", rValues[resultsNLowPtr[s].pos[0]].r, rValues[resultsNLowPtr[s].pos[1]].r);
       gprintf(gui, "   val:%11G   delta:%11.4G", desired+resultsNLowPtr[s].delta, resultsNLowPtr[s].delta);
       gprintf(gui, " e%%:%6.3G\n", resultsNLowPtr[s].delta/desired*100);

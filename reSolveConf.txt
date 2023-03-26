@@ -42,5 +42,8 @@ numberOfResults=20 ; show the best 20 results
 maxRp=1 ; max number of resistances supported per position: as now 1 or 2.
         ; with 2 try all series and parallel for 'a' and 'b'. Note: when 2
         ; require Eseries = 12 or 24 or will end memory, see 'Readme.txt'
+
+algo=1  ; 0 use old memory hungry strategy, 1 use new memory save strategy
+
 maxRc=2 ; as now 2 is the only supported value
         ; (numbers of variables in formula, 'a' and 'b')

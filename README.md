@@ -77,8 +77,10 @@ With 2 E24  resistances per position and 4 decades the search time is 1 min 46 s
 With 2 E24  resistances per position and 5 decades the search time is 4 min 23 s.
 With 2 E96  resistances per position and 1 decades the search time is 1 min 46 s.
 ```
-The required memory depends on how many resistances are used.
+The required memory depends on how many resistances and find strategy are used
 ```
+Using old memory hungry strategy, when algo=0, all results are kept in RAM,
+then sorted, and shown only the best requested by the user.
 Theoretical value with Rp=1 : (d*s)           ^2*8(=StructSize)
 Theoretical value with Rp=2 :((d*s)^2+2*(d*s))^2*8(=StructSize)
 where 'd' is the number of decades and 's' is the E series
@@ -128,8 +130,10 @@ With 2 E192 resistances per position and 5 decades need   6.2 TB core dump
 With 2 E192 resistances per position and 6 decades need  12.9 TB core dump
 With 2 E192 resistances per position and 7 decades need  23.8 TB core dump
 ```
-Using the alternative strategy on memory allocation introduced on 2023/03/19,
-the required size can be much less
+Using the new memory save strategy introduced on 2023/03/26, the required size
+can be much less. Are kept in RAM only the best N results as user request.
+When algo=1, the required RAM is always below 90 MB
+Compute time can still be high in some configurations: E48/E96/E192, Rp=2
 
 History:
 --------
@@ -298,10 +302,10 @@ v0.09.09h 2023/03/14
   - show calc and sort progress as percentage
   - generation of Linux AppImage
 
-v0.09.09h 2023/03/26
+v0.10.09h 2023/03/26
 * Added:
-  - new save memory strategy searching results, thanks @mvimercati for hints
-    keep only the first N best results
+  - new memory save strategy searching results, thanks @mvimercati for hints
+    keep only the first N best results. Selectable with 'algo=1'
   - timing code in CLI to evaluate performance of new strategy
   - thanks @lcavalli for hints
 
@@ -318,9 +322,10 @@ ToDo:
 - For each position of resistance in circuit, add support for 'Rp' resistances
   in series or parallel. Probably not possible with current resources.
 - add opAmp (not)inverting and standard 4 pin regulators circuit
-- make a distribution package for macOS
 - different packages for different OSs
 - release binaries, remove binaries from github main
+- make a distribution package for macOS
+- CLI: add parameters to set Eseries and decades
 - GUI: working Stop and About buttons
 - GUI: better circuit images
 - GUI: show best results value in circuit
