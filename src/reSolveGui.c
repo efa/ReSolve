@@ -462,6 +462,19 @@ static void resolveButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on
 
 static void aboutButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on about button
    g_print("About button\n");
+   
+   int len;
+   char* stringPtr;
+   len = asprintf (&stringPtr, "%s %s", SourceVersion, SourceDate);
+   if (len==-1) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
+   GdkPixbuf* logoPtr = gdk_pixbuf_new_from_file("./ReSolve.png", NULL);
+   GtkWidget* aboutPtr = gtk_about_dialog_new();
+   gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(aboutPtr), "ReSolve");
+   gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(aboutPtr), logoPtr);
+   gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(aboutPtr), stringPtr);
+   gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(aboutPtr), "Web site: https://github.com/efa/ReSolve");
+   gtk_dialog_run(GTK_DIALOG(aboutPtr));
+   free(stringPtr);
 } // aboutButton()
 
 static void stopButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on stop button
@@ -474,7 +487,7 @@ int quit() { // called also on Window destroy
    if (baseRconf) free (baseRconf); // only when GUI
    if (baseRuser) free (baseRuser); // only when GUI
    gtk_main_quit();
-   return OK;
+   return EXIT_SUCCESS;
 } // quit()
 
 static void quitButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on quit button
@@ -804,7 +817,7 @@ int main(int argc, char *argv[]) { // GUI entry point
    gtk_disable_setlocale();
    printf ("Starting GUI ...\n");
    ret = guiInit(argc, argv);
-   if (ret!=0) {
+   if (ret!=OK) {
       printf ("GUI cannot be initialized, quit\n");
       exit (1);
    }

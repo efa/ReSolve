@@ -33,7 +33,7 @@ Limits:
   as are seen by ReSolve all as the same resistor.
 - max 2 resistors per position (no series/parallel when Rp>2 resistances)
 - do not solve library math functions (sin, cos, tan, exp, log, ...)
-- calculate all possible solutions, will consume too much memory
+- calculate all possible solutions, last too much time
 
 Calling Example:
 ----------------
@@ -133,7 +133,7 @@ With 2 E192 resistances per position and 7 decades need  23.8 TB core dump
 Using the new memory save strategy introduced on 2023/03/26, the required size
 can be much less. Are kept in RAM only the best N results as user request.
 When algo=1, the required RAM is always below 90 MB
-Compute time can still be high in some configurations: E48/E96/E192, Rp=2
+Compute time can still be high in some configurations: E48/E96/E192, d=7, Rp=2
 
 History:
 --------
