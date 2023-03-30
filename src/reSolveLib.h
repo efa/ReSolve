@@ -35,8 +35,13 @@
 #include "fileIo.h"     /* file Input/Output */
 #include "exprParser.h" /* expression parser interface */
 
+#define AppName       "ReSolve"
 #define SourceVersion "0.10.09h beta"
-#define SourceDate    "2023/03/26"
+#define CopyrightYear "2023"
+#define SourceDate    CopyrightYear"/03/28"
+#define ReSolveVer    SourceVersion" "SourceDate
+#define Author        "Valerio Messina"
+#define WebLink       "github.com/efa/ReSolve"
 
 #ifdef __MSVCRT__       /* CrossCompile to MinGw target */
 #define fsync _commit   /* msvcrt.dll miss fsync, that is present on unix */

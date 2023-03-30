@@ -21,7 +21,7 @@ Features:
 - cross-platform, open-source
 - GUI, see image below
 
-![Current GUI of ReSolve 0.09.09h](/ReSolveGUI.png)
+![Current GUI of ReSolve 0.10.09h](/ReSolveGUI.png)
 
 Limits:
 -------

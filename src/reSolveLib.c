@@ -186,7 +186,7 @@ u64 powll(u32 base, u32 exp) { /* like math.h pow() but return u64 */
 } // u64 powll(u64 base, u64 exp)
 
 void showHead(void) {
-   printf ("ReSolve v%s %s by Valerio Messina github.com/efa/ReSolve\n", SourceVersion, SourceDate);
+   printf ("ReSolve v%s by Valerio Messina %s\n", ReSolveVer, WebLink);
    printf ("\n");
 }
 

@@ -462,19 +462,19 @@ static void resolveButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on
 
 static void aboutButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on about button
    g_print("About button\n");
-   
-   int len;
-   char* stringPtr;
-   len = asprintf (&stringPtr, "%s %s", SourceVersion, SourceDate);
-   if (len==-1) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
+   const gchar* auth[]={ Author, 0 };
    GdkPixbuf* logoPtr = gdk_pixbuf_new_from_file("./ReSolve.png", NULL);
    GtkWidget* aboutPtr = gtk_about_dialog_new();
-   gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(aboutPtr), "ReSolve");
+   gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(aboutPtr), AppName);
    gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(aboutPtr), logoPtr);
-   gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(aboutPtr), stringPtr);
-   gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(aboutPtr), "Web site: https://github.com/efa/ReSolve");
+   gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(aboutPtr), ReSolveVer);
+   gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(aboutPtr),"Copyright "CopyrightYear" "Author);
+   gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(aboutPtr), GTK_LICENSE_GPL_3_0);
+   gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(aboutPtr), "Solve math expressions using discrete values");
+   gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(aboutPtr), auth);
+   gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(aboutPtr), "Web site: https://"WebLink);
    gtk_dialog_run(GTK_DIALOG(aboutPtr));
-   free(stringPtr);
+   g_object_unref(logoPtr), logoPtr = NULL;
 } // aboutButton()
 
 static void stopButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on stop button
