@@ -133,14 +133,14 @@ int main(int numPar, char* param[]) { // CLI entry point
    start = clock();
    if (algo==0) // 0 use old memory hungry strategy
       ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
-   else {// 1 use new mem low strategy
+   else { // 1 use new mem low strategy
       ret = doMemLowCalc(); // LIB: fill inputs, calcs, sort solutions
-      ret = doMemLowCalc(); // LIB: fill inputs, calcs, sort solutions
-      ret = doMemLowCalc(); // LIB: fill inputs, calcs, sort solutions
+      //ret = doMemLowCalc(); // LIB: fill inputs, calcs, sort solutions
+      //ret = doMemLowCalc(); // LIB: fill inputs, calcs, sort solutions
    }
    stop = clock();
    time = (double)(stop - start) / CLOCKS_PER_SEC /3; time+=0;
-   printf ("time:%f <=======\n", time);
+   //printf ("time:%f <=======\n", time);
 
    // 11 - print results
    if (algo==0) { // old memory hungry strategy
