@@ -61,21 +61,42 @@ reSolve 3.3 '15*b/(a+b)' 50
 System requirements:
 --------------------
 As always fastest is the system and less time will be required to show results.
-As a minimum I suggest a PentiumIII 666 MHz:
 ```
+On a PentiumIII @ 666 MHz:
 With 1 E12 resistance  per position the search time is negligible.
-With 2 E12 resistances per position and 4 decades the search time is 49 seconds.
-With 2 E12 resistances per position and 5 decades the search time is 2 minutes.
+With 2 E12 resistances per position and 4 decades the search time is 49".
+With 2 E12 resistances per position and 5 decades the search time is 2'.
 On a Core2 Duo @ 2.13 GHz:
 With 1 E96  resistance  per position the search time is negligible.
-With 1 E192 resistance  per position and 7 decades the search time is 2 s.
-With 2 E12  resistances per position and 4 decades the search time is 7 s.
-With 2 E12  resistances per position and 5 decades the search time is 17 s.
-With 2 E12  resistances per position and 6 decades the search time is 35 s.
-With 2 E12  resistances per position and 7 decades the search time is 63 s.
-With 2 E24  resistances per position and 4 decades the search time is 1 min 46 s.
-With 2 E24  resistances per position and 5 decades the search time is 4 min 23 s.
-With 2 E96  resistances per position and 1 decades the search time is 1 min 46 s.
+With 1 E192 resistance  per position and 7 decades the search time is 2".
+With 2 E12  resistances per position and 4 decades the search time is 7".
+With 2 E12  resistances per position and 5 decades the search time is 17".
+With 2 E12  resistances per position and 6 decades the search time is 35".
+With 2 E12  resistances per position and 7 decades the search time is 63".
+With 2 E24  resistances per position and 4 decades the search time is 1'46".
+With 2 E24  resistances per position and 5 decades the search time is 4'23".
+With 2 E96  resistances per position and 1 decades the search time is 1'46".
+On a i7-4710HQ @ 2.5 GHz:
+With 1 E192 resistance  per position and 7 decades the search time is negligible.
+With 2 E3   resistance  per position and 7 decades the search time is negligible.
+With 2 E6   resistance  per position and 7 decades the search time is  1.01".
+With 2 E12  resistance  per position and 4 decades the search time is  1.75".
+With 2 E12  resistance  per position and 5 decades the search time is  4.16".
+With 2 E12  resistance  per position and 6 decades the search time is  8.55".
+With 2 E12  resistance  per position and 7 decades the search time is 15.63".
+With 2 E24  resistance  per position and 4 decades the search time is 26.46".
+With 2 E24  resistance  per position and 5 decades the search time is  1' 4".
+With 2 E24  resistance  per position and 6 decades the search time is  2'12".
+With 2 E24  resistance  per position and 7 decades the search time is  4' 4".
+With 2 E48  resistance  per position and 1 decades the search time is  1.75".
+With 2 E48  resistance  per position and 2 decades the search time is 26.46".
+With 2 E48  resistance  per position and 3 decades the search time is  2'12".
+With 2 E48  resistance  per position and 4 decades the search time is  6'56".
+With 2 E48  resistance  per position and 5 decades the search time is 16'42".
+With 2 E96  resistance  per position and 1 decades the search time is 26.46".
+With 2 E96  resistance  per position and 2 decades the search time is  6'56".
+With 2 E96  resistance  per position and 3 decades the search time is 35'20".
+With 2 E192 resistance  per position and 1 decades the search time is  6'56".
 ```
 The required memory depends on how many resistances and find strategy are used
 ```
@@ -302,12 +323,13 @@ v0.09.09h 2023/03/14
   - show calc and sort progress as percentage
   - generation of Linux AppImage
 
-v0.10.09h 2023/03/26
+v0.10.09h 2023/04/05
 * Added:
   - new memory save strategy searching results, thanks @mvimercati for hints
     keep only the first N best results. Selectable with 'algo=1'
   - timing code in CLI to evaluate performance of new strategy
   - thanks @lcavalli for hints
+  - GUI: working About button
 
 ToDo:
 -----
@@ -326,7 +348,7 @@ ToDo:
 - release binaries, remove binaries from github main
 - make a distribution package for macOS
 - CLI: add parameters to set Eseries and decades
-- GUI: working Stop and About buttons
+- GUI: working Stop button
 - GUI: better circuit images
 - GUI: show best results value in circuit
 

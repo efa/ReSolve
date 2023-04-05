@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/03/26 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/04/05 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -474,6 +474,7 @@ static void aboutButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on a
    gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(aboutPtr), auth);
    gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(aboutPtr), "Web site: https://"WebLink);
    gtk_dialog_run(GTK_DIALOG(aboutPtr));
+   gtk_widget_destroy(aboutPtr);
    g_object_unref(logoPtr), logoPtr = NULL;
 } // aboutButton()
 

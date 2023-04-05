@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/03/26 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/04/05 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@
 #define AppName       "ReSolve"
 #define SourceVersion "0.10.09h beta"
 #define CopyrightYear "2023"
-#define SourceDate    CopyrightYear"/03/28"
+#define SourceDate    CopyrightYear"/04/05"
 #define ReSolveVer    SourceVersion" "SourceDate
 #define Author        "Valerio Messina"
 #define WebLink       "github.com/efa/ReSolve"

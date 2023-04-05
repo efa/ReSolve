@@ -3,7 +3,7 @@
 ; strings are enclosed in "", keep in one line, shorter than 78 chars
 ; vectors are {} enclosed and comma separated (space and multi lines allowed)
 ; comments follow ;
-; remember that command line arguments take precedence to config value
+; remember that command line arguments take precedence to config values
 ; -h|--help to see command line syntax
 
 expr="1.25*(1+b/a)" ; default formula. Es. '1.25*(1+b/a)'
@@ -41,7 +41,7 @@ numberOfResults=20 ; show the best 20 results
 
 maxRp=1 ; max number of resistances supported per position: as now 1 or 2.
         ; with 2 try all series and parallel for 'a' and 'b'. Note: when 2
-        ; require Eseries = 12 or 24 or will end memory, see 'Readme.txt'
+        ; and Eseries = 48, 96 or 192 will require much time, see 'Readme.txt'
 
 algo=1  ; 0 use old memory hungry strategy, 1 use new memory save strategy
 

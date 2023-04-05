@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/03/26 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/04/05 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -139,8 +139,9 @@ int main(int numPar, char* param[]) { // CLI entry point
       //ret = doMemLowCalc(); // LIB: fill inputs, calcs, sort solutions
    }
    stop = clock();
-   time = (double)(stop - start) / CLOCKS_PER_SEC /3; time+=0;
-   //printf ("time:%f <=======\n", time);
+   time = (double)(stop - start) / CLOCKS_PER_SEC; time+=0;
+   //time = time/3;
+   printf ("Compute time: %f s\n", time);
 
    // 11 - print results
    if (algo==0) { // old memory hungry strategy
