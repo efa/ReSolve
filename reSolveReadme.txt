@@ -329,6 +329,7 @@ v0.10.09h 2023/04/05
     keep only the first N best results. Selectable with 'algo=1'
   - timing code in CLI to evaluate performance of new strategy
   - thanks @lcavalli for hints
+  - different packages for different OSs
   - GUI: working About button
 
 ToDo:
@@ -344,7 +345,6 @@ ToDo:
 - For each position of resistance in circuit, add support for 'Rp' resistances
   in series or parallel. Probably not possible with current resources.
 - add opAmp (not)inverting and standard 4 pin regulators circuit
-- different packages for different OSs
 - release binaries, remove binaries from github main
 - make a distribution package for macOS
 - CLI: add parameters to set Eseries and decades

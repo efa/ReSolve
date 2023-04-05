@@ -23,8 +23,6 @@ int main(int numPar, char* param[]) { // CLI entry point
    u08  p;
    char c;
    int  ret;
-   clock_t start, stop;
-   double time;
 
    gui=0; // mean gprintf() do not update GUI
    guiUpdateOutPtr = NULL; // no function pointer to guiUpdateOut()
@@ -130,6 +128,8 @@ int main(int numPar, char* param[]) { // CLI entry point
    // 8 - fill the input vectors with needed data
    // 9 - calculus of solutions
    // 10 - sorting of solutions
+   clock_t start, stop;
+   double time;
    start = clock();
    if (algo==0) // 0 use old memory hungry strategy
       ret = doCalc(); // LIB: fill inputs, calcs, sort solutions

@@ -3,6 +3,8 @@ HERE="$(dirname "$(readlink -f "${0}")")"
 #echo "HERE:'$HERE'"; echo ""
 cd ${HERE}
 export UNION_PRELOAD="${HERE}"
+BITS="is32whenLinux32pkgAndRunOnLinux64"
+#echo BITS:$BITS
 LIBS=:$(find . -type f -name "*.so.*" | tr '\n' ':' | sed 's|:$||g')
 #echo "LIBS:'$LIBS'"; echo ""
 export LD_PRELOAD=`echo $LIBS | sed 's|:|:'${HERE}'/|g' | sed 's|/\./|/|g' | sed 's|^:||g'`
@@ -15,6 +17,6 @@ export LD_LIBRARY_PATH="${HERE}"/lib:"${LD_LIBRARY_PATH}"
 #echo "LD_LIBRARY_PATH:'$LD_LIBRARY_PATH'"; echo ""
 #export PKG_CONFIG_PATH="${HERE}"/usr/share/pkgconfig:$PKG_CONFIG_PATH
 #EXEC=$(grep -e '^Exec=.*' "${HERE}"/*.desktop | head -n 1 | cut -d "=" -f 2- | sed -e 's| %.||g')
-EXEC=reSolveGui
+EXEC=reSolveGuiLinux${BITS}
 #echo "EXEC:'$EXEC'"; echo "RUN:${HERE}/${EXEC}"
 exec ${HERE}/${EXEC} "$@"

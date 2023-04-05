@@ -472,9 +472,9 @@ static void aboutButton(GtkWidget* widgetPtr, gpointer dataPtr) { // called on a
    gtk_about_dialog_set_license_type(GTK_ABOUT_DIALOG(aboutPtr), GTK_LICENSE_GPL_3_0);
    gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(aboutPtr), "Solve math expressions using discrete values");
    gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(aboutPtr), auth);
-   gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(aboutPtr), "Web site: https://"WebLink);
+   gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(aboutPtr), "http://"WebLink);
+   gtk_about_dialog_set_website_label(GTK_ABOUT_DIALOG(aboutPtr), "http://"WebLabel);
    gtk_dialog_run(GTK_DIALOG(aboutPtr));
-   gtk_widget_destroy(aboutPtr);
    g_object_unref(logoPtr), logoPtr = NULL;
 } // aboutButton()
 
@@ -731,10 +731,16 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
    // 8 - fill the input vectors with needed data
    // 9 - calculus of solutions
    // 10 - sorting of solutions
+   clock_t start, stop;
+   double time;
+   start = clock();
    if (algo==0) // 0 use old memory hungry strategy
       ret = doCalc(); // LIB: fill inputs, calcs, sort solutions
    else // 1 use new mem low strategy
       ret = doMemLowCalc(); // LIB: fill inputs, calcs, sort solutions
+   stop = clock();
+   time = (double)(stop - start) / CLOCKS_PER_SEC; time+=0;
+   gprintf (gui, "Compute time: %f s\n", time);
 
    // 11 - print results
    winGuiLoop=0; // Win loop gtk_events_pending/gtk_main_iteration to update GUI

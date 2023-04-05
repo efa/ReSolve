@@ -42,6 +42,7 @@
 #define ReSolveVer    SourceVersion" "SourceDate
 #define Author        "Valerio Messina"
 #define WebLink       "github.com/efa/ReSolve"
+#define WebLabel      WebLink
 
 #ifdef __MSVCRT__       /* CrossCompile to MinGw target */
 #define fsync _commit   /* msvcrt.dll miss fsync, that is present on unix */

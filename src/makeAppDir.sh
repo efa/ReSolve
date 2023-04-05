@@ -1,5 +1,5 @@
 #!/bin/bash
-# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-04-04
+# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-04-05
 echo "makeAppDir.sh: generating the AppDir for ReSolve ..."
 if (test "" = "$1") then
    echo "makeAppDir.sh ERROR: need the target platform to create package"
@@ -88,6 +88,7 @@ if (test "$PKG" = "Linux") then
       #cp -aL /lib/x86_64-linux-gnu/libm.so.6 AppDir/lib
       #cp -aL /lib/x86_64-linux-gnu/libc.so.6 AppDir/lib
       #cp -aL /lib/x86_64-linux-gnu/libsystemd.so.0 AppDir/lib
+      cat AppRun | sed 's/is32whenLinux32pkgAndRunOnLinux64/64/' > AppDir/AppRun
    fi # 64 bit
    if (test "$BITS" = "32") then
       cp -aL /lib/i386-linux-gnu/libatk-1.0.so.0 AppDir/lib
@@ -160,8 +161,10 @@ if (test "$PKG" = "Linux") then
       #cp -aL /lib/i386-linux-gnu/libm.so.6 AppDir/lib
       #cp -aL /lib/i386-linux-gnu/libc.so.6 AppDir/lib
       #cp -aL /lib/i386-linux-gnu/libsystemd.so.0 AppDir/lib
+      cat AppRun | sed 's/is32whenLinux32pkgAndRunOnLinux64/32/' > AppDir/AppRun
    fi # 32 bit
-   cp -aL reSolve.desktop AppRun AppDir
+   chmod +x AppDir/AppRun
+   cp -aL reSolve.desktop AppDir
 fi # Linux libs
 cp -aL reSolveConf.txt reSolve.glade circuit*.png ReSolve.png AppDir
 cp -a ../reSolveReadme.txt ../README.md
@@ -206,7 +209,13 @@ if (test "$PKG" = "Linux") then
    echo "Creating package file:'$file' ..."
    cd ../..
    if (test -f $file) then { rm $file ; } fi
-   tar --exclude-vcs --exclude=AppDir --exclude=*.AppImage --exclude=appimagetool* --exclude=*.exe --exclude=ReSolve.ods --exclude=reSolveBack.glade --exclude=reSolve_.glade --exclude=notes.txt -cvaf $file ReSolve
+   if (test "$BITS" = "64") then
+      EXCL=Linux32
+   fi
+   if (test "$BITS" = "32") then
+      EXCL=Linux64
+   fi
+   tar --exclude-vcs --exclude=$EXCL --exclude=AppDir --exclude=*.AppImage --exclude=appimagetool* --exclude=*.exe --exclude=ReSolve.ods --exclude=reSolveBack.glade --exclude=reSolve_.glade --exclude=notes.txt -cvaf $file ReSolve
 fi
 if (test "$PKG" = "Win") then
    file=reSolve${ver}_${date}_Win$BITS.7z
