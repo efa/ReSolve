@@ -1,5 +1,5 @@
 #!/bin/bash
-# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-04-05
+# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-04-08
 echo "makeAppDir.sh: generating the AppDir for ReSolve ..."
 if (test "" = "$1") then
    echo "makeAppDir.sh ERROR: need the target platform to create package"
@@ -85,8 +85,8 @@ if (test "$PKG" = "Linux") then
       cp -aL /lib/x86_64-linux-gnu/libXrender.so.1 AppDir/lib
       cp -aL /lib/x86_64-linux-gnu/libz.so.1 AppDir/lib
       cp -aL /lib/x86_64-linux-gnu/libzstd.so.1 AppDir/lib
-      #cp -aL /lib/x86_64-linux-gnu/libm.so.6 AppDir/lib
-      #cp -aL /lib/x86_64-linux-gnu/libc.so.6 AppDir/lib
+      cp -aL /lib/x86_64-linux-gnu/libm.so.6 AppDir/lib
+      cp -aL /lib/x86_64-linux-gnu/libc.so.6 AppDir/lib
       #cp -aL /lib/x86_64-linux-gnu/libsystemd.so.0 AppDir/lib
       cat AppRun | sed 's/is32whenLinux32pkgAndRunOnLinux64/64/' > AppDir/AppRun
    fi # 64 bit
@@ -158,8 +158,8 @@ if (test "$PKG" = "Linux") then
       cp -aL /lib/i386-linux-gnu/libXrender.so.1 AppDir/lib
       cp -aL /lib/i386-linux-gnu/libz.so.1 AppDir/lib
       cp -aL /lib/i386-linux-gnu/libzstd.so.1 AppDir/lib
-      #cp -aL /lib/i386-linux-gnu/libm.so.6 AppDir/lib
-      #cp -aL /lib/i386-linux-gnu/libc.so.6 AppDir/lib
+      cp -aL /lib/i386-linux-gnu/libm.so.6 AppDir/lib
+      cp -aL /lib/i386-linux-gnu/libc.so.6 AppDir/lib
       #cp -aL /lib/i386-linux-gnu/libsystemd.so.0 AppDir/lib
       cat AppRun | sed 's/is32whenLinux32pkgAndRunOnLinux64/32/' > AppDir/AppRun
    fi # 32 bit

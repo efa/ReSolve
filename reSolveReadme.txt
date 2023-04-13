@@ -329,8 +329,8 @@ v0.10.09h 2023/04/05
     keep only the first N best results. Selectable with 'algo=1'
   - timing code in CLI to evaluate performance of new strategy
   - thanks @lcavalli for hints
-  - different packages for different OSs
-  - GUI: working About button
+  - different binary packages for different OSs
+  - GUI: working About button, thanks @lb90
 
 ToDo:
 -----
@@ -345,9 +345,14 @@ ToDo:
 - For each position of resistance in circuit, add support for 'Rp' resistances
   in series or parallel. Probably not possible with current resources.
 - add opAmp (not)inverting and standard 4 pin regulators circuit
-- release binaries, remove binaries from github main
-- make a distribution package for macOS
+- estimate computation time, show as X'Y", warn before long computation
+- show only one qs=0%,100% when algo=1 and Rp=2
+- remove binaries from github master
+- make a distribution package for macOS targeting Quartz
 - CLI: add parameters to set Eseries and decades
+- GUI: disable widgets not active
+- GUI: add other hints popup
+- GUI: better parameters checking: custom formula, custom values, results
 - GUI: working Stop button
 - GUI: better circuit images
 - GUI: show best results value in circuit
@@ -374,8 +379,10 @@ src/Makefile             Makefile
 src/Makefile32           Makefile to build from Linux64 to Linux32
 src/MakefileX            Makefile to cross-build from Linux to Win64
 src/MakefileX32          Makefile to cross-build from Linux to Win32
+src/makeAppDir.sh        script use to prepare distribution packages
 src/reSolve.desktop      Linux desktop integration file
 src/ReSolve.png          Linux icon file
+src/AppRun               AppImage run file template
 reSolveLinux32           CLI binary for Linux/x86
 reSolveGuiLinux32        GUI binary for Linux/x86
 reSolveLinux64           CLI binary for Linux/amd64
@@ -388,6 +395,7 @@ circuit??.png            Circuit images with example formula
 reSolveConf.txt          Configuration file
 reSolve.glade            GUI resource XML file
 reSolveReadme.txt        this file/manual
+ReSolveGUI.png           github application image
 README.md                github readme/manual
 LICENSE                  GNU GPL v3 license file
 ```

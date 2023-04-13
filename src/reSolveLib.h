@@ -136,6 +136,7 @@ extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 // public library functions:
 int gprintf (int gui, const char* format, ...); // printf() or update GUI
 char* siMem(u64 sizeB); // convert an u64 to string using SI prefix
+int isNumber(char* strPtr, bool dotComma); // return 1 for numbers. When dotComma=1 accept dot and comma
 int fillConfigVars(void); // load and check users config file
 void showHelp(u64 allocatedB);
 void showHead(void);

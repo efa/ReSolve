@@ -176,6 +176,15 @@ char* siMem(u64 sizeB) { // convert an u64 to string using SI prefix
    return stringPtr; // remember caller must free ptr
 } // siMem(u64 sizeB)
 
+int isNumber(char* strPtr, bool dotComma) { // return 1 for numbers. When dotComma=1 accept dot and comma
+   if (strPtr==NULL) return ERROR;
+   int c=0;
+   while ( isdigit(strPtr[c]) || (dotComma==true && (strPtr[c]=='.' || strPtr[c]==',' ) ) ) ++c;
+   //printf("str:'%s' bool:%d c:%d\n", strPtr, dotComma, c);
+   if (c==strlen(strPtr)) return true;
+   return false;
+} // isNumber()
+
 u64 powll(u32 base, u32 exp) { /* like math.h pow() but return u64 */
     u32 c;
     u64 res = 1;

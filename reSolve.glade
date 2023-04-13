@@ -63,6 +63,7 @@ Author: Valerio Messina
               <object class="GtkComboBoxText" id="formulaList">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="tooltip-text" translatable="yes">select e predefined circuit formula or "custom formula"</property>
                 <property name="active">3</property>
                 <property name="active-id">Parallel</property>
                 <items>
@@ -106,10 +107,12 @@ Author: Valerio Messina
             <child>
               <object class="GtkEntry" id="formula">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can-focus">True</property>
-                <property name="tooltip-text" translatable="yes">formula hint:
+                <property name="tooltip-text" translatable="yes">select "custom formula" above, then type a formula.
+Formula hint:
 two variables 'a' and 'b', numbers (use '.' as decimal separator),
-operators: +,-,*,/,%,^, parentesis () with any depth</property>
+operators: +,-,*,/,%,^, parenthesis () with any depth</property>
                 <property name="placeholder-text" translatable="yes">type a custom formula, variables a-b, +,-,*,/,%,^,(,) of any depth</property>
               </object>
               <packing>
@@ -139,6 +142,7 @@ operators: +,-,*,/,%,^, parentesis () with any depth</property>
                   <object class="GtkSpinButton" id="desired">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <property name="tooltip-text" translatable="yes">target value of the formula</property>
                     <property name="text" translatable="yes">9,000</property>
                     <property name="progress-fraction">0.10</property>
                     <property name="input-purpose">number</property>
@@ -178,6 +182,7 @@ operators: +,-,*,/,%,^, parentesis () with any depth</property>
               <object class="GtkComboBoxText" id="EseriesList">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="tooltip-text" translatable="yes">select one of the standard IEC 60063 Eseries</property>
                 <property name="active">6</property>
                 <items>
                   <item id="0" translatable="yes">E1</item>
@@ -226,7 +231,9 @@ operators: +,-,*,/,%,^, parentesis () with any depth</property>
             <child>
               <object class="GtkEntry" id="customList">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can-focus">True</property>
+                <property name="tooltip-text" translatable="yes">as alternative to standard Eseries, select "custom values:", then type your comma separated values</property>
                 <property name="hexpand">True</property>
                 <property name="placeholder-text" translatable="yes">type a comma separated list of custom values, use '.' as decimal separator</property>
               </object>
@@ -244,6 +251,7 @@ operators: +,-,*,/,%,^, parentesis () with any depth</property>
                   <object class="GtkSpinButton" id="decades">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <property name="tooltip-text" translatable="yes">number of decades [7:1]</property>
                     <property name="text" translatable="yes">7,0</property>
                     <property name="xalign">2.2351741291171123e-10</property>
                     <property name="progress-fraction">1</property>
@@ -314,6 +322,7 @@ operators: +,-,*,/,%,^, parentesis () with any depth</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">False</property>
+                <property name="tooltip-text" translatable="yes">calculate also series and parallel of two resistors for Ra and Rb</property>
                 <property name="draw-indicator">True</property>
               </object>
               <packing>
@@ -344,10 +353,11 @@ operators: +,-,*,/,%,^, parentesis () with any depth</property>
                     <property name="name">ValueQty</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <property name="tooltip-text" translatable="yes">choose the number of results to show</property>
                     <property name="text" translatable="yes">20</property>
                     <property name="progress-fraction">1</property>
                     <property name="progress-pulse-step">1</property>
-                    <property name="input-purpose">number</property>
+                    <property name="input-purpose">digits</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -370,6 +380,7 @@ operators: +,-,*,/,%,^, parentesis () with any depth</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">False</property>
+                <property name="tooltip-text" translatable="yes">Press to start computations</property>
               </object>
               <packing>
                 <property name="expand">False</property>

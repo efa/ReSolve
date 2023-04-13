@@ -109,6 +109,7 @@ static void formulaPre(GtkWidget* widgetPtr, gpointer dataPtr) { // called on dr
       else
          gtk_image_set_from_file(GTK_IMAGE(widgetPtr), "circuit03p.png");
       widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "formula");
+      gtk_widget_set_sensitive((GtkWidget*)widgetPtr, true);
       if (exprUser[0]!='\0') { // user has already type a formula
          gtk_entry_set_text ((GtkEntry*)widgetPtr, exprUser);
          strcpy(expr, exprUser);
@@ -118,6 +119,7 @@ static void formulaPre(GtkWidget* widgetPtr, gpointer dataPtr) { // called on dr
       }
    } else { // blank custom formula
       widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "formula");
+      gtk_widget_set_sensitive((GtkWidget*)widgetPtr, false);
       gtk_entry_set_text ((GtkEntry*)widgetPtr, "");
    }
    printf("expr:'%s'\n", expr);
@@ -186,6 +188,7 @@ static void standardSeries(GtkWidget* widgetPtr, gpointer dataPtr) { // called o
    ret = updateLabelMem();
    if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "customList");
+   gtk_widget_set_sensitive(widgetPtr, false);
    gtk_entry_set_text ((GtkEntry*)widgetPtr, "");
 } // standardSeries()
 
@@ -255,9 +258,9 @@ static void customValues(GtkWidget* widgetPtr, gpointer dataPtr) { // called on 
       char doubleStr[25];
       for (uint16_t r=0; r<listNumberUser; r++) {
          sprintf(doubleStr, "%0.f", baseRuser[r]);
-         len+=strlen(doubleStr);
+         len+=strlen(doubleStr); // count chars
       }
-      len+=listNumberUser;
+      len+=listNumberUser; // space for commas
       doubleList = calloc(len+1,1);
       for (uint16_t r=0; r<listNumberUser; r++) {
          sprintf(doubleStr, "%0.f", baseRuser[r]);
@@ -272,9 +275,9 @@ static void customValues(GtkWidget* widgetPtr, gpointer dataPtr) { // called on 
       char doubleStr[25];
       for (uint16_t r=0; r<listNumberConf; r++) {
          sprintf(doubleStr, "%0.f", baseRconf[r]);
-         len+=strlen(doubleStr);
+         len+=strlen(doubleStr); // count chars
       }
-      len+=listNumberConf;
+      len+=listNumberConf; // space for commas
       doubleList = calloc(len+1,1);
       for (uint16_t r=0; r<listNumberConf; r++) {
          sprintf(doubleStr, "%0.f", baseRconf[r]);
@@ -285,6 +288,7 @@ static void customValues(GtkWidget* widgetPtr, gpointer dataPtr) { // called on 
       printf("populate customValue list with config values...\n");
    }
    widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "customList");
+   gtk_widget_set_sensitive(widgetPtr, true);
    gtk_entry_set_text ((GtkEntry*)widgetPtr, doubleList);
    free(doubleList);
    updateRdesc(); // LIB: 
@@ -313,6 +317,14 @@ static void customList(GtkWidget* widgetPtr, gpointer dataPtr) { // called on cu
    int l=strlen(textPtr);
    gchar* txtPtr=malloc(l+1);
    strcpy(txtPtr, textPtr);
+   // check are only digits, dot and comma
+   ret=isNumber(txtPtr, true);
+   //printf("str:'%s' ret:%d (1=number, 0=other, -1=ERROR)\n", txtPtr, ret);
+   if (ret!=1) {
+      printf("str:'%s' not only numbers\n", txtPtr);
+      g_free(txtPtr);
+      return;
+   }
    int c;
    //for (c=0; c<listNumberConf; c++) {
    //   printf("baseR[%d]:%f\n", c, baseR[c]);
@@ -429,13 +441,29 @@ static void resultsFct(GtkWidget* widgetPtr, gpointer dataPtr) { // called on Re
    g_print("Results editbox\n");
    const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetPtr);
    g_print("text:'%s'\n", textPtr);
-   numBestRes=atoi(textPtr);
+   // make a copy of textPtr[]
+   int l=strlen(textPtr);
+   gchar* txtPtr=malloc(l+1);
+   strcpy(txtPtr, textPtr);
+   // check are only digits
+   ret=isNumber(txtPtr, false);
+   //printf("str:'%s' ret:%d (1=number, 0=other, -1=ERROR)\n", txtPtr, ret);
+   if (ret!=1) {
+      printf("str:'%s' not digits only\n", txtPtr);
+      g_free(txtPtr);
+      widgetPtr = (GtkWidget*)gtk_builder_get_object (builderPtr, "results");
+      char unsignedStr[25];
+      sprintf(unsignedStr, "%u", numBestRes);
+      gtk_entry_set_text ((GtkEntry*)widgetPtr, unsignedStr);
+      return;
+   }
+   numBestRes=atoi(txtPtr);
    if (numBestRes==0) {
-      printf ("Unsupported:'%s'\n", textPtr);
+      printf ("Unsupported:'%s'\n", txtPtr);
       numBestRes=NumberResDefault;
    }
+   g_free(txtPtr);
    printf("numBestRes:%u\n", numBestRes);
-   //g_free(textPtr);
    // 3 - calculate the needed memory
    ret = memValCalc(); // LIB: memory size calculation for input values
    if (ret!=OK) { printf ("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
@@ -598,8 +626,8 @@ int guiUpdateIn() { // update widgets with input/config values
    return OK;
 } // guiUpdateIn()
 
-int guiInit(int argc, char *argv[]) {
-   gtk_init(&argc, &argv);
+int guiInit(int numPar, char* param[]) {
+   gtk_init(&numPar, &param);
 
    /* Construct a GtkBuilder instance and load our UI description */
    builderPtr = gtk_builder_new();
@@ -790,7 +818,7 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
    return OK;
 } // runReSolve()
 
-int main(int argc, char *argv[]) { // GUI entry point
+int main(int numPar, char* param[]) { // GUI entry point
    int ret;
 
    gui=1; // mean gprintf() update GUI
@@ -823,7 +851,7 @@ int main(int argc, char *argv[]) { // GUI entry point
    setlocale(LC_ALL,"C");
    gtk_disable_setlocale();
    printf ("Starting GUI ...\n");
-   ret = guiInit(argc, argv);
+   ret = guiInit(numPar, param);
    if (ret!=OK) {
       printf ("GUI cannot be initialized, quit\n");
       exit (1);
