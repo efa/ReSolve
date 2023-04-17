@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/04/05 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/04/16 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -176,10 +176,51 @@ char* siMem(u64 sizeB) { // convert an u64 to string using SI prefix
    return stringPtr; // remember caller must free ptr
 } // siMem(u64 sizeB)
 
+// convert a double to string using engineering notation or SI prefix
+char* engStr(double num, int significant, bool sign, bool siPref) {
+   if (significant<1) return NULL;
+   char* siPre[] = { "y", "z", "a", "f", "p", "n", MICRO, "m",
+                     "", "k", "M", "G", "T", "P", "E", "Z", "Y" };
+   static char* strPtr;
+   double exd = log10(num);
+   int sci = floor(exd);
+   int exp = 3*floor(exd/3);
+   //printf("exp:%+03d ", exp);
+   double divs = pow(10, sci);
+   double dive = pow(10, exp);
+   double ords = pow(10, significant);
+   //printf("divs:%6g ", divs);
+   double mant = num/dive; if (exp==0) mant=num;
+   //printf ("      num:'%6g' eng:'%3gE%+03d'\n", num, mant, exp);
+   //printf("sign:%d ", sign);
+   if (significant<3) {
+      mant=floor(num/divs*ords/10)*10*divs/ords; // round to significant
+      mant = mant/dive;
+      significant=3;
+   }
+   //printf("mant:%7g ", mant);
+   if (siPref==false) { // engineering notation
+      if (sign==false)
+         asprintf(&strPtr, "%.*gE%+03d", significant, mant, exp);
+      else
+         asprintf(&strPtr, "%+.*gE%+03d", significant, mant, exp);
+      return strPtr;
+   } else { // SI prefix
+      if (exp<-24 || exp>24) return NULL;
+      int s=exp/3+8;
+      //printf("s:%02d ", s);
+      if (sign==false)
+         asprintf(&strPtr, "%.*g%s", significant, mant, siPre[s]);
+      else
+         asprintf(&strPtr, "%+.*g%s", significant, mant, siPre[s]);
+      return strPtr;
+   }
+} // engStr()
+
 int isNumber(char* strPtr, bool dotComma) { // return 1 for numbers. When dotComma=1 accept dot and comma
    if (strPtr==NULL) return ERROR;
    int c=0;
-   while ( isdigit(strPtr[c]) || (dotComma==true && (strPtr[c]=='.' || strPtr[c]==',' ) ) ) ++c;
+   while ( isdigit(strPtr[c]) || strPtr[c]=='e' || strPtr[c]=='+' || (dotComma==true && (strPtr[c]=='.' || strPtr[c]==',' ) ) ) ++c;
    //printf("str:'%s' bool:%d c:%d\n", strPtr, dotComma, c);
    if (c==strlen(strPtr)) return true;
    return false;
@@ -371,11 +412,6 @@ int fillConfigVars(void) { // load and check users config file
    }
    // now can use global baseR[size] for custom values
    free (vectorPtr);
-   if (dbgLev>=PRINTDEBUG) printf ("baseR[%u]:", size);
-   for (u16 p=0; p<size; p++) {
-      if (dbgLev>=PRINTDEBUG) printf ("%g, ", baseR[p]);
-   }
-   if (dbgLev>=PRINTDEBUG) printf ("\n");
 
    strcpy (paramName, "baseRdesc");
    ret=parseConf (bufferPtr, paramName, paramValue);

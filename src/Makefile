@@ -20,7 +20,7 @@ CC=gcc
 CFLAGS=-std=gnu11 -Wall $(COPT) -D__USE_MINGW_ANSI_STDIO=1
 PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH
 GFLAGS=`pkg-config --cflags --libs gtk+-3.0`
-LDFLAGS=$(LOPT)
+LDFLAGS=$(LOPT) -lm
 TARGET=reSolve$(PKG)64
 GUI=reSolveGui$(PKG)64
 
@@ -28,10 +28,10 @@ all: $(TARGET) $(GUI)
 	@rm -f *.gch
 
 $(GUI): fileIo.o exprParser.o reSolveLib.o reSolveGui.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(GFLAGS)
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) $(GFLAGS) -o $@
 
 $(TARGET): fileIo.o exprParser.o reSolveLib.o reSolveCli.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 fileIo.o: comType.h fileIo.h fileIo.c
 

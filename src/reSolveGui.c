@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/04/05 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/04/16 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -257,13 +257,13 @@ static void customValues(GtkWidget* widgetPtr, gpointer dataPtr) { // called on 
       uint16_t len=0;
       char doubleStr[25];
       for (uint16_t r=0; r<listNumberUser; r++) {
-         sprintf(doubleStr, "%0.f", baseRuser[r]);
+         sprintf(doubleStr, "%g", baseRuser[r]);
          len+=strlen(doubleStr); // count chars
       }
       len+=listNumberUser; // space for commas
       doubleList = calloc(len+1,1);
       for (uint16_t r=0; r<listNumberUser; r++) {
-         sprintf(doubleStr, "%0.f", baseRuser[r]);
+         sprintf(doubleStr, "%g", baseRuser[r]);
          strcat(doubleList, doubleStr);
          if (r<listNumberUser-1) strcat(doubleList, ",");
       }
@@ -274,13 +274,13 @@ static void customValues(GtkWidget* widgetPtr, gpointer dataPtr) { // called on 
       uint16_t len=0;
       char doubleStr[25];
       for (uint16_t r=0; r<listNumberConf; r++) {
-         sprintf(doubleStr, "%0.f", baseRconf[r]);
+         sprintf(doubleStr, "%g", baseRconf[r]);
          len+=strlen(doubleStr); // count chars
       }
       len+=listNumberConf; // space for commas
       doubleList = calloc(len+1,1);
       for (uint16_t r=0; r<listNumberConf; r++) {
-         sprintf(doubleStr, "%0.f", baseRconf[r]);
+         sprintf(doubleStr, "%g", baseRconf[r]);
          strcat(doubleList, doubleStr);
          if (r<listNumberConf-1) strcat(doubleList, ",");
       }
@@ -312,12 +312,12 @@ static void customList(GtkWidget* widgetPtr, gpointer dataPtr) { // called on cu
    int ret;
    g_print("CustomList editbox\n");
    const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetPtr);
-   g_print("text:'%s'\n", textPtr);
+   //g_print("text:'%s'\n", textPtr);
    // make a copy of textPtr[]
    int l=strlen(textPtr);
    gchar* txtPtr=malloc(l+1);
    strcpy(txtPtr, textPtr);
-   // check are only digits, dot and comma
+   // check are only digits, dots and commas
    ret=isNumber(txtPtr, true);
    //printf("str:'%s' ret:%d (1=number, 0=other, -1=ERROR)\n", txtPtr, ret);
    if (ret!=1) {
@@ -346,24 +346,37 @@ static void customList(GtkWidget* widgetPtr, gpointer dataPtr) { // called on cu
    int n, len;
    prvPtr=txtPtr;
    for (n=0; n<c; n++) {
-      chrPtr=strchr(prvPtr, ',');
-      //printf("prvPtr:%p *prvPtr:%c chrPtr:%p *chrPtr:%c\n", prvPtr, *prvPtr, chrPtr, *chrPtr);
-      if (chrPtr==NULL)
-         len=strlen(prvPtr);
-      else
-         len=chrPtr-prvPtr;
-      //printf("len:%d\n", len);
-      char doubleStr[len+1];
-      strncpy(doubleStr, prvPtr, len);
-      doubleStr[len]='\0';
-      //printf("doubleStr:'%s'\n", doubleStr);
-      double num=strtod(doubleStr, NULL);
-      baseR[n]=num;
-      //printf("baseR[%d]:%f\n", n, baseR[n]);
-      prvPtr=chrPtr+1;
+      double num=0;
+      while (num<1 && *prvPtr!='\0') { // skip letters and consecutive commas
+         chrPtr=strchr(prvPtr, ',');
+         //printf("prvPtr:%p chrPtr:%p\n", prvPtr, chrPtr);
+         //printf("*prvPtr:'%c' str:'%s' ", *prvPtr, prvPtr);
+         //if (chrPtr!=NULL) printf("*chrPtr:'%c' nstr:'%s'\n", *chrPtr, chrPtr);
+         //else printf("\n");
+         if (chrPtr==NULL)
+            len=strlen(prvPtr);
+         else
+            len=chrPtr-prvPtr;
+         //printf("len:%d\n", len);
+         //char doubleStr[len+1];
+         char doubleStr[12];
+         strncpy(doubleStr, prvPtr, len);
+         doubleStr[len]='\0';
+         //printf("doubleStr:'%s'", doubleStr);
+         num=strtod(doubleStr, NULL);
+         //printf(" num:%g\n", num);
+         prvPtr=chrPtr+1;
+         if (num==0) { c--; /*printf("c:%d\n", c);*/ prvPtr=chrPtr+1; }
+      }
+      if (num!=0) {
+         baseR[n]=num;
+         //printf("baseR[%d]:%g\n", n, baseR[n]);
+      } else c--;
+      if (chrPtr==NULL) break;
    }
-   //for (c=0; c<listNumberConf; c++) {
-   //   printf("baseR[%d]:%f\n", c, baseR[c]);
+   //printf("c final:%d\n", c);
+   //for (n=0; n<c; n++) {
+   //   printf("baseR[%d]:%f\n", n, baseR[n]);
    //}
    //printf("listNumber:%u\n", listNumber);
    listNumber=c;
@@ -593,13 +606,13 @@ int guiUpdateIn() { // update widgets with input/config values
    uint16_t len=0;
    char doubleStr[25];
    for (uint16_t r=0; r<listNumber; r++) {
-      sprintf(doubleStr, "%0.f", baseR[r]);
+      sprintf(doubleStr, "%g", baseR[r]);
       len+=strlen(doubleStr);
    }
    len+=listNumber;
    char* doubleList = calloc(len+1,1);
    for (uint16_t r=0; r<listNumber; r++) {
-      sprintf(doubleStr, "%0.f", baseR[r]);
+      sprintf(doubleStr, "%g", baseR[r]);
       strcat(doubleList, doubleStr);
       if (r<listNumber-1) strcat(doubleList, ",");
    }

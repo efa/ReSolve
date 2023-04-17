@@ -323,13 +323,17 @@ v0.09.09h 2023/03/14
   - show calc and sort progress as percentage
   - generation of Linux AppImage
 
-v0.10.09h 2023/04/05
+v0.10.09h 2023/04/16
 * Added:
   - new memory save strategy searching results, thanks @mvimercati for hints
     keep only the first N best results. Selectable with 'algo=1'
   - timing code in CLI to evaluate performance of new strategy
   - thanks @lcavalli for hints
   - different binary packages for different OSs
+  - GUI: read decimal values from baseR custom values in config file
+  - GUI: better parameters checking: custom values, results
+  - GUI: disable widgets not active
+  - GUI: add other hints popup
   - GUI: working About button, thanks @lb90
 
 ToDo:
@@ -347,12 +351,11 @@ ToDo:
 - add opAmp (not)inverting and standard 4 pin regulators circuit
 - estimate computation time, show as X'Y", warn before long computation
 - show only one qs=0%,100% when algo=1 and Rp=2
+- show big numbers with engineering notation
 - remove binaries from github master
 - make a distribution package for macOS targeting Quartz
 - CLI: add parameters to set Eseries and decades
-- GUI: disable widgets not active
-- GUI: add other hints popup
-- GUI: better parameters checking: custom formula, custom values, results
+- GUI: better parameters checking: custom formula
 - GUI: working Stop button
 - GUI: better circuit images
 - GUI: show best results value in circuit

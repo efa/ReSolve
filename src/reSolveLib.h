@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/04/05 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/04/16 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -19,7 +19,6 @@
 #ifndef _INCreSolveLibh
 #define _INCreSolveLibh
 
-//#define _XOPEN_SOURCE 600
 #define _GNU_SOURCE     /* vasprintf() */
 #include <stdio.h>      /* printf() */
 #include <string.h>     /* strcpy(), strlen(), strcspn() */
@@ -38,7 +37,7 @@
 #define AppName       "ReSolve"
 #define SourceVersion "0.10.09h beta"
 #define CopyrightYear "2023"
-#define SourceDate    CopyrightYear"/04/05"
+#define SourceDate    CopyrightYear"/04/16"
 #define ReSolveVer    SourceVersion" "SourceDate
 #define Author        "Valerio Messina"
 #define WebLink       "github.com/efa/ReSolve"
@@ -90,6 +89,8 @@
 #define NumberResDefault  20  /* default number of results to print */
 #define NumberResMax     512000 /* the limit depends on compiler */
 
+#define MICRO "μ" // used when SI prefix are requested
+
 #define PRINTBATCH   3
 #define PRINTF       4
 #define PRINTDEBUG   5
@@ -136,6 +137,7 @@ extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 // public library functions:
 int gprintf (int gui, const char* format, ...); // printf() or update GUI
 char* siMem(u64 sizeB); // convert an u64 to string using SI prefix
+char* engStr(double num, int significant, bool sign, bool siPref); // engineering notation or SI prefix
 int isNumber(char* strPtr, bool dotComma); // return 1 for numbers. When dotComma=1 accept dot and comma
 int fillConfigVars(void); // load and check users config file
 void showHelp(u64 allocatedB);

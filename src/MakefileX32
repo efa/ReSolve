@@ -19,7 +19,7 @@ CFLAGS=-std=gnu11 -Wall $(COPT) -D__USE_MINGW_ANSI_STDIO=1
 PKGCONFIG=/opt/mxe/usr/bin/i686-w64-mingw32.static-pkg-config
 PKG_CONFIG_LIBDIR=/opt/mxe/usr/i686-w64-mingw32.static/lib/pkgconfig
 GFLAGS=`$(PKGCONFIG) --cflags --libs gtk+-3.0`
-LDFLAGS=$(LOPT)
+LDFLAGS=$(LOPT) -lm
 TARGET=reSolveWin32.exe
 GUI=reSolveGuiWin32.exe
 
@@ -27,10 +27,10 @@ all: $(TARGET) $(GUI)
 	@rm -f *.gch
 
 $(GUI): fileIo.o exprParser.o reSolveLib.o reSolveGui.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(GFLAGS)
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) $(GFLAGS) -o $@
 
 $(TARGET): fileIo.o exprParser.o reSolveLib.o reSolveCli.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 fileIo.o: comType.h fileIo.h fileIo.c
 
