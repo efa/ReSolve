@@ -85,11 +85,10 @@
 #define DesiredDefault     9 /* default value for desired */
 #define MaxValue 50E9 // 50 G(Ohm) should be greather than any practical value
 #define Epsilon 1.0E-14 // used to compare double/float numbers
+#define MICRO "μ" // used when SI prefix are requested
 
 #define NumberResDefault  20  /* default number of results to print */
 #define NumberResMax     512000 /* the limit depends on compiler */
-
-#define MICRO "μ" // used when SI prefix are requested
 
 #define PRINTBATCH   3
 #define PRINTF       4
@@ -129,6 +128,7 @@ extern struct resultsTy* resultsLowPtr; // low mem results[numBestRes], all kind
 extern struct resultsTy* results4LowPtr; // low mem results[numBestRes], 4R solutions
 extern struct resultsTy* results3LowPtr; // low mem results[numBestRes], 3R solutions
 extern struct resultsTy* results2LowPtr; // low mem results[numBestRes], 2R solutions
+extern u08 format; // 0 scientific notation, 1 engineering notation, 2 SI prefix
 extern bool algo; // 0 use old memory hungry strategy, 1 use new mem low strategy
 extern bool gui;  // when 1, gprintf() update the GUI
 extern bool winGuiLoop; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
@@ -136,8 +136,8 @@ extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 
 // public library functions:
 int gprintf (int gui, const char* format, ...); // printf() or update GUI
-char* siMem(u64 sizeB); // convert an u64 to string using SI prefix
-char* engStr(double num, int significant, bool sign, bool siPref); // engineering notation or SI prefix
+char* siMem(u64 sizeB); // convert an u64 to string using SI prefix, do not require libmath
+char* engStr(double num, int significant, bool sign, bool siPref); // engineering notation or SI prefix, require libmath
 int isNumber(char* strPtr, bool dotComma); // return 1 for numbers. When dotComma=1 accept dot and comma
 int fillConfigVars(void); // load and check users config file
 void showHelp(u64 allocatedB);

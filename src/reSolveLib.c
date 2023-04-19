@@ -136,6 +136,7 @@ double delta4Worst = MaxValue; // 50 GOhm
 double delta3Worst = MaxValue; // 50 GOhm
 double delta2Worst = MaxValue; // 50 GOhm
 
+u08 format; // 0 scientific notation, 1 engineering notation, 2 SI prefix
 bool algo=1; // 0 use old memory hungry strategy, 1 use new mem low strategy
 bool gui;    // when 1, gprintf() update the GUI
 bool winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
@@ -164,7 +165,7 @@ int gprintf (int gui, const char* format, ...) {
    return len;
 } // gprintf ()
 
-char* siMem(u64 sizeB) { // convert an u64 to string using SI prefix
+char* siMem(u64 sizeB) { // convert an u64 to string using SI prefix, do not require libmath
    int len=0;
    char* stringPtr;
    if      (sizeB>1E12) len = asprintf (&stringPtr, "%.1f TB", (float)sizeB/1E12);
@@ -176,14 +177,25 @@ char* siMem(u64 sizeB) { // convert an u64 to string using SI prefix
    return stringPtr; // remember caller must free ptr
 } // siMem(u64 sizeB)
 
-// convert a double to string using engineering notation or SI prefix
+// convert a double to string using engineering notation or SI prefix, require libmath
 char* engStr(double num, int significant, bool sign, bool siPref) {
    if (significant<1) return NULL;
+   static char* strPtr;
+   double abs=fabs(num);
+   if (abs<Epsilon) { asprintf(&strPtr, "0"); return strPtr; }
+   if (abs>=1 && abs<1E3) {
+      if (sign==false)
+         asprintf(&strPtr, "%.*g", significant, num);
+      else
+         asprintf(&strPtr, "%+.*g", significant, num);
+      return strPtr;
+   }
    char* siPre[] = { "y", "z", "a", "f", "p", "n", MICRO, "m",
                      "", "k", "M", "G", "T", "P", "E", "Z", "Y" };
-   static char* strPtr;
-   double exd = log10(num);
+   double exd = log10(abs); // to support negative numbers
+   //printf("exd:%+03g ", exd);
    int sci = floor(exd);
+   //printf("sci:%+03d ", sci);
    int exp = 3*floor(exd/3);
    //printf("exp:%+03d ", exp);
    double divs = pow(10, sci);
@@ -455,19 +467,19 @@ int fillConfigVars(void) { // load and check users config file
    }
    if (dbgLev>=PRINTDEBUG) printf ("maxRp=%u\n", maxRp);
 
-   strcpy (paramName, "maxRc");
+   strcpy (paramName, "format");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
       return ERROR;
    }
-   //printf ("maxRc='%s'\n", paramValue);
-   maxRc = strtol (paramValue, &endPtr, 10);
+   //printf ("format='%s'\n", paramValue);
+   format = strtol (paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in maxRc='%s'\n", __FUNCTION__, paramValue);
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in format='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
-   if (dbgLev>=PRINTDEBUG) printf ("maxRc=%u\n", maxRc);
+   if (dbgLev>=PRINTDEBUG) printf ("format=%u\n", format);
 
    strcpy (paramName, "algo");
    ret=parseConf (bufferPtr, paramName, paramValue);
@@ -482,6 +494,20 @@ int fillConfigVars(void) { // load and check users config file
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf ("algo=%u\n", algo);
+
+   strcpy (paramName, "maxRc");
+   ret=parseConf (bufferPtr, paramName, paramValue);
+   if (ret!=OK) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
+      return ERROR;
+   }
+   //printf ("maxRc='%s'\n", paramValue);
+   maxRc = strtol (paramValue, &endPtr, 10);
+   if (endPtr==paramValue) {
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in maxRc='%s'\n", __FUNCTION__, paramValue);
+      return ERROR;
+   }
+   if (dbgLev>=PRINTDEBUG) printf ("maxRc=%u\n", maxRc);
 
    //dbgLev=PRINTF;
    //printf ("Freeing buffer ...\n");
@@ -1293,9 +1319,9 @@ int showVal(u32 first) { // solutions with up to 4 resistors
              (strcmp (rValues[results[pos].pos[0]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
              (strcmp (rValues[results[pos].pos[1]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      gprintf (gui, "a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      gprintf (gui, "   val:%11G   delta:%11.4G", desired+results[pos].delta, results[pos].delta);
-      gprintf (gui, " e%%:%6.3G\n", results[pos].delta/desired*100);
+      gprintf (gui, "val:%11G   delta:%11.4G", desired+results[pos].delta, results[pos].delta);
+      gprintf (gui, " e%%:%6.3G", results[pos].delta/desired*100);
+      gprintf (gui, "   a:%11G b:%11G\n", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
       if (maxRp==2) { // maybe a series or parallel value
          if (cmp0==0) { // single resistors
             gprintf (gui, "a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
@@ -1340,9 +1366,9 @@ int showVal4(u32 numBestRes) { // Solutions with 4 resistors
              (strcmp (rValues[results[pos].pos[0]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
              (strcmp (rValues[results[pos].pos[1]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      gprintf (gui, "a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      gprintf (gui, "   val:%11G   delta:%11.4G", desired+results[pos].delta, results[pos].delta);
-      gprintf (gui, " e%%:%6.3G\n", results[pos].delta/desired*100);
+      gprintf (gui, "val:%11G   delta:%11.4G", desired+results[pos].delta, results[pos].delta);
+      gprintf (gui, " e%%:%6.3G", results[pos].delta/desired*100);
+      gprintf (gui, "   a:%11G b:%11G\n", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
       if (maxRp==2) { // maybe a series or parallel value
          if (cmp0==0) { // single resistors
             gprintf (gui, "a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
@@ -1384,10 +1410,10 @@ int showVal3(u32 numBestRes) { // Solutions with 3 resistors
              (strcmp (rValues[results[pos].pos[0]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       cmp1 = (strcmp (rValues[results[pos].pos[1]].desc, "Custom list")!=0) &&
              (strcmp (rValues[results[pos].pos[1]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      gprintf (gui, "a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      gprintf (gui, "   val:%11G   delta:%11.4G", desired+results[pos].delta, results[pos].delta);
-      gprintf (gui, " e%%:%6.3G\n", results[pos].delta/desired*100);
-      if (maxRp==2) {
+      gprintf (gui, "val:%11G   delta:%11.4G", desired+results[pos].delta, results[pos].delta);
+      gprintf (gui, " e%%:%6.3G", results[pos].delta/desired*100);
+      gprintf (gui, "   a:%11G b:%11G\n", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
+      if (maxRp==2) { // maybe a series or parallel value
          if (cmp0==0) { // single resistors
             gprintf (gui, "a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
          } else { // 2 resistors in series or parallel
@@ -1425,9 +1451,9 @@ int showVal2(u32 numBestRes) { // Solutions with 2 resistors
    for (best=count-1; best>=0; best--) { // [0] is the best solution
       pos=res[best];
       //printf("pos:%d results[pos].pos[0]:%u, results[pos].pos[1]:%u\n", pos, results[pos].pos[0], results[pos].pos[1]);
-      gprintf (gui, "a:%11G b:%11G", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      gprintf (gui, "   val:%11G   delta:%11.4G", desired+results[pos].delta, results[pos].delta);
-      gprintf (gui, " e%%:%6.3G\n", results[pos].delta/desired*100);
+      gprintf (gui, "val:%11G   delta:%11.4G", desired+results[pos].delta, results[pos].delta);
+      gprintf (gui, " e%%:%6.3G", results[pos].delta/desired*100);
+      gprintf (gui, "   a:%11G b:%11G\n", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
       if (maxRp==2) { // this is just a repetition of 'a' and 'b' as are Custom list
          gprintf (gui, "a:%-12s:%8g             ", rValues[results[pos].pos[0]].desc, rValues[results[pos].pos[0]].rp[0]);
          gprintf (gui, "b:%-12s:%8g"       , rValues[results[pos].pos[1]].desc, rValues[results[pos].pos[1]].rp[0]);
@@ -1436,6 +1462,8 @@ int showVal2(u32 numBestRes) { // Solutions with 2 resistors
    }
    return OK;
 } // int showVal2(u32 numBestRes)
+
+u08 format=0;
 
 /* print best 'numBestRes' LowMem results */
 int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr) { // Solutions
@@ -1449,10 +1477,28 @@ int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr) { // Solutio
       //gprintf (gui, "-\n");
       //if (resultsNLowPtr[s].delta>MaxValue/2) continue;
       if (dbgLv>=PRINTDEBUG) gprintf(gui, "valid s:%02d resultsNLowPtr[].pos[0]:%03u resultsNLowPtr[].pos[1]:%03u\n", s, resultsNLowPtr[s].pos[0], resultsNLowPtr[s].pos[1]);
-      gprintf(gui, "a:%11G b:%11G", rValues[resultsNLowPtr[s].pos[0]].r, rValues[resultsNLowPtr[s].pos[1]].r);
-      gprintf(gui, "   val:%11G   delta:%11.4G", desired+resultsNLowPtr[s].delta, resultsNLowPtr[s].delta);
-      gprintf(gui, " e%%:%6.3G\n", resultsNLowPtr[s].delta/desired*100);
-      if (maxRp==2) { // 
+      if (format==0) {
+         gprintf(gui, "val:%11G", desired+resultsNLowPtr[s].delta);
+         gprintf(gui, "   delta:%11.4G", resultsNLowPtr[s].delta);
+         gprintf(gui, " e%%:%7.2G", resultsNLowPtr[s].delta/desired*100);
+         gprintf(gui, "   a:%11G", rValues[resultsNLowPtr[s].pos[0]].r);
+         gprintf(gui, " b:%11G\n", rValues[resultsNLowPtr[s].pos[1]].r);
+      } else {
+         char* valPtr = engStr(desired+resultsNLowPtr[s].delta, 6, false, format-1);
+         char* deltaPtr = engStr(resultsNLowPtr[s].delta, 4, false, format-1);
+         char* aPtr = engStr(rValues[resultsNLowPtr[s].pos[0]].r, 6, false, format-1);
+         char* bPtr = engStr(rValues[resultsNLowPtr[s].pos[1]].r, 6, false, format-1);
+         gprintf(gui, "val:%11s", valPtr);
+         gprintf(gui, "   delta:%11s", deltaPtr);
+         gprintf(gui, " e%%:%7.2G", resultsNLowPtr[s].delta/desired*100);
+         gprintf(gui, "   a:%11s", aPtr);
+         gprintf(gui, " b:%11s\n", bPtr);
+         free(valPtr);
+         free(deltaPtr);
+         free(aPtr);
+         free(bPtr);
+      }
+      if (maxRp==2) { // maybe a series or parallel value
          int cmp0, cmp1;
          cmp0 = (strcmp (rValues[resultsNLowPtr[s].pos[0]].desc, "Custom list")!=0) &&
                 (strcmp (rValues[resultsNLowPtr[s].pos[0]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
@@ -1460,16 +1506,44 @@ int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr) { // Solutio
                 (strcmp (rValues[resultsNLowPtr[s].pos[1]].desc, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
          if (dbgLv>=PRINTDEBUG) gprintf(gui, "s:%d cmp0:%d cmp1:%d\n", s, cmp0, cmp1);
          if (cmp0==0) { // single resistors
-            gprintf (gui, "a:%-12s:%8g             ", rValues[resultsNLowPtr[s].pos[0]].desc, rValues[resultsNLowPtr[s].pos[0]].rp[0]);
+            if (format==0)
+               gprintf(gui, "a:%-12s:%8g             ", rValues[resultsNLowPtr[s].pos[0]].desc, rValues[resultsNLowPtr[s].pos[0]].rp[0]);
+            else {
+               char* aPtr = engStr(rValues[resultsNLowPtr[s].pos[0]].rp[0], 6, false, format-1);
+               gprintf(gui, "a:%-12s:%8s             ", rValues[resultsNLowPtr[s].pos[0]].desc, aPtr);
+               free(aPtr);
+            }
          } else { // 2 resistors in series or parallel
-            gprintf (gui, "a:%-12s:%8g & %8g  " , rValues[resultsNLowPtr[s].pos[0]].desc, rValues[resultsNLowPtr[s].pos[0]].rp[0], rValues[resultsNLowPtr[s].pos[0]].rp[1]);
+            if (format==0)
+               gprintf(gui, "a:%-12s:%8g & %8g  " , rValues[resultsNLowPtr[s].pos[0]].desc, rValues[resultsNLowPtr[s].pos[0]].rp[0], rValues[resultsNLowPtr[s].pos[0]].rp[1]);
+            else {
+               char* a0Ptr = engStr(rValues[resultsNLowPtr[s].pos[0]].rp[0], 6, false, format-1);
+               char* a1Ptr = engStr(rValues[resultsNLowPtr[s].pos[0]].rp[1], 6, false, format-1);
+               gprintf(gui, "a:%-12s:%8s & %8s  ", rValues[resultsNLowPtr[s].pos[0]].desc, a0Ptr, a1Ptr);
+               free(a0Ptr);
+               free(a1Ptr);
+            }
          }
          if (cmp1==0) { // single resistors
-            gprintf (gui, "b:%-12s:%8g"       , rValues[resultsNLowPtr[s].pos[1]].desc, rValues[resultsNLowPtr[s].pos[1]].rp[0]);
+            if (format==0)
+               gprintf(gui, "b:%-12s:%8g"       , rValues[resultsNLowPtr[s].pos[1]].desc, rValues[resultsNLowPtr[s].pos[1]].rp[0]);
+            else {
+               char* bPtr = engStr(rValues[resultsNLowPtr[s].pos[1]].rp[0], 6, false, format-1);
+               gprintf(gui, "b:%-12s:%8s"       , rValues[resultsNLowPtr[s].pos[1]].desc, bPtr);
+               free(bPtr);
+            }
          } else { // 2 resistors in series or parallel
-            gprintf (gui, "b:%-12s:%8g & %8g ", rValues[resultsNLowPtr[s].pos[1]].desc, rValues[resultsNLowPtr[s].pos[1]].rp[0], rValues[resultsNLowPtr[s].pos[1]].rp[1]);
+            if (format==0)
+               gprintf(gui, "b:%-12s:%8g & %8g ", rValues[resultsNLowPtr[s].pos[1]].desc, rValues[resultsNLowPtr[s].pos[1]].rp[0], rValues[resultsNLowPtr[s].pos[1]].rp[1]);
+            else {
+               char* b0Ptr = engStr(rValues[resultsNLowPtr[s].pos[1]].rp[0], 6, false, format-1);
+               char* b1Ptr = engStr(rValues[resultsNLowPtr[s].pos[1]].rp[1], 6, false, format-1);
+               gprintf(gui, "b:%-12s:%8s & %8s ", rValues[resultsNLowPtr[s].pos[1]].desc, b0Ptr, b1Ptr);
+               free(b0Ptr);
+               free(b1Ptr);
+            }
          }
-         gprintf (gui, "\n");
+         gprintf(gui, "\n");
       }
    }
    return OK;
