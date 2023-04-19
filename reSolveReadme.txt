@@ -323,7 +323,7 @@ v0.09.09h 2023/03/14
   - show calc and sort progress as percentage
   - generation of Linux AppImage
 
-v0.10.09h 2023/04/16
+v0.10.09h 2023/04/19
 * Added:
   - new memory save strategy searching results, thanks @mvimercati for hints
     keep only the first N best results. Selectable with 'algo=1'
