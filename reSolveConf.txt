@@ -1,4 +1,4 @@
-; put here the dynamic configurations for ReSolve +0.08.09g beta
+; put here the default configurations for ReSolve +0.08.09g beta
 ; numeric values follow equal sign, with no space in between
 ; strings are enclosed in "", keep in one line, shorter than 78 chars
 ; vectors are {} enclosed and comma separated (space and multi lines allowed)

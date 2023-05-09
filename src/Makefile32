@@ -3,7 +3,7 @@
 
 HOST=$(shell uname -o)
 PKG=Linux
-BITS = 32
+BITS=32
 
 BUILD?=release
 ifeq ($(BUILD),debug)
@@ -18,8 +18,8 @@ CFLAGS=-std=gnu11 -Wall $(COPT) -D__USE_MINGW_ANSI_STDIO=1 -m32
 PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig:$PKG_CONFIG_PATH
 GFLAGS=`pkg-config --cflags --libs gtk+-3.0`
 LDFLAGS=$(LOPT) -lm
-TARGET=reSolveLinux32
-GUI=reSolveGuiLinux32
+TARGET=reSolve$(PKG)$(BITS)
+GUI=reSolveGui$(PKG)$(BITS)
 
 all: $(TARGET) $(GUI)
 	@rm -f *.gch

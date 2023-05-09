@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/04/16 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/05/09 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -180,7 +180,7 @@ char* siMem(u64 sizeB) { // convert an u64 to string using SI prefix, do not req
 // convert a double to string using engineering notation or SI prefix, require libmath
 char* engStr(double num, int significant, bool sign, bool siPref) {
    if (significant<1) return NULL;
-   static char* strPtr;
+   char* strPtr;
    double abs=fabs(num);
    if (abs<Epsilon) { asprintf(&strPtr, "0"); return strPtr; }
    if (abs>=1 && abs<1E3) {
@@ -198,9 +198,9 @@ char* engStr(double num, int significant, bool sign, bool siPref) {
    //printf("sci:%+03d ", sci);
    int exp = 3*floor(exd/3);
    //printf("exp:%+03d ", exp);
-   double divs = pow(10, sci);
+   int divs = pow(10, sci);
    double dive = pow(10, exp);
-   double ords = pow(10, significant);
+   int ords = pow(10, significant);
    //printf("divs:%6g ", divs);
    double mant = num/dive; if (exp==0) mant=num;
    //printf ("      num:'%6g' eng:'%3gE%+03d'\n", num, mant, exp);
@@ -222,16 +222,16 @@ char* engStr(double num, int significant, bool sign, bool siPref) {
       int s=exp/3+8;
       //printf("s:%02d ", s);
       if (sign==false)
-         asprintf(&strPtr, "%.*g%s", significant, mant, siPre[s]);
+         asprintf(&strPtr, "%.*g %s", significant, mant, siPre[s]);
       else
-         asprintf(&strPtr, "%+.*g%s", significant, mant, siPre[s]);
+         asprintf(&strPtr, "%+.*g %s", significant, mant, siPre[s]);
       return strPtr;
    }
 } // engStr()
 
 int isNumber(char* strPtr, bool dotComma) { // return 1 for numbers. When dotComma=1 accept dot and comma
    if (strPtr==NULL) return ERROR;
-   int c=0;
+   u08 c=0;
    while ( isdigit(strPtr[c]) || strPtr[c]=='e' || strPtr[c]=='+' || (dotComma==true && (strPtr[c]=='.' || strPtr[c]==',' ) ) ) ++c;
    //printf("str:'%s' bool:%d c:%d\n", strPtr, dotComma, c);
    if (c==strlen(strPtr)) return true;
@@ -1299,7 +1299,7 @@ int doMemLowCalc() { // fill inputs, low mem calcs+sort solutions
    first = totV-numBestRes; /* 0 worse, 'first' 1st printed, 'totV' best, numBestRes # of best print */
 
    // 10 - sorting of solutions
-   gprintf (gui, "Sorting best:%llu found solutions ...\n", numBestRes);
+   gprintf (gui, "Sorting best:%u found solutions ...\n", numBestRes);
    structQuickSort(results2LowPtr, numBestRes); /* QuickSort on new results */
    if (maxRp==2) { // 
       structQuickSort(resultsLowPtr, numBestRes); /* QuickSort on new results */

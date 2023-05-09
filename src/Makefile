@@ -21,8 +21,8 @@ CFLAGS=-std=gnu11 -Wall $(COPT) -D__USE_MINGW_ANSI_STDIO=1
 PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH
 GFLAGS=`pkg-config --cflags --libs gtk+-3.0`
 LDFLAGS=$(LOPT) -lm
-TARGET=reSolve$(PKG)64
-GUI=reSolveGui$(PKG)64
+TARGET=reSolve$(PKG)$(BITS)
+GUI=reSolveGui$(PKG)$(BITS)
 
 all: $(TARGET) $(GUI)
 	@rm -f *.gch

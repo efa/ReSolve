@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/04/16 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/05/09 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -37,7 +37,7 @@
 #define AppName       "ReSolve"
 #define SourceVersion "0.10.09h beta"
 #define CopyrightYear "2023"
-#define SourceDate    CopyrightYear"/04/16"
+#define SourceDate    CopyrightYear"/05/09"
 #define ReSolveVer    SourceVersion" "SourceDate
 #define Author        "Valerio Messina"
 #define WebLink       "github.com/efa/ReSolve"
@@ -85,7 +85,7 @@
 #define DesiredDefault     9 /* default value for desired */
 #define MaxValue 50E9 // 50 G(Ohm) should be greather than any practical value
 #define Epsilon 1.0E-14 // used to compare double/float numbers
-#define MICRO "μ" // used when SI prefix are requested
+#define MICRO "μ"//"u" // used when SI prefix are requested
 
 #define NumberResDefault  20  /* default number of results to print */
 #define NumberResMax     512000 /* the limit depends on compiler */

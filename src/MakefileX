@@ -3,7 +3,7 @@
 
 HOST=$(shell uname -o)
 PKG=Win
-BITS := $(shell getconf LONG_BIT)
+BITS=64
 
 BUILD?=release
 ifeq ($(BUILD),debug)
@@ -20,8 +20,8 @@ PKGCONFIG=/opt/mxe/usr/bin/x86_64-w64-mingw32.static-pkg-config
 PKG_CONFIG_LIBDIR=/opt/mxe/usr/x86_64-w64-mingw32.static/lib/pkgconfig
 GFLAGS=`$(PKGCONFIG) --cflags --libs gtk+-3.0`
 LDFLAGS=$(LOPT) -lm
-TARGET=reSolveWin64.exe
-GUI=reSolveGuiWin64.exe
+TARGET=reSolve$(PKG)$(BITS).exe
+GUI=reSolveGui$(PKG)$(BITS).exe
 
 all: $(TARGET) $(GUI)
 	@rm -f *.gch

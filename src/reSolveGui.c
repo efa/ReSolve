@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/04/16 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/05/09 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -804,7 +804,7 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
          ret = showVal2 (numBestRes); // LIB:
       }
    } else { // new mem low strategy
-      gprintf (gui, "Show best:%llu found solutions ...\n", numBestRes);
+      gprintf (gui, "Show best:%u found solutions ...\n", numBestRes);
       if (maxRp==1) { // no need to showVal4,3,2 ...
          gprintf (gui, "Show best:%u solutions with 2 resistors:\n", numBestRes);
          ret = showValMemLow (numBestRes, results2LowPtr); // LIB:
