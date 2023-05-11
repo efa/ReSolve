@@ -323,7 +323,7 @@ v0.09.09h 2023/03/14
   - show calc and sort progress as percentage
   - generation of Linux AppImage
 
-v0.10.09h 2023/05/09
+v0.10.09h 2023/05/11
 * Added:
   - new memory save strategy searching results, thanks @mvimercati for hints
     keep only the first N best results. Selectable with 'algo=1'
@@ -331,8 +331,8 @@ v0.10.09h 2023/05/09
   - thanks @lcavalli for hints
   - format parameter to show numbers with engineering notation or SI prefix
   - different binary packages for different OSs
-  - made a package for Raspberry Pi @32/64bit
-  - made a package for VisionFive2 RISC-V @64bit
+  - made a package for Raspberry Pi @ 32/64bit
+  - made a package for VisionFive2 RISC-V @ 64bit
   - removed binaries from github master
   - GUI: read decimal values from baseR custom values in config file
   - GUI: better parameters checking: custom values, results

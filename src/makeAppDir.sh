@@ -1,5 +1,5 @@
 #!/bin/bash
-# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-05-04
+# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-05-11
 echo "makeAppDir.sh: generating the AppDir for ReSolve ..."
 if (test "" = "$1") then
    echo "makeAppDir.sh ERROR: need the target platform to create package"
@@ -8,19 +8,19 @@ if (test "" = "$1") then
 fi
 PKG=$1
 if (test "" = "$2") then
-   BITS=$(getconf LONG_BIT)
+   BIT=$(getconf LONG_BIT)
 else
-   BITS=$2
+   BIT=$2
 fi
 cp -a ../reSolveReadme.txt ../README.md
-arch=`uname -m`
-echo "makeAppDir.sh: generating $PKG $BITS bit package ..."
+CPU=`uname -m`
+echo "makeAppDir.sh: generating $PKG $CPU $BIT bit package ..."
 rm -rf AppDir
 mkdir -p AppDir
 if (test "$PKG" = "Linux") then
    mkdir -p AppDir/lib
-   if (test "$arch" = "x86_64" || test "$arch" = "i686") then # skip on ARM&RISC-V
-      if (test "$BITS" = "64") then
+   if (test "$CPU" = "x86_64" || test "$CPU" = "i686") then # skip on ARM&RISC-V
+      if (test "$BIT" = "64") then
          cp -aL /lib/x86_64-linux-gnu/libatk-1.0.so.0 AppDir/lib
          cp -aL /lib/x86_64-linux-gnu/libatk-bridge-2.0.so.0 AppDir/lib
          cp -aL /lib/x86_64-linux-gnu/libatspi.so.0 AppDir/lib
@@ -93,7 +93,7 @@ if (test "$PKG" = "Linux") then
          #cp -aL /lib/x86_64-linux-gnu/libsystemd.so.0 AppDir/lib
          cat AppRun | sed 's/is32whenLinux32pkgAndRunOnLinux64/64/' > AppDir/AppRun
       fi # 64 bit
-      if (test "$BITS" = "32") then
+      if (test "$BIT" = "32") then
          cp -aL /lib/i386-linux-gnu/libatk-1.0.so.0 AppDir/lib
          cp -aL /lib/i386-linux-gnu/libatk-bridge-2.0.so.0 AppDir/lib
          cp -aL /lib/i386-linux-gnu/libatspi.so.0 AppDir/lib
@@ -175,17 +175,11 @@ cp -a ../reSolveReadme.txt AppDir
 if (test "$PKG" = "Win") then
    EXT=".exe"
 fi
-if (test "$BITS" = "64") then
-   cp -a ../reSolve${PKG}64${EXT}    AppDir/reSolve${PKG}64${EXT}
-   cp -a ../reSolveGui${PKG}64${EXT} AppDir/reSolveGui${PKG}64${EXT}
-fi
-if (test "$BITS" = "32") then
-   cp -a ../reSolve${PKG}32${EXT}    AppDir/reSolve${PKG}32${EXT}
-   cp -a ../reSolveGui${PKG}32${EXT} AppDir/reSolveGui${PKG}32${EXT}
-fi
-if (test "$PKG" = "Linux" && (test "$arch" = "x86_64" || test "$arch" = "i686")) then # skip on ARM&RISC-V
+cp -a ../reSolve${PKG}${BIT}${EXT}    AppDir/reSolve${PKG}${BIT}${EXT}
+cp -a ../reSolveGui${PKG}${BIT}${EXT} AppDir/reSolveGui${PKG}${BIT}${EXT}
+if (test "$PKG" = "Linux" && (test "$CPU" = "x86_64" || test "$CPU" = "i686")) then # skip on ARM&RISC-V
    echo "makeAppDir.sh: Generating the AppImage for ReSolve ..."
-   if (test "$BITS" = "64") then
+   if (test "$BIT" = "64") then
       if (! test -x appimagetool-x86_64.AppImage) then
          wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
          chmod +x appimagetool-x86_64.AppImage
@@ -194,7 +188,7 @@ if (test "$PKG" = "Linux" && (test "$arch" = "x86_64" || test "$arch" = "i686"))
       mv ReSolveGui-x86_64.AppImage ..
       cp -a ../ReSolveGui-x86_64.AppImage ../..
    fi
-   if (test "$BITS" = "32") then
+   if (test "$BIT" = "32") then
       if (! test -x appimagetool-i686.AppImage) then
          wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-i686.AppImage"
          chmod +x appimagetool-i686.AppImage
@@ -208,20 +202,20 @@ ver=`grep SourceVersion reSolveLib.h | cut -d' ' -f3 | tr -d '."'`
 date=`date -I`
 echo ver:$ver date:$date
 if (test "$PKG" = "Linux") then
-   file=reSolve${ver}_${date}_Linux$BITS.tgz
+   file=reSolve${ver}_${date}_Linux_${CPU}_${BIT}bit.tgz
    echo "Creating package file:'$file' ..."
    cd ../..
    if (test -f $file) then { rm $file ; } fi
-   if (test "$BITS" = "64") then
+   if (test "$BIT" = "64") then
       EXCL=Linux32
    fi
-   if (test "$BITS" = "32") then
+   if (test "$BIT" = "32") then
       EXCL=Linux64
    fi
    tar --exclude-vcs --exclude=$EXCL --exclude=AppDir --exclude=*.AppImage --exclude=appimagetool* --exclude=*.exe --exclude=ReSolve.ods --exclude=reSolveBack.glade --exclude=reSolve_.glade --exclude=notes.txt -cvaf $file ReSolve
 fi
 if (test "$PKG" = "Win") then
-   file=reSolve${ver}_${date}_Win$BITS.7z
+   file=reSolve${ver}_${date}_Win_${BIT}bit.7z
    echo "Creating package file:'$file' ..."
    mkdir -p AppDir/src
    cp -a *.h *.c Makefile* AppDir/src
