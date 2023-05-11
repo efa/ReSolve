@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/05/09 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/05/11 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -231,8 +231,9 @@ char* engStr(double num, int significant, bool sign, bool siPref) {
 
 int isNumber(char* strPtr, bool dotComma) { // return 1 for numbers. When dotComma=1 accept dot and comma
    if (strPtr==NULL) return ERROR;
-   u08 c=0;
-   while ( isdigit(strPtr[c]) || strPtr[c]=='e' || strPtr[c]=='+' || (dotComma==true && (strPtr[c]=='.' || strPtr[c]==',' ) ) ) ++c;
+   u16 c=0;
+   //printf("strPtr:'%s'\n", strPtr);
+   while ( isdigit(strPtr[c]) || strPtr[c]=='e' || strPtr[c]=='+' || (dotComma==true && (strPtr[c]=='.' || strPtr[c]==',' ) ) ) c++;
    //printf("str:'%s' bool:%d c:%d\n", strPtr, dotComma, c);
    if (c==strlen(strPtr)) return true;
    return false;
