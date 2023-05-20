@@ -1,8 +1,13 @@
 # Makefile to generate 'reSolve'
-# Linux32=>Linux32, Linux64=>Linux64, MinGw32=>Win32, MinGw64=>Win64
+# Linux32=>Linux32, Linux64=>Linux64, MinGw32=>Win32, MinGw64=>Win64, macOS64=>macOS64
 
-HOST=$(shell uname -o)
+HOST=$(shell uname)
 PKG=Linux
+ifneq ($(HOST),Darwin)
+   HOST=$(shell uname -o)
+else
+   PKG=MacOS
+endif
 ifeq ($(HOST),Msys)
    PKG=Win
 endif
@@ -19,8 +24,9 @@ endif
 CC=gcc
 CFLAGS=-std=gnu11 -Wall $(COPT) -D__USE_MINGW_ANSI_STDIO=1
 PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH
-GFLAGS=`pkg-config --cflags --libs gtk+-3.0`
+GFLAGS=`pkg-config --cflags gtk+-3.0`
 LDFLAGS=$(LOPT) -lm
+GLDFLAGS=`pkg-config --libs gtk+-3.0`
 TARGET=reSolve$(PKG)$(BITS)
 GUI=reSolveGui$(PKG)$(BITS)
 
@@ -28,10 +34,10 @@ all: $(TARGET) $(GUI)
 	@rm -f *.gch
 
 $(GUI): fileIo.o exprParser.o reSolveLib.o reSolveGui.o
-	$(CC) $(CFLAGS) $^ $(LDFLAGS) $(GFLAGS) -o $@
+	$(CC) $^ $(LDFLAGS) $(GLDFLAGS) -o $@
 
 $(TARGET): fileIo.o exprParser.o reSolveLib.o reSolveCli.o
-	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(CC) $^ $(LDFLAGS) -o $@
 
 fileIo.o: comType.h fileIo.h fileIo.c
 

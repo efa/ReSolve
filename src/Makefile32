@@ -16,8 +16,9 @@ endif
 CC=gcc
 CFLAGS=-std=gnu11 -Wall $(COPT) -D__USE_MINGW_ANSI_STDIO=1 -m32
 PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig:$PKG_CONFIG_PATH
-GFLAGS=`pkg-config --cflags --libs gtk+-3.0`
-LDFLAGS=$(LOPT) -lm
+GFLAGS=`pkg-config --cflags gtk+-3.0`
+LDFLAGS=$(LOPT) -lm -m32
+GLDFLAGS=`pkg-config --libs gtk+-3.0`
 TARGET=reSolve$(PKG)$(BITS)
 GUI=reSolveGui$(PKG)$(BITS)
 
@@ -25,10 +26,10 @@ all: $(TARGET) $(GUI)
 	@rm -f *.gch
 
 $(GUI): fileIo.o exprParser.o reSolveLib.o reSolveGui.o
-	$(CC) $(CFLAGS) $^ $(LDFLAGS) $(GFLAGS) -o $@
+	$(CC) $^ $(LDFLAGS) $(GLDFLAGS) -o $@
 
 $(TARGET): fileIo.o exprParser.o reSolveLib.o reSolveCli.o
-	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(CC) $^ $(LDFLAGS) -o $@
 
 fileIo.o: comType.h fileIo.h fileIo.c
 

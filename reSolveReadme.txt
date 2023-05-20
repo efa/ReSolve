@@ -323,7 +323,7 @@ v0.09.09h 2023/03/14
   - show calc and sort progress as percentage
   - generation of Linux AppImage
 
-v0.10.09h 2023/05/11
+v0.10.09h 2023/05/20
 * Added:
   - new memory save strategy searching results, thanks @mvimercati for hints
     keep only the first N best results. Selectable with 'algo=1'
@@ -331,6 +331,7 @@ v0.10.09h 2023/05/11
   - thanks @lcavalli for hints
   - format parameter to show numbers with engineering notation or SI prefix
   - different binary packages for different OSs
+  - initial support for macOS @64bit
   - made a package for Raspberry Pi @ 32/64bit
   - made a package for VisionFive2 RISC-V @ 64bit
   - removed binaries from github master

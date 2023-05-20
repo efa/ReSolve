@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/05/11 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/05/20 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -23,11 +23,10 @@
 #include <stdio.h>      /* printf() */
 #include <string.h>     /* strcpy(), strlen(), strcspn() */
 #include <stdint.h>     /* uintptr_t */
-#include <stdlib.h>     /* qsort(), atof(), exit() */
+#include <stdlib.h>     /* qsort(), atof(), exit(), malloc() */
 #include <stdarg.h>     /* va_list, va_start(), va_end() */
 #include <math.h>       /* pow(), fabs() */
 #include <ctype.h>      /* isdigit() */
-#include <malloc.h>     /* malloc() */
 #include <time.h>       /* clock(), CLOCKS_PER_SEC */
 #include <unistd.h>     /* fsync() */
 #include "comType.h"    /* common type */
@@ -37,7 +36,7 @@
 #define AppName       "ReSolve"
 #define SourceVersion "0.10.09h beta"
 #define CopyrightYear "2023"
-#define SourceDate    CopyrightYear"/05/11"
+#define SourceDate    CopyrightYear"/05/20"
 #define ReSolveVer    SourceVersion" "SourceDate
 #define Author        "Valerio Messina"
 #define WebLink       "github.com/efa/ReSolve"

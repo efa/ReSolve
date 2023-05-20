@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/05/11 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/05/20 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* exprParser.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -139,7 +139,7 @@ void putBack(void) {
 
 /* Process a parenthesized expression */
 void evalExp6(double* answer) {
-   if ((*token == '(')) {
+   if (*token == '(') {
       getToken ();
       evalExp2 (answer);
       if (*token != ')')

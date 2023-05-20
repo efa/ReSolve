@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/05/11 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/05/20 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* fileIo.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -157,7 +157,7 @@ off_t readFile(char* fileName, char** bufferPtrPtr) {
    }
    Nch = fread (*bufferPtrPtr, 1, len, filePtr);
    if (Nch != len) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot read Nch/len:%zu/%ld from file:\"%s\"\n", __FUNCTION__, Nch, len, fileName);
+      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot read Nch/len:%zu/%lld from file:\"%s\"\n", __FUNCTION__, Nch, (s64)len, fileName);
       return Nch;
    }
    if (dbgLev>=PRINTVERBOSE) printf ("%s(): file:'%s' of '%zu' chars readed in buffer\n", __FUNCTION__, fileName, Nch);
