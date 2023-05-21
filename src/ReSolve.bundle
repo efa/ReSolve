@@ -7,9 +7,11 @@
     <gtk>gtk+-3.0</gtk>
   </meta>
   <plist>${project}/Info.plist</plist>
-  <main-binary>${project}/../reSolveGuiMacOS64</main-binary>
-  <binary>
-    ${project}/../reSolveMacOS64
+  <main-binary dest="${bundle}/Contents/MacOS">
+    ${project}/reSolveGuiMacOS64
+  </main-binary>
+  <binary dest="${bundle}/Contents/MacOS">
+    ${project}/reSolveMacOS64
   </binary>
   <data dest="${bundle}/Contents/MacOS">
     ${project}/reSolve.glade
