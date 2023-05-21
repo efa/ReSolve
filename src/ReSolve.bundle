@@ -1,0 +1,29 @@
+<?xml version="1.0" standalone="no"?> <!--*- mode: xml -*-->
+<app-bundle>
+  <meta>
+    <prefix name="default">${env:JHBUILD_PREFIX}</prefix>
+    <destination overwrite="yes">${env:HOME}/c</destination>
+    <run-install-name-tool/>
+    <gtk>gtk+-3.0</gtk>
+  </meta>
+  <plist>${project}/Info.plist</plist>
+  <main-binary>${project}/../reSolveGuiMacOS64</main-binary>
+  <binary>
+    ${project}/../reSolveMacOS64
+  </binary>
+  <data dest="${bundle}/Contents/MacOS">
+    ${project}/reSolve.glade
+  </data>
+  <data dest="${bundle}/Contents/MacOS">
+    ${project}/reSolveConf.txt
+  </data>
+  <data dest="${bundle}/Contents/MacOS">
+    ${project}/circuit*.png
+  </data>
+  <data dest="${bundle}/Contents/MacOS">
+    ${project}/ReSolve.png
+  </data>
+  <data dest="${bundle}/Contents/Resources">
+    ${project}/ReSolve.icns
+  </data>
+</app-bundle>

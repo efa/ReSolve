@@ -1,5 +1,5 @@
 #!/bin/bash
-# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-05-11
+# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-05-21
 echo "makeAppDir.sh: generating the AppDir for ReSolve ..."
 if (test "" = "$1") then
    echo "makeAppDir.sh ERROR: need the target platform to create package"
@@ -15,6 +15,10 @@ fi
 cp -a ../reSolveReadme.txt ../README.md
 CPU=`uname -m`
 echo "makeAppDir.sh: generating $PKG $CPU $BIT bit package ..."
+if (test "$PKG" = "MacOS") then
+   echo "As now do not support macOS. Use 'gtk-mac-bundler'. Quit"
+   exit
+fi
 rm -rf AppDir
 mkdir -p AppDir
 if (test "$PKG" = "Linux") then
