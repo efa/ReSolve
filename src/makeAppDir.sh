@@ -1,5 +1,5 @@
 #!/bin/bash
-# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-05-21
+# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-05-22
 echo "makeAppDir.sh: generating the AppDir for ReSolve ..."
 if (test "" = "$1") then
    echo "makeAppDir.sh ERROR: need the target platform to create package"
