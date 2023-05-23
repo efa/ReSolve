@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/05/22 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/05/23 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -141,6 +141,28 @@ bool algo=1; // 0 use old memory hungry strategy, 1 use new mem low strategy
 bool gui;    // when 1, gprintf() update the GUI
 bool winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
+
+// change current working directory to binary path to let find assets files
+void chDirBin(char* argList) { // call with chDirBin(argv[0]);
+   char* cwdPath;
+   char absPath[PATH_MAX];
+   cwdPath=malloc(PATH_MAX);
+   cwdPath=getcwd(cwdPath, PATH_MAX);
+   //printf("cwdPath='%s'\n", cwdPath);
+   realpath(argList, absPath);
+   //printf("realpath()='%s'\n", absPath);
+   int len=strlen(absPath);
+   for (int l=len; l>0; l--) {
+      if (absPath[l]=='/' || absPath[l]=='\\') {
+         absPath[l]='\0';
+         break;
+      }
+   }
+   //printf("absPath()='%s'\n", absPath);
+   chdir(absPath);
+   free(cwdPath);
+   return;
+} // chDirBin()
 
 // gprintf(): selectable printf OR asprintf(autoalloc sprintf)
 // when first parameter is 0 is like printf()

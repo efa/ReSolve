@@ -77,4 +77,5 @@ rel: force
 	mv $(TARGET) $(GUI) ..
 
 pkg: rel
+	@echo ""
 	@makeAppDir.sh $(PKG) $(BITS)

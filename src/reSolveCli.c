@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/05/22 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/05/23 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ int main(int numPar, char* param[]) { // CLI entry point
    guiUpdateOutPtr = NULL; // no function pointer to guiUpdateOut()
    winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
+   chDirBin(param[0]); // change current working directory to binary path
    // 1 - load configuration file and params
    ret = baseInit (); // LIB: basic initialization: load config from file
    if (ret != 0) {

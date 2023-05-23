@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/05/22 solve math expressions using discrete values*/
+/* ReSolve v0.10.09h 2023/05/23 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -25,6 +25,7 @@
 #include <stdint.h>     /* uintptr_t */
 #include <stdlib.h>     /* qsort(), atof(), exit(), malloc() */
 #include <stdarg.h>     /* va_list, va_start(), va_end() */
+#include <limits.h>     /* PATH_MAX,NAME_MAX */
 #include <math.h>       /* pow(), fabs() */
 #include <ctype.h>      /* isdigit() */
 #include <time.h>       /* clock(), CLOCKS_PER_SEC */
@@ -36,7 +37,7 @@
 #define AppName       "ReSolve"
 #define SourceVersion "0.10.09h beta"
 #define CopyrightYear "2023"
-#define SourceDate    CopyrightYear"/05/22"
+#define SourceDate    CopyrightYear"/05/23"
 #define ReSolveVer    SourceVersion" "SourceDate
 #define Author        "Valerio Messina"
 #define WebLink       "github.com/efa/ReSolve"
@@ -45,6 +46,9 @@
 #ifdef __MSVCRT__       /* CrossCompile to MinGw target */
 #define fsync _commit   /* msvcrt.dll miss fsync, that is present on unix */
 #endif                  /* on Win32 try if work using _commit */
+#ifdef _WIN32           // Win have '_fullpath'
+   #define realpath(N,R) _fullpath((R),(N),PATH_MAX)
+#endif
 
 /* Up to V0.07.07c before compile, to configure available values, need to set:
     1) 'Series' with xx (96 for E96), or 0 for custom list
@@ -134,6 +138,7 @@ extern bool winGuiLoop; // Win loop gtk_events_pending/gtk_main_iteration to upd
 extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
 
 // public library functions:
+void chDirBin(char* argList); // change current working directory to binary path
 int gprintf (int gui, const char* format, ...); // printf() or update GUI
 char* siMem(u64 sizeB); // convert an u64 to string using SI prefix, do not require libmath
 char* engStr(double num, int significant, bool sign, bool siPref); // engineering notation or SI prefix, require libmath
