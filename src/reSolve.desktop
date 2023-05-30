@@ -2,7 +2,7 @@
 Version=1.0
 Type=Application
 Terminal=false
-Exec=reSolveGui
+Exec=reSolveGuiLinux64
 Comment=Start ReSolveGui
 Comment[it_IT]=Avvia ReSolveGui
 Icon=ReSolve
