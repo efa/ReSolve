@@ -7,7 +7,7 @@
     <key>CFBundleExecutable</key>
     <string>reSolveGuiMacOS64</string>
     <key>CFBundleGetInfoString</key>
-    <string>0.10.09h beta 2023/05/22, Copyright 2023 Valerio Messina</string>
+    <string>0.11.09h beta 2023/08/25, Copyright 2023 Valerio Messina</string>
     <key>CFBundleIconFile</key>
     <string>ReSolve.icns</string>
     <key>CFBundleIdentifier</key>
@@ -17,11 +17,11 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.10.09h</string>
+    <string>0.11.09h</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleVersion</key>
-    <string>0.10.09h beta 2023/05/22</string>
+    <string>0.11.09h beta 2023/08/25</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright 2023 Valerio Messina, GNU General Public License.</string>
     <key>LSMinimumSystemVersion</key>

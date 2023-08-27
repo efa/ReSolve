@@ -1,51 +1,49 @@
-; put here the default configurations for ReSolve +0.08.09g beta
-; numeric values follow equal sign, with no space in between
+; put here the default configurations for ReSolve +0.11.09h beta
+; parameter names must be at the start of a new line
+; parameter names must be followed by an equal sign with no space in between
+; numeric values follow equal sign with no space in between
 ; strings are enclosed in "", keep in one line, shorter than 78 chars
 ; vectors are {} enclosed and comma separated (space and multi lines allowed)
 ; comments follow ;
 ; remember that command line arguments take precedence to config values
 ; -h|--help to see command line syntax
 
-expr="1.25*(1+b/a)" ; default formula. Es. '1.25*(1+b/a)'
-                    ; reverse high partitor (LM317)
+expr="1.25*(1+b/a)" ; default formula. Use only 'a' and 'b' as variables
+                    ; Es. '1.25*(1+b/a)' reverse high partitor (LM317)
 
-desired=9 ; 9 Volt output
+target=9 ; 9 Volt output
 
-Eseries=96 ; Exx: Series E12, E24, E96 or E192
-            ;   0  for custom list, see 'baseR' and 'listNumber'
-            ;   1  
-            ;   3 @40% tolerance
-            ;   6 @20% tolerance
-            ;  12 @10% tolerance
-            ;  24 @5% (and 2%) tolerance
-            ;  48 @2% tolerance
-            ;  96 @1% tolerance
-            ; 192 @0.5% (and 0.1%) tolerance
+Eserie=96 ; Exx: Serie E1, E3, E6, E12, E24, E48, E96 or E192
+           ;   0  for user list, use 'baseR'
+           ;   1 @80% tolerance
+           ;   3 @40% tolerance
+           ;   6 @20% tolerance
+           ;  12 @10% tolerance
+           ;  24 @5% (and 2%) tolerance
+           ;  48 @2% tolerance
+           ;  96 @1% tolerance
+           ; 192 @0.5% (and 0.1%) tolerance
 decades=7 ; number of decades of interest, normally 6 or 7
-          ; not used when Eseries=0
-
-baseR={  470,   510,   560,   620,   680,   750,   820,   910,
-        1000,  1100,  1200,  1300,  1500,  1600,  1800,
-        2000,  2200,  2400,  2700,  3000,  3300,  3600,  3900,
-        4300,  4700,  5100,  5600,  6200,  6800,  7500,  8200, 9100,
-       10000, 11000, 12000, 13000, 15000, 16000, 18000,
-       20000, 22000, 24000, 27000, 30000, 33000, 36000, 39000,
-       43000, 47000, 51000, 56000, 62000, 68000,
-       75000, 82000, 91000, 100000 } ; custom list of 57 values @1% : TH @RS
-listNumber=57 ; insert here custom list quantity. Not used when Eseries>0
-
-baseRdesc="custom list of 57 values @1% tolerance: TH @RS" ; max 64 chars
-                                                           ; description only
+          ; not used when Eserie=0
+userR={ 10, 11, 12.1, 13.3, 14.7, 16.2, 17.8, 19.6, 21.5, 23.7, 26.1, 28.7, 31.6, 34.8, 38.3, 42.2, 46.4, 51.1, 56.2, 61.9, 68.1, 75, 82.5, 90.9, 100, 110, 121, 133, 147, 162, 178, 196, 215, 237, 261, 287, 316, 348, 383, 422, 464, 511, 562, 619, 681, 750, 825, 909, 1000, 1100, 1210, 1330, 1470, 1620, 1780, 1960, 2150, 2370, 2610, 2870, 3160, 3480, 3830, 4220, 4640, 5110, 5620, 6190, 6810, 7500, 8250, 9090, 10000, 11000, 12100, 13300, 14700, 16200, 17800, 19600, 21500, 23700, 26100, 28700, 31600, 34800, 38300, 42200, 46400, 51100, 56200, 61900, 68100, 75000, 82500, 90900, 100000, 110000, 121000, 133000, 147000, 162000, 178000, 196000, 215000, 237000, 261000, 287000, 316000, 348000, 383000, 422000, 464000, 511000, 562000, 619000, 681000, 750000, 825000, 909000, 1000000, 1100000, 1210000, 1330000, 1470000, 1620000, 1780000, 1960000, 2150000, 2370000, 2610000, 2870000, 3160000, 3480000, 3830000, 4220000, 4640000, 5110000, 5620000, 6190000, 6810000, 7500000, 8250000, 9090000, 10000000, 11000000, 12100000, 13300000, 14700000, 16200000, 17800000, 19600000, 21500000 } ; user list of 153 E48/2 values @1%, 10-22M Ohm
+userRtol=1 ; baseR percent tolerance: use 1 for 1% tolerance
+userRdesc="user list of 153 E48/2 values @1%, 10-22M Ohm" ; description max 64 chars
 
 numberOfResults=20 ; show the best 20 results
 
 maxRp=1 ; max number of resistances supported per position: as now 1 or 2.
         ; with 2 try all series and parallel for 'a' and 'b'. Note: when 2
-        ; and Eseries = 48, 96 or 192 will require much time, see 'Readme.txt'
+        ; and Eserie = 48, 96 or 192 will require lot of time, see 'Readme.txt'
 
 format=1; 0 scientific notation, 1 engineering notation, 2 SI prefix
 
-algo=1  ; 0 use old memory hungry strategy, 1 use new memory save strategy
+mem=1   ; 0 use old memory hungry strategy, 1 use new memory save strategy
 
-maxRc=2 ; as now 2 is the only supported value
-        ; (numbers of variables in formula, 'a' and 'b')
+lists=1 ; 1 normal, 2 use baseR as low precision and baseR2 as hi precision
+        ; when lists=2 automatically set Eserie=0, maxRc=2 and mem=0
+
+userR2={ 10, 12.1, 14.7, 17.8, 21.5, 26.1, 31.6, 38.3, 46.4, 56.2, 68.1, 82.5, 100, 121, 147, 178, 215, 261, 316, 383, 464, 562, 681, 825, 1000, 1210, 1470, 1780, 2150, 2610, 3160, 3830, 4640, 5620, 6810, 8250, 10000, 12100, 14700, 17800, 21500, 26100, 31600, 38300, 46400, 56200, 68100, 82500, 100000, 121000, 147000, 178000, 215000, 261000, 316000, 383000, 464000, 562000, 681000, 825000, 1000000, 1210000, 1470000, 1780000, 2150000, 2610000, 3160000, 3830000, 4640000, 5620000, 6810000, 8250000, 10000000, 12100000, 14700000, 17800000, 21500000 } ; user list of 77 E48/4 values @0.1%, 10-22M Ohm
+userR2tol=0.1 ; baseR2 percent tolerance: use 0.1 for 0.1% tolerance
+userR2desc="user list of 77 E48/4 values @0.1%, 10-22M Ohm" ; description max 64 chars
+
+valTolBest=1 ; 0 keep all values, 1 skip: serie 10*R1%>R0.1%, // R1%<10*R0.1%

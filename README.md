@@ -15,13 +15,14 @@ Features:
 - can use a configurable resistor series (default E12, E24, E96 or E192)
 - can use a configurable resistor decade number (default to 7)
 - as alternative can use a custom list of values
+- support for a 2nd set of custom better tolerance values
 - sort and show results in best match order, showing difference and error%
   from desiderata value
 - default configuration is read from the file 'reSolveConf.txt'
 - cross-platform, open-source
 - GUI, see image below
 
-![Current GUI of ReSolve 0.10.09h](/ReSolveGUI.png)
+![Current GUI of ReSolve 0.11.09h](/ReSolveGUI.png)
 
 Limits:
 -------
@@ -33,13 +34,14 @@ Limits:
   as are seen by ReSolve all as the same resistor.
 - max 2 resistors per position (no series/parallel when Rp>2 resistances)
 - do not solve library math functions (sin, cos, tan, exp, log, ...)
-- calculate all possible solutions, last too much time
+- calculate all possible solutions, take too much time
 
 Calling Example:
 ----------------
 Note: unspecified values as arguments are taken from 'reSolveConf.txt'
 ```
-reSolve -h | --help
+Syntax: reSolve [targetFloatValue ['function(a,b)' [numberOfResults]]]
+Syntax: reSolve -h | --help
    show the command line syntax
 reSolve
    search commercial resistances that best match the formula:
@@ -58,6 +60,23 @@ reSolve 3.3 '15*b/(a+b)' 50
    '3.3=12*b/(a+b)' direct low partitor formula with 12V in and 3.3V output.
    Show the best 50 resistances couples.
 ```
+Support for a second list of user values:
+-----------------------------------------
+When lists=1 and Eserie=0, ReSolve will use:
+userR={ v1, v2, ..., Vn } ; user list of 'n' values @1%
+userRtol=1 ; baseR percent tolerance: use 1 for 1% tolerance
+userRdesc="user list of 'n' values @1% tolerance" ; description max 64 chars
+When lists=2, ReSolve set Eserie=0, maxRp=2, mem=0 and will use a second set
+of user/custom values in addition to the base ones, read from:
+userR2={ v1, v2, ..., Vm } ; user list of 'm' values @0.1%
+userR2tol=0.1 ; baseR2 percent tolerance: use 0.1 for 0.1% tolerance
+userR2desc="user list of 'm' values @0.1% tolerance" ; description max 64 chars
+When valTolBest=1 ; 0 keep all, 1 skip: serie 10*R1%>R0.1%, // R1%<10*R0.1%
+ReSolve will discard values when:
+- series  : 10*userR(1%) >    userR2(0.1%)
+- parallel:    userR(1%) < 10*userR2(0.1%)
+so results are calculated keeping best tolerances only
+
 System requirements:
 --------------------
 As always fastest is the system and less time will be required to show results.
@@ -100,7 +119,7 @@ With 2 E192 resistance  per position and 1 decades the search time is  6'56".
 ```
 The required memory depends on how many resistances and find strategy are used
 ```
-Using old memory hungry strategy, when algo=0, all results are kept in RAM,
+Using old memory hungry strategy, when mem=0, all results are kept in RAM,
 then sorted, and shown only the best requested by the user.
 Theoretical value with Rp=1 : (d*s)           ^2*8(=StructSize)
 Theoretical value with Rp=2 :((d*s)^2+2*(d*s))^2*8(=StructSize)
@@ -153,7 +172,7 @@ With 2 E192 resistances per position and 7 decades need  23.8 TB core dump
 ```
 Using the new memory save strategy introduced on 2023/03/26, the required size
 can be much less. Are kept in RAM only the best N results as user request.
-When algo=1, the required RAM is always below 90 MB
+When mem=1, the required RAM is always below 90 MB
 Compute time can still be high in some configurations: E48/E96/E192, d=7, Rp=2
 
 History:
@@ -161,7 +180,7 @@ History:
 When I was at lower school I wrote a Basic program called 'Ohmico',
 It is still on my web site, it searched only parallel resistance close to
 a required value. The limit at that time was memory allocation to 640 kBytes,
-that prevent to implement usefull functions and large resistance series.
+that prevent to implement useful functions and large resistance series.
 Instead ReSolve is written in C and is more general and fast.
 
 v0.01.00 2005/01
@@ -341,21 +360,64 @@ v0.10.09h 2023/05/30
   - GUI: add some hints popup
   - GUI: working About button, thanks @lb90
 
+v0.11.09h 2023/08/27
+* Added:
+  - LIB: Support for 2 custom list of values of different tolerances
+  - LIB: Can use lower tolerance list, keeping best final tolerance:
+         when lists=2 and valTolBest=1 use baseR2 as 1/10 tolerance than baseR
+         when lists=2 and valTolBest=1 use baseR2 & baseR2 too
+  - CLI: new output formatting to show tolerance of each component
+  - CLI: use 80 cols for output formatting
+  - GUI: enlarged to 722 pixels to accomodate 80 cols output formatting
+  - LIB: extended support for decades to 8, GUI too
+  - LIB: reduced memory allocation/compute time for input descriptions:
+         baseR[3+2],mem=0,lists2=2,valTolBest=0: 1.7 kB   => 840  B  , 0.000704 s  => 0.000905 s
+         E1,decades=7,mem=0,lists2=1           : 1.5 kB   => 1.5 kB  , 0.002569 s  => 0.001241 s
+         E12,decades=7,mem=0,lists2=1          : 346.8 kB => 173.4 kB, 42.715295 s => 20.320254 s
+  - LIB: refactored compute functions for mem=1
+  - LIB: refactored showHelp(), showConf()
+  - GUI: changed radio buttom standardEserie/custom values callbacks: done
+  - GUI: disabled "standard Series" & "Decades" selection when "custom values"
+  - LIB: reSolveConf.txt renamed 'desired=' to 'target='
+                                 'algo=' to 'mem='
+                                 'baseR=' to 'userR='
+                                 'baseRdesc=' to 'userRdesc='
+  - LIB: reSolveConf.txt added 'userRtol='
+                               'lists='
+                               'userR2='
+                               'userR2tol='
+                               'userR2desc='
+                               'valTolBest='
+  - LIB: reSolveConf.txt ignore/removed 'listNumber='
+                                        'maxRc='
+* Fix:
+  - LIB: fix conversion to eng notation in case: -1000E-09 instead of -1E-06
+  - LIB: parsing of reSolveConf.txt more robust for duplicates and comments
+
 ToDo:
 -----
-- use multi-threading to speed-up calculation with multicore CPU/GPU
-- remove duplicated triangular solutions with MaxRp=2
-- print exact results, separated by approximate results
-- separate value below and over the target value
-- support for 0 Ohm value in formula denominator (division by 0)
-- add support for variables with an index number. Es. R1, R2
-- add support for variables/letters other than a-b. Autoinit values
-- Made generic the number of total values, based on variables number in formula
-- For each position of resistance in circuit, add support for 'Rp' resistances
-  in series or parallel. Probably not possible with current resources.
-- add opAmp (not)inverting and standard 4 pin regulators circuit
-- estimate computation time, show as X'Y", warn before long computation
-- show only one qs=0%,100% when algo=1 and Rp=2
+- LIB: use multi-threading to speed-up calculation with multicore CPU/GPU
+- LIB: use mem=1 computations with lists=2 to reduce memory requirements
+- LIB: add half/quarter Eseries: E96/4, E48/2
+- LIB: add custom E24 using closest E96 values
+- LIB: add custom E12 using closest E96 values
+- LIB: add hybrid Eseries: E48+E24, E96+E24, E192+E24
+- LIB: minValue=10 ; when !=0 skip Eserie values lesser than minValue
+- LIB: maxValue=0 ; when !=0 skip Eserie values greather than maxValue
+- GUI: show value read from reSolveConf.txt userR in engineering notation
+- LIB: print with eng/SIprefix notation with mem=0
+- LIB: remove duplicated triangular solutions with MaxRp=2
+- LIB: print exact results, separated by approximate results
+- LIB: separate value below and over the target value
+- LIB: support for 0 Ohm value in formula denominator (division by 0)
+- LIB: add support for variables with an index number. Es. R1, R2
+- LIB: add support for variables/letters other than a-b. Autoinit values
+- LIB: Made generic number of total values, based on variables number in formula
+- LIB: For each position of resistance circuit, add support for 'Rp' resistances
+       in series or parallel. Probably not possible with current resources.
+- GUI: add opAmp (not)inverting and standard 4 pin regulators circuit
+- LIB: estimate computation time, show as X'Y", warn before long computation
+- LIB: show only one qs=0%,100% when algo=1 and Rp=2
 - CLI: add parameters to set Eseries and decades
 - GUI: better parameters checking: custom formula
 - GUI: working Stop button
@@ -396,7 +458,7 @@ reSolveWin32.exe         CLI binary for Win32/x86
 reSolveGuiWin32.exe      GUI binary for Win32/x86
 reSolveWin64.exe         CLI binary for Win64/amd64
 reSolveGuiWin64.exe      GUI binary for Win64/amd64
-circuit??.png            Circuit images with example formula
+circuit???.png           Circuit images with example formula
 reSolveConf.txt          Configuration file
 reSolve.glade            GUI resource XML file
 reSolveReadme.txt        this file/manual

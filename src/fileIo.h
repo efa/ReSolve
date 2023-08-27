@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/05/30 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/08/27 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* fileIo.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -51,6 +51,7 @@ off_t readFile(char* fileName, char** bufferPtrPtr);
 size_t writeFile(char* fileName, char* bufferPtr);
 
 /* parse of configuration buffer for parameter value. Return value or ERROR */
+/* vectors parameter: remember to free its address after use */
 errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]);
 
 #endif /* _INCfileIoh */

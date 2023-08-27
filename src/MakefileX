@@ -1,9 +1,27 @@
-# Makefile to crosscompile 'reSolve' from Linux to Win64
+# Makefile: Copyright 2005-2023 Valerio Messina efa@iol.it
+#
+# Makefile is part of ReSolve - solve math expressions using discrete values
+# ReSolve is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# ReSolve is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with ReSolve. If not, see <http://www.gnu.org/licenses/>.
+#
+# Makefile to crossbuild 'reSolve' from Linux to Win64
 # Linux=>Win64
+#
+# To build for debug use: $ make BUILD=debug debug
 
 HOST=$(shell uname -o)
 PKG=Win
-BITS=64
+BIT=64
 
 BUILD?=release
 ifeq ($(BUILD),debug)
@@ -21,8 +39,8 @@ PKG_CONFIG_LIBDIR=/opt/mxe/usr/x86_64-w64-mingw32.static/lib/pkgconfig
 GFLAGS=`$(PKGCONFIG) --cflags gtk+-3.0`
 LDFLAGS=$(LOPT) -lm
 GLDFLAGS=`$(PKGCONFIG) --libs gtk+-3.0`
-TARGET=reSolve$(PKG)$(BITS).exe
-GUI=reSolveGui$(PKG)$(BITS).exe
+TARGET=reSolve$(PKG)$(BIT).exe
+GUI=reSolveGui$(PKG)$(BIT).exe
 
 all: $(TARGET) $(GUI)
 	@rm -f *.gch
@@ -69,4 +87,4 @@ rel: force
 
 pkg: rel
 	@echo ""
-	@makeAppDir.sh $(PKG) $(BITS)
+	@makeAppDir.sh $(PKG) $(BIT)

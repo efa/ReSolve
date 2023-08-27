@@ -1,4 +1,4 @@
-/* ReSolve v0.10.09h 2023/05/30 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/08/27 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* fileIo.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -27,20 +27,20 @@
 int printNchar(char* startPtr, u64 num) { /* print N wchar from start */
    u64 pos;
    if (startPtr == NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: startPtr point to NULL\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: startPtr point to NULL\n", __FUNCTION__);
       return ERROR;
    }
    if (num == 0) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: num must be >0\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: num must be >0\n", __FUNCTION__);
       return ERROR;
    }
-   if (dbgLev>=PRINTVERBOSE) printf ("%2lluChar:'%s'\n", num, startPtr);
+   if (dbgLev>=PRINTVERBOSE) printf("%2lluChar:'%s'\n", num, startPtr);
    for (pos=0; pos<num; pos++) {
-      if (dbgLev>=PRINTF) printf ("%c", *(startPtr+pos));
+      if (dbgLev>=PRINTF) printf("%c", *(startPtr+pos));
       if (*(startPtr+pos)=='\0') break;
    }
-   if (dbgLev>=PRINTDEBUG) printf ("@%p\n", startPtr);
-   if (dbgLev>=PRINTVERBOSE) printf ("\n");
+   if (dbgLev>=PRINTDEBUG) printf("@%p\n", startPtr);
+   if (dbgLev>=PRINTVERBOSE) printf("\n");
    return OK;
 } // printNchar()
 
@@ -48,12 +48,12 @@ int printNchar(char* startPtr, u64 num) { /* print N wchar from start */
 FILE* openRead(char* fileName) {
    FILE* out;
    if (fileName==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: fileName point to NULL\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: fileName point to NULL\n", __FUNCTION__);
       return NULL;
    }
    out = fopen (fileName, "r");
    if (out == NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot open File:\"%s\"\n", __FUNCTION__, fileName);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot open File:\"%s\"\n", __FUNCTION__, fileName);
    }
    return out;
 } // openRead()
@@ -62,12 +62,12 @@ FILE* openRead(char* fileName) {
 FILE* openWrite(char* fileName) {
    FILE* out;
    if (fileName==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: fileName point to NULL\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: fileName point to NULL\n", __FUNCTION__);
       return NULL;
    }
    out = fopen (fileName, "w");
    if (out == NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot open File:\"%s\"\n", __FUNCTION__, fileName);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot open File:\"%s\"\n", __FUNCTION__, fileName);
    }
    return out;
 } // openWrite()
@@ -80,38 +80,38 @@ off_t getFileSize(char* fileName, FILE** filePtrPtr) {
    int out;
    off_t len;  /* SUS: off_t is signed long long, so max 9223372036854775801 */
    if (fileName==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: fileName point to NULL\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: fileName point to NULL\n", __FUNCTION__);
       return ERROR;
    }
    if (filePtrPtr==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: filePtrPtr point to NULL\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: filePtrPtr point to NULL\n", __FUNCTION__);
       return ERROR;
    }
    filePtr = openRead (fileName);
    if (filePtr==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: openRead returned NULL on File:\"%s\"\n", __FUNCTION__, fileName);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: openRead returned NULL on File:\"%s\"\n", __FUNCTION__, fileName);
       return ERROR;
    }
    // ftello is in SingleUnixSpecification not Posix, so no support in old Cygwin
    prev = ftello (filePtr); // read current position (start)
    if (prev<0) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: ftell failed on File:\"%s\"\n", __FUNCTION__, fileName);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: ftell failed on File:\"%s\"\n", __FUNCTION__, fileName);
       return ERROR;
    }
    out = fseeko (filePtr, 0, SEEK_END); // go to end of file
    if (out!=0) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: seek failed on File:\"%s\"\n", __FUNCTION__, fileName);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: seek failed on File:\"%s\"\n", __FUNCTION__, fileName);
       return ERROR;
    }
    len = ftello (filePtr); // read current position (end)
-   if (dbgLev>=PRINTVERBOSE) printf ("File length:\"%s\" is %lld\n", fileName, (s64)len);
+   if (dbgLev>=PRINTVERBOSE) printf("File length:\"%s\" is %lld\n", fileName, (s64)len);
    if (len<0) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: ftell failed on File:\"%s\"\n", __FUNCTION__, fileName);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: ftell failed on File:\"%s\"\n", __FUNCTION__, fileName);
       return ERROR;
    }
    out = fseeko (filePtr, prev, SEEK_SET); // seek to start
    if (out != prev) {
-      if (dbgLev>=PRINTWARN) printf ("WARN %s: seek to prev:%lld failed on File:\"%s\"\n", __FUNCTION__, (s64)prev, fileName);
+      if (dbgLev>=PRINTWARN) printf("WARN %s: seek to prev:%lld failed on File:\"%s\"\n", __FUNCTION__, (s64)prev, fileName);
       return ERROR;
    }
    *filePtrPtr = filePtr;
@@ -127,46 +127,46 @@ off_t readFile(char* fileName, char** bufferPtrPtr) {
    size_t Nch;          /* U32: like an unsigned int, not an unsigned long! */
    int out;
    if (fileName==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: fileName point to NULL\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: fileName point to NULL\n", __FUNCTION__);
       return ERROR;
    }
    if (bufferPtrPtr==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: bufferPtrPtr point to NULL\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: bufferPtrPtr point to NULL\n", __FUNCTION__);
       return ERROR;
    }
    len = getFileSize (fileName, &filePtr);
    if (len<0) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: getFileSize returned:%lld on File:\"%s\"\n", __FUNCTION__, (s64)len, fileName);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: getFileSize returned:%lld on File:\"%s\"\n", __FUNCTION__, (s64)len, fileName);
       return ERROR;
    }
-   if (dbgLev>=PRINTVERBOSE) printf ("file length:\"%s\" is %lld\n", fileName, (s64)len);
+   if (dbgLev>=PRINTVERBOSE) printf("file length:\"%s\" is %lld\n", fileName, (s64)len);
    if (len>MaxSize32) { /* limit memory allocation to 2 GB */
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: file \"%s\" too big:%lld\n", __FUNCTION__, fileName, (s64)len);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: file \"%s\" too big:%lld\n", __FUNCTION__, fileName, (s64)len);
       return ERROR;
    }
    *bufferPtrPtr = (char*) malloc (len+1);               /* room for NULL */
-   //printf ("allocated %lld Bytes @%p\n", (s64)len+1, *bufferPtrPtr);
+   //printf("allocated %lld Bytes @%p\n", (s64)len+1, *bufferPtrPtr);
    if (*bufferPtrPtr==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot allocate %lld bytes of memory\n", __FUNCTION__, (s64)len);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot allocate %lld bytes of memory\n", __FUNCTION__, (s64)len);
       return ERROR;
    }
-   if (dbgLev>=PRINTVERBOSE) printf ("%s: buffer allocated at %p\n", __FUNCTION__, *bufferPtrPtr);
+   if (dbgLev>=PRINTVERBOSE) printf("%s: buffer allocated at %p\n", __FUNCTION__, *bufferPtrPtr);
    if (len >= MaxSize32) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot read so much:%lld with size_t fread(3)\n", __FUNCTION__, (s64)len);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot read so much:%lld with size_t fread(3)\n", __FUNCTION__, (s64)len);
       return ERROR;
    }
    Nch = fread (*bufferPtrPtr, 1, len, filePtr);
    if (Nch != len) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot read Nch/len:%zu/%lld from file:\"%s\"\n", __FUNCTION__, Nch, (s64)len, fileName);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot read Nch/len:%zu/%lld from file:\"%s\"\n", __FUNCTION__, Nch, (s64)len, fileName);
       return Nch;
    }
-   if (dbgLev>=PRINTVERBOSE) printf ("%s(): file:'%s' of '%zu' chars readed in buffer\n", __FUNCTION__, fileName, Nch);
+   if (dbgLev>=PRINTVERBOSE) printf("%s(): file:'%s' of '%zu' chars readed in buffer\n", __FUNCTION__, fileName, Nch);
    //if (dbgLev>=PRINTVERBOSE) printNchar ( ((*bufferPtrPtr)+len-5), 5 );
    *((*bufferPtrPtr)+len) = TERM; /* insert terminator */
-   if (dbgLev>=PRINTVERBOSE) printf ("%s() line:%u\n", __FUNCTION__, __LINE__);
+   if (dbgLev>=PRINTVERBOSE) printf("%s() line:%u\n", __FUNCTION__, __LINE__);
    out = fclose (filePtr);
    if (out != 0) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot close file:\"%s\"\n", __FUNCTION__, fileName);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot close file:\"%s\"\n", __FUNCTION__, fileName);
       return ERROR;
    }
    return len;
@@ -180,99 +180,95 @@ size_t writeFile(char* fileName, char* bufferPtr) { /* copy from RAM to file */
    size_t len;
    int out;
    if (fileName==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: fileName point to NULL\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: fileName point to NULL\n", __FUNCTION__);
       return ERROR;
    }
    if (bufferPtr==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: bufferPtr point to NULL\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: bufferPtr point to NULL\n", __FUNCTION__);
       return ERROR;
    }
    filePtr = openWrite (fileName);
    if (filePtr==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: Cannot write to file:\"%s\"\n", __FUNCTION__, fileName);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: Cannot write to file:\"%s\"\n", __FUNCTION__, fileName);
       return ERROR;
    }
    len = strlen (bufferPtr);
-   if (dbgLev>=PRINTVERBOSE) printf ("File:\"%s\" lenght is %zu\n", fileName, len);
-   if (dbgLev>=PRINTVERBOSE) printf ("Buffer to transfer at %p\n", bufferPtr);
+   if (dbgLev>=PRINTVERBOSE) printf("File:\"%s\" lenght is %zu\n", fileName, len);
+   if (dbgLev>=PRINTVERBOSE) printf("Buffer to transfer at %p\n", bufferPtr);
    if (len >= MaxSize32) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot write so much:%lld with size_t fwrite(3)\n", __FUNCTION__, (s64)len);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot write so much:%lld with size_t fwrite(3)\n", __FUNCTION__, (s64)len);
       return ERROR;
    }
-   if (dbgLev>=PRINTVERBOSE) printf ("Buffer to transfer at %p\n", bufferPtr);
+   if (dbgLev>=PRINTVERBOSE) printf("Buffer to transfer at %p\n", bufferPtr);
    Nblk = fwrite (bufferPtr, 1, len, filePtr);
    if (Nblk != len) {
-      if (dbgLev>=PRINTERROR) printf ("WARN %s: Cannot write Nblk/len:%zd/%lld to file:\"%s\"\n", __FUNCTION__, Nblk, (s64)len, fileName);
+      if (dbgLev>=PRINTERROR) printf("WARN %s: Cannot write Nblk/len:%zd/%lld to file:\"%s\"\n", __FUNCTION__, Nblk, (s64)len, fileName);
       return Nblk;
    }
-   if (dbgLev>=PRINTVERBOSE) printf ("File of '%zd' char written from buffer\n", Nblk);
+   if (dbgLev>=PRINTVERBOSE) printf("File of '%zd' char written from buffer\n", Nblk);
    if (dbgLev>=PRINTVERBOSE) printNchar ( ((bufferPtr)+len-5), 5 );
    /**((*buffer)+len) = TERM;*//* add terminator at buffer end */
-   if (dbgLev>=PRINTVERBOSE) printf ("line:%u\n", __LINE__);
+   if (dbgLev>=PRINTVERBOSE) printf("line:%u\n", __LINE__);
    out = fclose (filePtr);
    if (out != 0) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: Cannot close file:\"%s\"\n", __FUNCTION__, fileName);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: Cannot close file:\"%s\"\n", __FUNCTION__, fileName);
       return ERROR;
    }
    return Nblk;
 } // writeFile()
 
 /* parse of configuration buffer for parameter value. Return value or ERROR */
+/* vectors parameter: remember to free its address after use */
 errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
    u08 len;
    char* chPtr;
    char* chPos;
    char ch;
    if (bufPtr==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: bufPtr point to NULL\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: bufPtr point to NULL\n", __FUNCTION__);
       return ERROR;
    }
    if (paramPtr==NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: paramPtr point to NULL\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: paramPtr point to NULL\n", __FUNCTION__);
       return ERROR;
    }
    len = strlen (paramPtr);
    if (len==0) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: paramPtr len is zero\n", __FUNCTION__);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: paramPtr len is zero\n", __FUNCTION__);
       return ERROR;
    }
    if (len>LineLen) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: paramPtr len>%u unsupported\n", __FUNCTION__, LineLen);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: paramPtr len>%u unsupported\n", __FUNCTION__, LineLen);
       return ERROR;
    }
-   //printf ("'@%p\n", bufPtr);
-   //printf ("bufPtr:'%s'\n", bufPtr);
-   //printNchar (bufPtr, 5); printf ("\n");
-   //printNchar (paramPtr, 5); printf ("\n");
-   if (dbgLev>=PRINTDEBUG) printf ("%s: look for '%s' len:%u\n", __FUNCTION__, paramPtr, len);
-   chPtr = strstr (bufPtr, paramPtr); // find start of parameter
+   //printf("'@%p\n", bufPtr);
+   //printf("bufPtr:'%s'\n", bufPtr);
+   //printNchar (bufPtr, 5); printf("\n");
+   //printNchar (paramPtr, 5); printf("\n");
+   if (dbgLev>=PRINTDEBUG) printf("%s: look for '%s' len:%u\n", __FUNCTION__, paramPtr, len);
+   chPtr=bufPtr+1; // the parameter name must not be on first char
+   //printNchar (chPtr, 5); printf("\n");
+   do {
+      if (dbgLev>=PRINTDEBUG) if (chPtr!=(bufPtr+1)) printf("%s: search next occurrence of param:'%s'\n", __FUNCTION__, paramPtr);
+      if (chPtr!=(bufPtr+1)) chPtr+=len; // go to end of searched parameter name
+      chPos = strstr (chPtr, paramPtr); // try to find first occurrence
+      if (chPos==NULL) {
+         //printf("chPos = NULL, quit\n");
+         if (dbgLev>=PRINTERROR) printf("ERROR %s: param:'%s' not found\n", __FUNCTION__, paramPtr);
+         return ERROR;
+      }
+      chPtr=chPos;
+   } while (*(chPtr+len)!='=' || *(chPtr-1)!='\n'); // pretend "\nPARAMETER="
+   //printNchar (chPtr, 10); printf("\n");
+   chPtr = strstr (chPtr, "="); // find equal of "\nPARAMETER="
    if (chPtr == NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: param:'%s' not found\n", __FUNCTION__, paramPtr);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: configFile syntax error, miss '='\n", __FUNCTION__);
       return ERROR;
    }
-   //printNchar (chPtr, 5); printf ("\n");
-   chPtr+=len; // go to end of searched parameter
-   if (dbgLev>=PRINTVERBOSE) printNchar (chPtr, 5);
-   /*for ( ; chPos!=NULL; chPos=strstr(chPos,paramPtr) ) { // find last occurrence
-      if (dbgLev>=PRINTVERBOSE) printf ("%s: use next occurrence of param:'%s'\n", __FUNCTION__, paramPtr);
-      chPtr = chPos;
-      chPos++;
-   }*/
-   if (*(chPtr)!=' ' && *(chPtr)!='=') {
-      //if (dbgLev>=PRINTDEBUG) printf ("%s: use next occurrence of param:'%s'\n", __FUNCTION__, paramPtr);
-      chPos = strstr (chPtr, paramPtr); // try to find another occurrence
-      chPtr=chPos+len; // go to end of searched parameter
-   }
-   //printNchar (chPos, 5); printf ("\n");
-   chPtr = strstr (chPtr, "=");
-   if (chPtr == NULL) {
-      if (dbgLev>=PRINTERROR) printf ("ERROR %s: configFile syntax error, miss '='\n", __FUNCTION__);
-      return ERROR;
-   }
-   //if (dbgLev>=PRINTDEBUG) printNchar (chPtr, 5);
+   if (dbgLev>=PRINTDEBUG) printNchar (chPtr, 5);
 
    if (*(chPtr+1)=='{' || *(chPtr+2)=='{') { // extract vector of double
-      if (dbgLev>=PRINTDEBUG) printf ("vector\n");
+      if (dbgLev>=PRINTDEBUG) printf("vector\n");
       chPtr++;
       if (*(chPtr)=='{') chPtr++;
       //if (dbgLev>=PRINTDEBUG) printNchar (chPtr, 7);
@@ -281,23 +277,23 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
       char* vectorChr = malloc (sizeChr+1);
       strncpy (vectorChr, chPtr, sizeChr);
       *(vectorChr+sizeChr)='\0';
-      //if (dbgLev>=PRINTDEBUG) printf ("vector:'%s'\n", vectorChr);
+      //if (dbgLev>=PRINTDEBUG) printf("vector:'%s'\n", vectorChr);
       chPtr = strchr (vectorChr, ',');
       u16 size=0; // count how many commas
       for (; chPtr; chPtr++) {
          size++;
-         //if (dbgLev>=PRINTDEBUG) printf ("size:%u\n", size);
+         //if (dbgLev>=PRINTDEBUG) printf("size:%u\n", size);
          chPtr = strchr (chPtr, ',');
          if (chPtr==NULL) break;
          //if (dbgLev>=PRINTDEBUG) printNchar (chPtr, 10);
       }
-      if (dbgLev>=PRINTDEBUG) printf ("size:%u\n", size);
-      double* vectorVal = malloc (size*sizeof(double));
+      if (dbgLev>=PRINTDEBUG) printf("size:%u\n", size);
+      double* vectorVal = malloc (size*sizeof(double)); //must be freed by caller
       chPtr = vectorChr;
       char val[LineLen];
       u16 p;
       for (p=0; p<size; p++) {
-         //if (dbgLev>=PRINTDEBUG) printf ("p:%u\n", p);
+         //if (dbgLev>=PRINTDEBUG) printf("p:%u\n", p);
          chPos = strchr (chPtr, ',');
          if (chPos==NULL)
             strcpy (val, chPtr);
@@ -306,53 +302,53 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
             strncpy (val, chPtr, sizeChr);
             val[sizeChr]='\0';
          }
-         //if (dbgLev>=PRINTDEBUG) printf ("val:'%s'\n", val);
+         //if (dbgLev>=PRINTDEBUG) printf("val:'%s'\n", val);
          vectorVal[p] = strtod (val, &chPos);
          if (vectorVal[p]==0 && chPos==val) {
-            if (dbgLev>=PRINTERROR) printf ("ERROR %s: cannot find digits in val='%s'\n", __FUNCTION__, val);
+            if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in val='%s'\n", __FUNCTION__, val);
             return ERROR;
          }
          chPtr=chPtr+sizeChr+1;
       }
       free (vectorChr);
       for (p=0; p<size; p++) {
-         if (dbgLev>=PRINTDEBUG) printf ("vectorVal[%02u]:%g\n", p, vectorVal[p]);
+         if (dbgLev>=PRINTDEBUG) printf("vectorVal[%02u]:%g\n", p, vectorVal[p]);
       }
-      //if (dbgLev>=PRINTF) printf ("vectorVal :@'0x%16zx'\n", (size_t)vectorVal);
-      if (dbgLev>=PRINTDEBUG) printf ("vectorVal :@'%16p'\n", vectorVal);
+      //if (dbgLev>=PRINTF) printf("vectorVal :@'0x%16zx'\n", (size_t)vectorVal);
+      if (dbgLev>=PRINTDEBUG) printf("vectorVal :@'%16p'\n", vectorVal);
       // now return the vector of double as it's address and size:
       // printing them as hex chars in paramValue[0-17] for the 0Xaddress,
       // set paramValue[18]=',' and paramValue[19-24] for the size
-      if (dbgLev>=PRINTDEBUG) printf ("paramValue:@'%16p'\n", paramValue);
-      sprintf (paramValue, "0x%016zx", (uintptr_t)vectorVal); // copy the address of vectorVal as 0x 16 hex chars
+      if (dbgLev>=PRINTDEBUG) printf("paramValue:@'%16p'\n", paramValue);
+      sprintf(paramValue, "0x%016zx", (uintptr_t)vectorVal); // copy the address of vectorVal as 0x 16 hex chars
       /*for (p=0; p<=17; p++) {
-         if (dbgLev>=PRINTDEBUG) printf ("@:%p paramValue[%02u]=0x%02x='%c'\n", &paramValue[p], p, paramValue[p], paramValue[p]);
+         if (dbgLev>=PRINTDEBUG) printf("@:%p paramValue[%02u]=0x%02x='%c'\n", &paramValue[p], p, paramValue[p], paramValue[p]);
       }*/
       paramValue[18]=','; // overwrite NULL
-      if (dbgLev>=PRINTDEBUG) printf ("size:%u=0x%04X\n", size, size);
-      sprintf (&paramValue[19], "0x%04X", size); // print 'u16 size' of vectorVal as 0x 4 hex chars at position 17-22
+      if (dbgLev>=PRINTDEBUG) printf("size:%u=0x%04X\n", size, size);
+      sprintf(&paramValue[19], "0x%04X", size); // print 'u16 size' of vectorVal as 0x 4 hex chars at position 17-22
       //paramValue[25]='\0'; // NULL
       for (p=0; p<=24; p++) {
-         if (dbgLev>=PRINTDEBUG) printf ("@:%p paramValue[%02u]=0x%02x='%c'\n", &paramValue[p], p, paramValue[p], paramValue[p]);
+         if (dbgLev>=PRINTDEBUG) printf("@:%p paramValue[%02u]=0x%02x='%c'\n", &paramValue[p], p, paramValue[p], paramValue[p]);
       } // check there is the terminator NULL @ pos 25
-      if (dbgLev>=PRINTDEBUG) printf ("@:%p paramValue[25]=0x%02x='%c'\n", &paramValue[25], paramValue[25], paramValue[25]);
+      if (dbgLev>=PRINTDEBUG) printf("@:%p paramValue[25]=0x%02x='%c'\n", &paramValue[25], paramValue[25], paramValue[25]);
       return OK;
    } // end extract vector of double
 
-   chPos = strstr (chPtr, "\""); // if present it is text string
-   //if (dbgLev>=PRINTDEBUG) printNchar (chPos, 5); // printf ("\n");
+   chPos = strstr (chPtr, "\""); // if present " it is text string
+   //if (dbgLev>=PRINTDEBUG) printNchar (chPos, 5); // printf("\n");
    if (chPos == NULL || chPos-chPtr > 2) { // not starting with ", so it is a number
-      if (dbgLev>=PRINTDEBUG) printf ("number\n");
-      //if (dbgLev>=PRINTERROR) printf ("ERROR %s: configFile syntax error, miss start '\"'\n", __FUNCTION__);
-      ch='\n'; // set end character to find
+      if (dbgLev>=PRINTDEBUG) printf("number\n");
+      //if (dbgLev>=PRINTERROR) printf("ERROR %s: configFile syntax error, miss start '\"'\n", __FUNCTION__);
+      ch='\n'; // set the end character to find
    } else { // starting with ", so it is a text string
-      if (dbgLev>=PRINTDEBUG) printf ("string\n");
+      if (dbgLev>=PRINTDEBUG) printf("string\n");
       chPtr++; // skip "
-      ch='\"'; // set end character to find
+      ch='\"'; // set the end character to find
    }
-   if (dbgLev>=PRINTDEBUG) printNchar (chPtr, 5); // printf ("\n");
+   if (dbgLev>=PRINTDEBUG) printNchar (chPtr, 5); // printf("\n");
    chPtr++; // skip =
-   if (dbgLev>=PRINTDEBUG) printNchar (chPtr, 5); // printf ("\n");
+   if (dbgLev>=PRINTDEBUG) printNchar (chPtr, 5); // printf("\n");
    for (chPos=chPtr; chPos-chPtr<LineLen; chPos++) {
       paramValue[chPos-chPtr]=*chPos;
       if (*chPos==';' || *chPos==ch || *chPos=='\0') {
@@ -364,6 +360,6 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
          break;
       }
    }
-   if (dbgLev>=PRINTDEBUG) printf ("'%s'\n", paramValue);
+   if (dbgLev>=PRINTDEBUG) printf("'%s'\n", paramValue);
    return OK;
 } // parseConf()

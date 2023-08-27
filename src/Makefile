@@ -1,5 +1,23 @@
-# Makefile to generate 'reSolve'
+# Makefile: Copyright 2005-2023 Valerio Messina efa@iol.it
+#
+# Makefile is part of ReSolve - solve math expressions using discrete values
+# ReSolve is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# ReSolve is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with ReSolve. If not, see <http://www.gnu.org/licenses/>.
+#
+# Makefile to build 'ReSolve' using GCC+GNUtoolchain on Linux
 # Linux32=>Linux32, Linux64=>Linux64, MinGw32=>Win32, MinGw64=>Win64, macOS64=>macOS64
+#
+# To build for debug use: $ make BUILD=debug debug
 
 HOST=$(shell uname)
 PKG=Linux
@@ -11,7 +29,7 @@ endif
 ifeq ($(HOST),Msys)
    PKG=Win
 endif
-BITS := $(shell getconf LONG_BIT)
+BIT := $(shell getconf LONG_BIT)
 
 BUILD?=release
 ifeq ($(BUILD),debug)
@@ -27,10 +45,10 @@ PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH
 GFLAGS=`pkg-config --cflags gtk+-3.0`
 LDFLAGS=$(LOPT) -lm
 GLDFLAGS=`pkg-config --libs gtk+-3.0`
-TARGET=reSolve$(PKG)$(BITS)
-GUI=reSolveGui$(PKG)$(BITS)
+TARGET=reSolve$(PKG)$(BIT)
+GUI=reSolveGui$(PKG)$(BIT)
 
-all: $(TARGET) $(GUI)
+all: $(TARGET) $(GUI) $(TARGET2)
 	@rm -f *.gch
 
 $(GUI): fileIo.o exprParser.o reSolveLib.o reSolveGui.o
@@ -78,4 +96,4 @@ rel: force
 
 pkg: rel
 	@echo ""
-	@makeAppDir.sh $(PKG) $(BITS)
+	@makeAppDir.sh $(PKG) $(BIT)

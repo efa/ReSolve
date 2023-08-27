@@ -1,5 +1,5 @@
 #!/bin/bash
-# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-05-30
+# makeAppDir.sh: this script generate the AppDir for ReSolve. 2023-08-27
 echo "makeAppDir.sh: generating the AppDir for ReSolve ..."
 if (test "" = "$1") then
    echo "makeAppDir.sh ERROR: need the target platform to create package"
@@ -33,20 +33,23 @@ fi
 cp -a ../reSolve${PKG}${BIT}${EXT}    AppDir/usr/bin/reSolve${PKG}${BIT}${EXT}
 cp -a ../reSolveGui${PKG}${BIT}${EXT} AppDir/usr/bin/reSolveGui${PKG}${BIT}${EXT}
 
+date=`date -I`
 if (test "$PKG" = "Linux" && (test "$CPU" = "x86_64" || test "$CPU" = "i686")) then # skip on ARM&RISC-V
-   echo "makeAppDir.sh: Generating the AppImage for ReSolve ..."
+   echo "makeAppDir.sh: generating the AppImage for ReSolve (about 2') ..."
+   if (test -f logWget$date.txt) then { rm logWget$date.txt ; } fi
    if (test "$BIT" = "64") then
       if (! test -x linuxdeploy-x86_64.AppImage) then
-         wget "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+         wget -nv "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" 2>> logWget$date.txt
          chmod +x linuxdeploy-x86_64.AppImage
       fi
       if (! test -x linuxdeploy-plugin-gtk.sh) then
-         wget "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh"
+         wget -nv "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh" 2>> logWget$date.txt
          chmod +x linuxdeploy-plugin-gtk.sh
       fi
-      linuxdeploy-x86_64.AppImage -e ../reSolveGuiLinux64 --appdir AppDir -p gtk -i ReSolve.png -d reSolve.desktop --output appimage
-      mv ReSolveGui-*-x86_64.AppImage ../ReSolveGui-x86_64.AppImage
+      linuxdeploy-x86_64.AppImage -e ../reSolveGuiLinux64 --appdir AppDir -p gtk -i ReSolve.png -d reSolve.desktop --output appimage > logLinuxdeploy$date.txt
+      mv ReSolveGui-x86_64.AppImage ../ReSolveGui-x86_64.AppImage
       cp -a ../ReSolveGui-x86_64.AppImage ../..
+      echo "AppImage created: ReSolveGui-x86_64.AppImage"
    fi
    if (test "$BIT" = "32") then
       echo "As now skip AppImage at 32 bit"
@@ -54,7 +57,6 @@ if (test "$PKG" = "Linux" && (test "$CPU" = "x86_64" || test "$CPU" = "i686")) t
 fi
 
 ver=`grep SourceVersion reSolveLib.h | cut -d' ' -f3 | tr -d '."'`
-date=`date -I`
 echo ver:$ver date:$date
 if (test "$PKG" = "Linux") then
    file=reSolve${ver}_${date}_Linux_${CPU}_${BIT}bit.tgz
