@@ -24,6 +24,7 @@ PKG=Linux
 ifneq ($(HOST),Darwin)
    HOST=$(shell uname -o)
 else
+   # on macOS run make inside $ jhbuild shell
    PKG=MacOS
 endif
 ifeq ($(HOST),Msys)

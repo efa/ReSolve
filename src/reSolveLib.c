@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/08/27 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/08/29 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -346,28 +346,28 @@ int updateRdesc(bit force) { // update userRdesc from baseEdesc
          sprintf(userRdesc, "user list of %u values @%g%% tolerance", listNumber, userRtol);
       break;
    case (1): // standard Exx series resistors
-      strcpy (userRdesc, baseE1desc);
+      strcpy(userRdesc, baseE1desc);
       break;
    case (3):
-      strcpy (userRdesc, baseE3desc);
+      strcpy(userRdesc, baseE3desc);
       break;
    case (6):
-      strcpy (userRdesc, baseE6desc);
+      strcpy(userRdesc, baseE6desc);
       break;
    case (12):
-      strcpy (userRdesc, baseE12desc);
+      strcpy(userRdesc, baseE12desc);
       break;
    case (24):
-      strcpy (userRdesc, baseE24desc);
+      strcpy(userRdesc, baseE24desc);
       break;
    case (48):
-      strcpy (userRdesc, baseE48desc);
+      strcpy(userRdesc, baseE48desc);
       break;
    case (96):
-      strcpy (userRdesc, baseE96desc);
+      strcpy(userRdesc, baseE96desc);
       break;
    case (192):
-      strcpy (userRdesc, baseE192desc);
+      strcpy(userRdesc, baseE192desc);
       break;
    default:
       printf("Unsupported Eserie:%u. Supported are 1, 3, 6, 12, 24, 48, 96 and 192\n", Eserie);
@@ -382,13 +382,13 @@ int baseInit() { // basic initialization
    if (lists==2) { // lists=2, imply maxRp=2 and Eserie=0
       Eserie=0;
       maxRp=2;
-      mem=0;
+      //mem=0;
    }
-   //strcpy (Exx, "E");
+   //strcpy(Exx, "E");
    //char series[4];
    //sprintf(series, "%u", Eserie);
-   //strcat (Exx, series);
-   //strcat (Exx, " serie "); // 11 chars
+   //strcat(Exx, series);
+   //strcat(Exx, " serie "); // 11 chars
    //printf("Eserie:%u Exx:'%s'\n", Eserie, Exx);
    updateRdesc(false);
    return OK;
@@ -400,7 +400,7 @@ void showHead(void) {
 }
 
 void showHelp() {
-   //showHead ();
+   //showHead();
    /*printf("Syntax: reSolve targetFloatValue [numberOfResults]\n");*/
    printf("Syntax: reSolve -h|--help\n");
    printf("Syntax: reSolve [targetFloatValue ['function(a,b)' [numberOfResults]]]\n");
@@ -414,11 +414,9 @@ void showHelp() {
 } // showHelp()
 
 int showConf() { // show config set
+   gprintf(gui, "Current configurations from 'reSolveConf.txt':\n");
    gprintf(gui, "Solve Formula: %s\n", expr);
    gprintf(gui, "Target Value : %11.5f\n", target);
-   // 4 - calculate the needed memory
-   memInpCalc(); // LIB: memory size calculation for input values
-   memResCalc(); // LIB: calculate the needed memory for results
    //printf("sizeof (rValuesTy):%u\n", valTy);
    //printf("sizeof (rValues[%lu]):%lu\n", numV, val);
    //printf("sizeof (resultsTy):%u\n", resTy);
@@ -475,7 +473,7 @@ int fillConfigVars(void) { // load and check users config file
    uintptr_t hex;
    double* vectorPtr;
 
-   bufSize=readFile (fileConf, &bufferPtr);
+   bufSize=readFile(fileConf, &bufferPtr);
    if (bufSize==ERROR) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot read file:%s\n", __FUNCTION__, fileConf);
       return ERROR;
@@ -489,11 +487,11 @@ int fillConfigVars(void) { // load and check users config file
    //printf("\n");
 
    // reading user configured parameters ...
-   strcpy (paramName, "expr");
+   strcpy(paramName, "expr");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("expr='%s'\n", paramValue);
@@ -502,52 +500,52 @@ int fillConfigVars(void) { // load and check users config file
       printf("Parameter:'%s' len:%u, max supported len:%u\n", paramName, len, LineLen);
       return ERROR;
    }
-   endPtr = strcpy (expr, paramValue);
+   endPtr = strcpy(expr, paramValue);
    if (endPtr==NULL) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("expr='%s'\n", expr);
 
-   strcpy (paramName, "target");
+   strcpy(paramName, "target");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("target='%s'\n", paramValue);
-   target = strtod (paramValue, &endPtr);
+   target = strtod(paramValue, &endPtr);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in target='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("target=%g\n", target);
 
-   strcpy (paramName, "Eserie");
+   strcpy(paramName, "Eserie");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("Eserie='%s'\n", paramValue);
-   Eserie = strtol (paramValue, &endPtr, 10);
+   Eserie = strtol(paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in Eserie='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("Eserie=%u\n", Eserie);
 
-   strcpy (paramName, "decades");
+   strcpy(paramName, "decades");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("decades='%s'\n", paramValue);
-   decades = strtol (paramValue, &endPtr, 10);
+   decades = strtol(paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in decades='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
@@ -555,14 +553,14 @@ int fillConfigVars(void) { // load and check users config file
    if (dbgLev>=PRINTDEBUG) printf("decades=%u\n", decades);
 
 #if 0
-   strcpy (paramName, "listNumber");
+   strcpy(paramName, "listNumber");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
       return ERROR;
    }
    //printf("listNumber='%s'\n", paramValue);
-   listNumber = strtol (paramValue, &endPtr, 10);
+   listNumber = strtol(paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in listNumber='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
@@ -570,11 +568,11 @@ int fillConfigVars(void) { // load and check users config file
    if (dbgLev>=PRINTDEBUG) printf("listNumber=%u\n", listNumber);
 #endif
 
-   strcpy (paramName, "userR");
+   strcpy(paramName, "userR");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("paramValue='%s'\n", paramValue);
@@ -606,50 +604,50 @@ int fillConfigVars(void) { // load and check users config file
       if (dbgLev>=PRINTDEBUG) printf("vectorPtr[%u]:%g\n", p, vectorPtr[p]);
       userR[p]=vectorPtr[p]; // copy custom values between vectors
    }
-   free (vectorPtr); // free config values vector address
+   free(vectorPtr); // free config values vector address
    numR1=size;
    listNumber=size;
    // now can use global userR[numR1] for custom values
 
-   strcpy (paramName, "userRtol");
+   strcpy(paramName, "userRtol");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("userRtol='%s'\n", paramValue);
-   userRtol = strtod (paramValue, &endPtr);
+   userRtol = strtod(paramValue, &endPtr);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in userRtol='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("userRtol=%g\n", userRtol);
 
-   strcpy (paramName, "userRdesc");
+   strcpy(paramName, "userRdesc");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("userRdesc='%s'\n", paramValue);
-   endPtr = strcpy (userRdesc, paramValue);
+   endPtr = strcpy(userRdesc, paramValue);
    if (endPtr==NULL) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("userRdesc='%s'\n", userRdesc);
 
-   strcpy (paramName, "numberOfResults");
+   strcpy(paramName, "numberOfResults");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("numberOfResults='%s'\n", paramValue);
-   u64 tmpNum = strtol (paramValue, &endPtr, 10);
+   u64 tmpNum = strtol(paramValue, &endPtr, 10);
    u64 tmpMax=(1<<(8*sizeof(numBestRes)))-1; // 65535
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
@@ -662,45 +660,45 @@ int fillConfigVars(void) { // load and check users config file
    numBestRes = tmpNum;
    if (dbgLev>=PRINTDEBUG) printf("numberOfResults='%u'\n", numBestRes);
 
-   strcpy (paramName, "maxRp");
+   strcpy(paramName, "maxRp");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("maxRp='%s'\n", paramValue);
-   maxRp = strtol (paramValue, &endPtr, 10);
+   maxRp = strtol(paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in maxRp='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("maxRp=%u\n", maxRp);
 
-   strcpy (paramName, "format");
+   strcpy(paramName, "format");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("format='%s'\n", paramValue);
-   format = strtol (paramValue, &endPtr, 10);
+   format = strtol(paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in format='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("format=%u\n", format);
 
-   strcpy (paramName, "mem");
+   strcpy(paramName, "mem");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("mem='%s'\n", paramValue);
-   mem = strtol (paramValue, &endPtr, 10);
+   mem = strtol(paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in mem='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
@@ -708,15 +706,15 @@ int fillConfigVars(void) { // load and check users config file
    if (dbgLev>=PRINTDEBUG) printf("mem=%u\n", mem);
 
 #if 0
-   strcpy (paramName, "maxRc");
+   strcpy(paramName, "maxRc");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("maxRc='%s'\n", paramValue);
-   maxRc = strtol (paramValue, &endPtr, 10);
+   maxRc = strtol(paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in maxRc='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
@@ -724,26 +722,26 @@ int fillConfigVars(void) { // load and check users config file
    if (dbgLev>=PRINTDEBUG) printf("maxRc=%u\n", maxRc);
 #endif
 
-   strcpy (paramName, "lists");
+   strcpy(paramName, "lists");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("lists='%s'\n", paramValue);
-   lists = strtol (paramValue, &endPtr, 10);
+   lists = strtol(paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in lists='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("lists=%u\n", lists);
 
-   strcpy (paramName, "userR2"); // second list of custom values
+   strcpy(paramName, "userR2"); // second list of custom values
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("paramValue='%s'\n", paramValue);
@@ -775,49 +773,49 @@ int fillConfigVars(void) { // load and check users config file
       if (dbgLev>=PRINTDEBUG) printf("vectorPtr[%u]:%g\n", p, vectorPtr[p]);
       userR2[p]=vectorPtr[p]; // copy custom values between vectors
    }
-   free (vectorPtr); // free config values vector address
+   free(vectorPtr); // free config values vector address
    numR2=size;
    // now can use global userR2[numR2] for custom values
 
-   strcpy (paramName, "userR2tol");
+   strcpy(paramName, "userR2tol");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("userR2tol='%s'\n", paramValue);
-   userR2tol = strtod (paramValue, &endPtr);
+   userR2tol = strtod(paramValue, &endPtr);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in userR2tol='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("userR2tol=%g\n", userR2tol);
 
-   strcpy (paramName, "userR2desc");
+   strcpy(paramName, "userR2desc");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("userR2desc='%s'\n", paramValue);
-   endPtr = strcpy (userR2desc, paramValue);
+   endPtr = strcpy(userR2desc, paramValue);
    if (endPtr==NULL) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
    if (dbgLev>=PRINTDEBUG) printf("userR2desc='%s'\n", userR2desc);
 
-   strcpy (paramName, "valTolBest");
+   strcpy(paramName, "valTolBest");
    ret=parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
-      free (bufferPtr);
+      free(bufferPtr);
       return ERROR;
    }
    //printf("valTolBest='%s'\n", paramValue);
-   valTolBest = strtol (paramValue, &endPtr, 10);
+   valTolBest = strtol(paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in valTolBest='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
@@ -826,7 +824,7 @@ int fillConfigVars(void) { // load and check users config file
 
    //dbgLev=PRINTF;
    //printf("Freeing buffer ...\n");
-   free (bufferPtr);
+   free(bufferPtr);
 
    // check supported user request
    //Eserie=192; // possible values are: 1, 3, 6, 12, 24, 48, 96, 192. Use 0 for custom list
@@ -883,7 +881,7 @@ int memInpCalc() { // memory size calculation for input values
       //numR1=(u32)listNumber; /* number of existant values of resistances */
    }
 
-   // 4 - calculate the needed memory
+   // 3 - calculate the needed memory
    if (lists==1) {
       numR=numR1;
       if (maxRp==1) {
@@ -947,7 +945,7 @@ int memResCalc() { // memory size calculation for results
 } // int memResCalc()
 
 int memInpAlloc() { // memory allocation for input values
-   // 6 - allocate the memory asking to the OS a malloc()
+   // 5 - allocate the memory asking to the OS a malloc()
    /* allocated memory for all R: [12*7]+([12*7]*[12*7])+[12*7] : */
    //struct rValuesTy rValues[numV]; /* single, series & parallel */
    //struct rValuesTy* rValues; /* pointer to memory for single, series & parallel */
@@ -961,9 +959,9 @@ int memInpAlloc() { // memory allocation for input values
       printf("Dynamic allocation of:%u Bytes failed:0x%8p\n", rValueSize, rValues);
       return ERROR;
    }
-   // 7 - create the structure's vector inside the allocated memory
+   // 5 - create the structure's vector inside the allocated memory
    for (u32 e=0; e<numV; e++) {
-      rValues[e].rp = (double*) malloc (maxRp*sizeof (double));
+      rValues[e].rp = (double*) malloc(maxRp*sizeof (double));
       if (!rValues[e].rp) {
          printf("Dynamic allocation of:%zu Bytes failed:0x%8p\n", maxRp*sizeof (double), rValues[e].rp);
          return ERROR;
@@ -1053,7 +1051,7 @@ s16 calcEserie(void) { // or fill with the custom list of values when Eserie=0
    u08 descIdx;
    if (Eserie>0) { // standard Exx series resistors
       for (decade=0; decade<decades; decade++) {
-         double powDecade = powll (10, decade);
+         double powDecade = powll(10, decade);
          for (rBase=0; rBase<Eserie; rBase++) {
             pos = rBase + decade*Eserie;
             switch (Eserie) {
@@ -1105,8 +1103,8 @@ s16 calcEserie(void) { // or fill with the custom list of values when Eserie=0
             for (p=0; p<maxRp; p++) {
                rValues[pos].rp[p] = val; // to simplify showVal()
             }
-            //strcpy (rValues[pos].descIdx, "Exx series"); // 11 chars
-            //strcpy (rValues[pos].descIdx, Exx); // description
+            //strcpy(rValues[pos].descIdx, "Exx series"); // 11 chars
+            //strcpy(rValues[pos].descIdx, Exx); // description
             rValues[pos].descIdx=descIdx; // 'EXXXserie' description
             if (dbgLv>=PRINTDEBUG) printf("rValue:%g\n", val);
          }
@@ -1120,7 +1118,7 @@ s16 calcEserie(void) { // or fill with the custom list of values when Eserie=0
             for (p=0; p<maxRp; p++) {
                rValues[pos].rp[p] = val; // to simplify showVal()
             }
-            //strcpy (rValues[pos].desc, "Custom list"); // 11 chars
+            //strcpy(rValues[pos].desc, "Custom list"); // 11 chars
             rValues[pos].descIdx=0; // 'UserList ' description
             if (dbgLv>=PRINTVERBOSE) printf("rValue:%g\n", val);
          }
@@ -1129,11 +1127,11 @@ s16 calcEserie(void) { // or fill with the custom list of values when Eserie=0
          for (pos=0; pos<numR; pos++) { // populate with custom values
             if (pos<numR2) {
                val = userR2[pos]; // fill with hi precision custom values for lists=2
-               //strcpy (rValues[pos].desc, "CustomList2"); // 11 chars
+               //strcpy(rValues[pos].desc, "CustomList2"); // 11 chars
                rValues[pos].descIdx=2; // 'UserList2' description
             } else {
                val = userR[pos-numR2];
-               //strcpy (rValues[pos].desc, "CustomList1"); // 11 chars
+               //strcpy(rValues[pos].desc, "CustomList1"); // 11 chars
                rValues[pos].descIdx=1; // 'UserList1' description
             }
             rValues[pos].r = val;
@@ -1173,7 +1171,7 @@ int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
    //printf("calcRvalues numV:%d\n", numV);
    //printf("calcRvalues totV:%lld\n", totV);
    /* at first calculate the single values (Eserie) or fill custom values */
-   pos = calcEserie (); // calculate all standard Exx series values
+   pos = calcEserie(); // calculate all standard Exx series values
    if (pos==ERROR) {
       printf("calcEserie returned ERROR\n");
       return ERROR;
@@ -1193,7 +1191,7 @@ int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
             for (p=1; p<maxRp; p++) {
                rValues[pos].rp[p] = rValues[rp2].r;
             }
-            //strcpy (rValues[pos].desc, "Series   of"); // 11 chars
+            //strcpy(rValues[pos].desc, "Series   of"); // 11 chars
             rValues[pos].descIdx=11; // 'Series of' description
             /*printf("r1:%g + r2:%g = ", rValues[rp1].r, rValues[rp2].r);
             printf("rValue:%g\n", val);*/
@@ -1211,7 +1209,7 @@ int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
             for (p=1; p<maxRp; p++) {
                rValues[pos].rp[p] = rValues[rp2].r;
             }
-            //strcpy (rValues[pos].desc, "Parallel of"); // 11 chars
+            //strcpy(rValues[pos].desc, "Parallel of"); // 11 chars
             rValues[pos].descIdx=14; // 'Parallel ' description
             /*printf("r1:%g // r2:%g = ", rValues[rp1].r, rValues[rp2].r);
             printf("rValue:%g\n", val);*/
@@ -1243,7 +1241,7 @@ int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
 // when lists=2, series: skip when 10*R1%>R0.1%, parallel: skip when 10*R1%<R0.1%
 // 'baseExx[Eserie/listNumber]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].desc
 int calcR2values() { // MaxP=2: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
-   // valid only for: lists=2, Eserie=0 and maxRp==2
+   // valid only for: lists=2, Eserie=0, maxRp==2
    u32 pos;
    double val, v1, v2;
    u16 rp1, rp2;
@@ -1255,7 +1253,7 @@ int calcR2values() { // MaxP=2: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
    //printf("calcR2values numV:%d\n", numV);
    //printf("calcR2values totV:%lld\n", totV);
    if (Eserie!=0) Eserie=0; // at first fill custom values
-   pos = calcEserie (); // calculate all standard Exx series values
+   pos = calcEserie(); // calculate all standard Exx series values
    if (pos==ERROR) {
       printf("calcEserie returned ERROR\n");
       return ERROR;
@@ -1285,20 +1283,21 @@ int calcR2values() { // MaxP=2: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
          //printf("v2:%f v1:%f\n", v2, v1);
          if ((valTolBest==1 && rp2>=numR2) ||
              (valTolBest==1 && rp1>=numR2 && tolRatio*v1>v2)) { // series: skip when 10*R1%>R0.1%
-            val=0; v1=0; v2=0;
-         } else
-            val = v1 + v2; // low + hi precision
+            //val=0; v1=0; v2=0;
+            continue;
+         } //else
+         val = v1 + v2; // low + hi precision
          rValues[pos].r = val;
          rValues[pos].rp[0] = v1;
          for (p=1; p<maxRp; p++) {
             rValues[pos].rp[p] = v2;
          }
-         //strcpy (rValues[pos].desc, "Series   of"); // 11 chars
+         //strcpy(rValues[pos].desc, "Series   of"); // 11 chars
          rValues[pos].descIdx=descIdx; // 'Series of' description
          /*printf("r1:%g + r2:%g = ", rValues[rp1].r, rValues[rp2].r);
          printf("rValue:%g\n", val);*/
          //printf("rp1:%u rp2:%u pos:%u\n", rp1, rp2, pos);
-         if (val==0) continue;
+         //if (val==0) continue;
          pos++;
       }
    }
@@ -1324,19 +1323,20 @@ int calcR2values() { // MaxP=2: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
          //printf("rp1:%05u v2:%8g v1:%8g\n", rp1, v2, v1);
          if ((valTolBest==1 && rp2>=numR2) ||
              (valTolBest==1 && rp1>=numR2 && v1<tolRatio*v2)) { // parallel: skip when R1%<10*R0.1%
-            val=0; v1=0; v2=0;
-         } else
-            val = v1 * v2 / (v1 + v2); // low // hi precision
+            //val=0; v1=0; v2=0;
+            continue;
+         } //else
+         val = v1 * v2 / (v1 + v2); // low // hi precision
          rValues[pos].r = val;
          rValues[pos].rp[0] = v1;
          for (p=1; p<maxRp; p++) {
             rValues[pos].rp[p] = v2;
          }
-         //strcpy (rValues[pos].desc, "Parallel of"); // 11 chars
+         //strcpy(rValues[pos].desc, "Parallel of"); // 11 chars
          rValues[pos].descIdx=descIdx; // 'Parallel ' description
          /*printf("r1:%g // r2:%g = ", rValues[rp1].r, rValues[rp2].r);
          printf("rValue:%g\n", val);*/
-         if (val==0) continue;
+         //if (val==0) continue;
          pos++;
       }
    }
@@ -1354,7 +1354,7 @@ int calcR2values() { // MaxP=2: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
 void showRvalues() { // show all input resistor values
    printf("Input values (single, serie, parallel):\n");
    for (u32 pos=0; pos<numT; pos++) {
-      printf("pos:%4u", pos);
+      printf("pos:%5u", pos);
       printf(" r:%10.1f", rValues[pos].r);
       printf(" rp[0]:%10.1f", rValues[pos].rp[0]);
       for (u08 p=1; p<maxRp; p++) {
@@ -1364,8 +1364,8 @@ void showRvalues() { // show all input resistor values
    }
 } // void showRvalues()
 
-/* calculate all formula results using 'maxRc' resistances: 2 series */
-int calcF2values(void) {
+/* calculate all formula results using 'maxRc' resistances: mem=0,lists=1/2 */
+int calcM0Fvalues(void) {
    u32 rc1, rc2;
    /*float res[maxRc];*/ /* single case, normally 2 resistances */
    u64 per; // percentage progress
@@ -1375,22 +1375,24 @@ int calcF2values(void) {
    if (dbgLv>=PRINTDEBUG) printf("numV:%u, totV:%llu\n", numV, totV);
    if (dbgLv>=PRINTDEBUG) printf("expr:'%s'\n", expr);
    if (dbgLv>=PRINTF) gprintf(gui, "sol="); // here print something for user feedback (take time)
+   fflush(NULL); // user space stdout flush
+   fsync(1);   // kernel space stdout flush
    for (rc1=0; rc1<numV; rc1++) {
       exprVarsParser[0] = rValues[rc1].r; /* estract single case to try */
       if (dbgLv>=PRINTDEBUG) printf("exprVarsParser[0]:%g\n", exprVarsParser[0]);
       //printf("rc1:%d 0:%f\n", rc1, exprVarsParser[0]);
-      if (exprVarsParser[0]==0.) {
+      //if (exprVarsParser[0]==0.) {
          //printf("rc1:%d skip:%f\n", rc1, exprVarsParser[0]);
-         continue;
-      }
+      //   continue;
+      //}
       for (rc2=0; rc2<numV; rc2++) {
          exprVarsParser[1] = rValues[rc2].r; /* estract single case to try */
          if (dbgLv>=PRINTDEBUG) printf("exprVarsParser[1]:%g\n", exprVarsParser[1]);
          //printf("rc1:%d rc2:%d 0:%f 1:%f\n", rc1, rc2, exprVarsParser[0], exprVarsParser[1]);
-         if (exprVarsParser[1]==0.) {
+         //if (exprVarsParser[1]==0.) {
             //printf("rc1:%d rc2:%d skip:%f\n", rc1, rc2, exprVarsParser[1]);
-            continue;
-         }
+         //   continue;
+         //}
          val = evalExprParser (expr);
          delta = val - target;
          /*printf("rc1:%04u rc2:%04u pos:%04u val:%8g delta:%8g\n", rc1, rc2, pos, val, delta);*/
@@ -1409,58 +1411,20 @@ int calcF2values(void) {
          //if (dbgLv>=PRINTF) gprintf(gui, "%u,", rc1*numV);
          per=(u64)rc1*numV*100/totV;
          if (dbgLv>=PRINTF) gprintf(gui, "%d%%,", per);
-         fflush (NULL); // user space stdout flush
-         fsync (1);   // kernel space stdout flush
+         fflush(NULL); // user space stdout flush
+         fsync(1);   // kernel space stdout flush
       }
    }
    //if (dbgLv>=PRINTF) gprintf(gui, "%u\n", rc1*numV-1); // here print something for user feedback (take time)
    if (dbgLv>=PRINTF) gprintf(gui, "100%%\n"); // here print something for user feedback (take time)
    //printf("pos:%u totV:%llu\n", pos, totV);
-   gprintf(gui, "Found %d high precision solutions\n", pos);
-   if (totV-pos>0) gprintf(gui, "Discarding %llu solutions: skip + %u*R1%%>R0.1%%, // R1%%<%u*R0.1%%\n", totV-pos, tolRatio, tolRatio);
-   totV=pos; // reduce to the real finded values
-   return OK;
-} // int calcF2values(void)
-
-/* calculate all formula results using 'maxRc' resistances */
-int calcFvalues(void) {
-   u32 rc1, rc2;
-   /*float res[maxRc];*/ /* single case, normally 2 resistances */
-   u64 per; // percentage progress
-   double val;
-   double delta = 0;
-   u32 pos = 0;
-   if (dbgLv>=PRINTDEBUG) printf("numV:%u, totV:%llu\n", numV, totV);
-   if (dbgLv>=PRINTDEBUG) printf("expr:'%s'\n", expr);
-   if (dbgLv>=PRINTF) gprintf(gui, "sol="); // here print something for user feedback (take time)
-   fflush (NULL); // user space stdout flush
-   fsync (1);   // kernel space stdout flush
-   for (rc1=0; rc1<numV; rc1++) {
-      exprVarsParser[0] = rValues[rc1].r; /* estract single case to try */
-      if (dbgLv>=PRINTDEBUG) printf("exprVarsParser[0]:%g\n", exprVarsParser[0]);
-      for (rc2=0; rc2<numV; rc2++) {
-         exprVarsParser[1] = rValues[rc2].r; /* estract single case to try */
-         if (dbgLv>=PRINTDEBUG) printf("exprVarsParser[1]:%g\n", exprVarsParser[1]);
-         val = evalExprParser (expr);
-         delta = val - target;
-         /*printf("rc1:%04u rc2:%04u pos:%04u val:%8g delta:%8g\n", rc1, rc2, pos, val, delta);*/
-         results[pos].pos[0] = rc1;
-         results[pos].pos[1] = rc2;
-         results[pos].delta  = delta;
-         pos++;
-      }
-      if (rc1%1000==0) { // here print something for user feedback (take time)
-         //if (dbgLv>=PRINTF) gprintf(gui, "%u,", rc1*numV);
-         per=(u64)rc1*numV*100/totV;
-         if (dbgLv>=PRINTF) gprintf(gui, "%d%%,", per);
-         fflush (NULL); // user space stdout flush
-         fsync (1);   // kernel space stdout flush
-      }
+   if (lists==2) {
+      gprintf(gui, "Found %d high precision solutions\n", pos);
+      if (totV-pos>0) gprintf(gui, "Discarding %llu solutions: skip + %u*R1%%>R0.1%%, // R1%%<%u*R0.1%%\n", totV-pos, tolRatio, tolRatio);
+      totV=pos; // reduce to the real finded values
    }
-   //if (dbgLv>=PRINTF) gprintf(gui, "%u\n", rc1*numV-1); // here print something for user feedback (take time)
-   if (dbgLv>=PRINTF) gprintf(gui, "100%%\n"); // here print something for user feedback (take time)
    return OK;
-} // int calcFvalues(void)
+} // int calcM0Fvalues(void)
 
 // find worst (higher delta) low mem solution
 int findWorst(struct resultsTy* resultsNLowPtr, u32* wNPtr, double* deltaNWorstPtr) {
@@ -1484,8 +1448,8 @@ bool is_double_le(double a, double b, double epsilon) {
     return a < b + epsilon;
 }
 
-/* calculate best formula results using 'maxRc' resistances */
-int calcMemLowFvalues(void) {
+/* calculate best formula results using 'maxRc' resistances: mem=1,lists=1/2 */
+int calcM1Fvalues(void) {
    u32 rc1, rc2;
    u64 per; // percentage progress
    double val;
@@ -1509,8 +1473,8 @@ int calcMemLowFvalues(void) {
       }
    }
    if (dbgLv>=PRINTF) gprintf(gui, "sol="); // here print something for user feedback (take time)
-   fflush (NULL); // user space stdout flush
-   fsync (1);   // kernel space stdout flush
+   fflush(NULL); // user space stdout flush
+   fsync(1);   // kernel space stdout flush
 //printf("\n");
 //printf("numR1:%u numV:%u totV:%llu numBestRes:%u\n", numR1, numV, totV, numBestRes);
 //printf("rValues[numV:%u] results[totV:%llu] results4LowPtr[numBestRes:%u]\n", numV, totV, numBestRes);
@@ -1600,19 +1564,14 @@ int calcMemLowFvalues(void) {
          //if (dbgLv>=PRINTF) gprintf(gui, "%u,", rc1*numV);
          per=(u64)rc1*numV*100/totV;
          if (dbgLv>=PRINTF) gprintf(gui, "%d%%,", per); // here print something for user feedback (take time)
-         fflush (NULL); // user space stdout flush
-         fsync (1);   // kernel space stdout flush
+         fflush(NULL); // user space stdout flush
+         fsync(1);   // kernel space stdout flush
       }
    } // outer for ()
    //if (dbgLv>=PRINTF) gprintf(gui, "%u\n", rc1*numV-1);
    if (dbgLv>=PRINTF) gprintf(gui, "100%%\n");
    return OK;
-} // int calcMemLowFvalues(void)
-
-/* calculate best formula results using 'maxRc' resistances: 2 series */
-int calcMemLowF2values(void) {
-   return OK;
-}
+} // int calcM1Fvalues(void)
 
 s64 tot; // used for debug link between 'structQuickSort()' & 'qsStruct()'
 
@@ -1629,8 +1588,8 @@ void qsStruct(struct resultsTy results[], s32 left, s32 right) {
       //if (dbgLv>=PRINTF) gprintf(1, "qs:%llu tot:%lld ", qs, tot);
       per=qs*100/tot;
       if (dbgLv>=PRINTF) gprintf(gui, "%llu%%,", per);
-      fflush (NULL); // user space stdout flush
-      fsync (1);   // kernel space stdout flush
+      fflush(NULL); // user space stdout flush
+      fsync(1);   // kernel space stdout flush
    }
    qs++;
    if (dbgLv>=PRINTDEBUG) {
@@ -1671,12 +1630,12 @@ void qsStruct(struct resultsTy results[], s32 left, s32 right) {
    if (left < r) {
       if (dbgLv>=PRINTDEBUG) printf("analisys: value[left=%9d]=%11G value[r=%9d]=%11G\n", left, results[left].delta, r, results[r].delta);
       if (dbgLv>=PRINTDEBUG) printf("\n");
-      qsStruct (results, left , r);
+      qsStruct(results, left , r);
    }
    if (l < right) {
       if (dbgLv>=PRINTDEBUG) printf("analisys: value[l=%9d]=%11G value[right=%9d]=%11G\n", l, results[l].delta, right, results[right].delta);
       if (dbgLv>=PRINTDEBUG) printf("\n");
-      qsStruct (results, l, right);
+      qsStruct(results, l, right);
    }
    if (dbgLv>=PRINTDEBUG) printf("\n");
 } // void qsStruct(struct resultsTy results[], s32 left, s32 right)
@@ -1688,10 +1647,10 @@ int structQuickSort(struct resultsTy results[], s32 totNumber) {
    tot = totNumber;
    if (dbgLv>=PRINTF) {
       gprintf(gui, "qs="); // here print something for user feedback (take time)
-      fflush (NULL); // user space stdout flush
-      fsync (1);   // kernel space stdout flush
+      fflush(NULL); // user space stdout flush
+      fsync(1);   // kernel space stdout flush
    }
-   qsStruct (results, 0UL, totNumber-1);
+   qsStruct(results, 0UL, totNumber-1);
    //if (dbgLv>=PRINTF) gprintf(gui, "%d\n", totNumber-1);
    if (dbgLv>=PRINTF) gprintf(gui, "100%%\n");
    if (dbgLv>=PRINTDEBUG) {
@@ -1706,53 +1665,47 @@ int doCalc() { // fill inputs, calcs, sort solutions
    int ret;
    winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
-   // 8 - fill the input vectors with needed data
+   // 6 - fill the input vectors with needed data
    if (maxRp>1) {
       gprintf(gui, "Calculating all:%u values with max:%u resistors per position ...\n", numV, maxRp);
    } else {
       gprintf(gui, "Populating all:%u values with max:%u resistors per position ...\n", numV, maxRp);
    }
    if (lists==1)
-      ret = calcRvalues (); /* populate with all possible resistance values */
-   else
-      ret = calcR2values (); /* populate with all possible resistance values */
+      ret = calcRvalues();  // populate all possible values, only for: lists=1
+   else // lists==2
+      ret = calcR2values(); // populate all possible values, only for: lists=2/
    if (ret==ERROR) {
       printf("calcRvalues returned ERROR\n");
-      free (results);
+      free(results);
       return ERROR;
    }
 
-   // 9 - calculus of solutions
+   // 7 - calculus of solutions
    if (mem==0) {
       gprintf(gui, "Calculating all:%llu solutions with a formula of:%u resistors ...\n", totV, maxRc);
-      if (lists==1)
-         ret = calcFvalues (); /* calculate all results and delta */
-      else // lists==2
-         ret = calcF2values (); /* calculate all results and delta */
+      ret = calcM0Fvalues(); // calculate all results and delta: lists=1/2
       if (ret==ERROR) {
-         printf("calcFvalues returned ERROR\n");
-         free (results);
+         printf("calcM0Fvalues returned ERROR\n");
+         free(results);
          return ERROR;
       }
-   } else { // low mem
+   } else { // low mem=1
       gprintf(gui, "Calculating best:%u/%llu solutions with a formula of:%u resistors ...\n", numBestRes, totV, maxRc);
-      if (lists==1)
-         ret = calcMemLowFvalues (); /* calculate best results and delta */
-      else // lists==2
-         ret = calcMemLowF2values (); /* calculate best results and delta */
+      ret = calcM1Fvalues(); // calculate best results and delta: lists=1/2
       if (ret==ERROR) {
-         printf("calcMemLowFvalues returned ERROR\n");
-         free (results);
+         printf("calcM1Fvalues returned ERROR\n");
+         free(results);
          return ERROR;
       }
    }
    if (numBestRes>totV) numBestRes=totV;
    first = totV-numBestRes; /* 0 worse, 'first' 1st printed, 'totV' best, numBestRes # of best print */
 
-   // 10 - sorting of solutions
+   // 8 - sorting of solutions
    if (mem==0) {
       gprintf(gui, "Sorting all:%llu found solutions ...\n", totV);
-      structQuickSort (results, totV); /* QuickSort on all results */
+      structQuickSort(results, totV); /* QuickSort on all results */
    } else { // low mem
       gprintf(gui, "Sorting best:%u found solutions ...\n", numBestRes);
       structQuickSort(results2LowPtr, numBestRes); /* QuickSort on new results */
@@ -1790,11 +1743,11 @@ int showVal(u32 first) { // solutions with up to 4 resistors
       gprintf(gui, "val:%11G   delta:%11.4G", target+results[pos].delta, results[pos].delta);
       gprintf(gui, " e%%:%9.2G", results[pos].delta/target*100);
       gprintf(gui, "   a:%11G b:%11G\n", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      //cmp0 = (strcmp (rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp0 = (strcmp(rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[0]].descIdx<11) cmp0=0; else cmp0=1; // 0 when single (Exx or custom), 1 when two (series or //)
-      //cmp1 = (strcmp (rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp1 = (strcmp(rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[1]].descIdx<11) cmp1=0; else cmp1=1; // 0 when single (Exx or custom), 1 when two (series or //)
       if (maxRp==2) { // maybe a series or parallel value or lists=2
          descIdx=rValues[results[pos].pos[0]].descIdx;
@@ -1851,11 +1804,11 @@ int showVal4(u32 numBestRes) { // Solutions with 4 resistors
    for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
       /*printf("pos:%9lu", pos);*/
       if (count>=numBestRes) break; // found 'numBestRes' results
-      //cmp0 = (strcmp (rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp0 = (strcmp(rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[0]].descIdx<11) cmp0=0; else cmp0=1; // 0 when single (Exx or custom), 1 when two (series or //)
-      //cmp1 = (strcmp (rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp1 = (strcmp(rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[1]].descIdx<11) cmp1=0; else cmp1=1; // 0 when single (Exx or custom), 1 when two (series or //)
       if (cmp0==0 || cmp1==0) continue; // skip when one is 0 (so skip when are less than 4 resistances, do when both are series/parallel)
       res[count]=pos;
@@ -1864,11 +1817,11 @@ int showVal4(u32 numBestRes) { // Solutions with 4 resistors
    }
    for (best=count-1; best>=0; best--) { // [0] is the best solution
       pos=res[best];
-      //cmp0 = (strcmp (rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp0 = (strcmp(rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[0]].descIdx<11) cmp0=0; else cmp0=1; // 0 when single (Exx or custom), 1 when two (series or //)
-      //cmp1 = (strcmp (rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp1 = (strcmp(rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[1]].descIdx<11) cmp1=0; else cmp1=1; // 0 when single (Exx or custom), 1 when two (series or //)
       gprintf(gui, "val:%11G   delta:%11.4G", target+results[pos].delta, results[pos].delta);
       gprintf(gui, " e%%:%9.2G", results[pos].delta/target*100);
@@ -1923,11 +1876,11 @@ int showVal3(u32 numBestRes) { // Solutions with 3 resistors
    if (numBestRes>NumberResMax) numBestRes=NumberResMax;
    for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
       if (count>=numBestRes) break; // found 'numBestRes' results
-      //cmp0 = (strcmp (rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp0 = (strcmp(rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[0]].descIdx<11) cmp0=0; else cmp0=1; // 0 when single (Exx or custom), 1 when two (series or //)
-      //cmp1 = (strcmp (rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp1 = (strcmp(rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[1]].descIdx<11) cmp1=0; else cmp1=1; // 0 when single (Exx or custom), 1 when two (series or //)
       if (cmp0==cmp1) continue; // skip when both 0 or both 1 (both Arb/Exx or both series/parallel, so do when are 3 resistances)
       res[count]=pos;
@@ -1936,11 +1889,11 @@ int showVal3(u32 numBestRes) { // Solutions with 3 resistors
    }
    for (best=count-1; best>=0; best--) { // [0] is the best solution
       pos=res[best];
-      //cmp0 = (strcmp (rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp0 = (strcmp(rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[0]].descIdx<11) cmp0=0; else cmp0=1; // 0 when single (Exx or custom), 1 when two (series or //)
-      //cmp1 = (strcmp (rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp1 = (strcmp(rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[1]].descIdx<11) cmp1=0; else cmp1=1; // 0 when single (Exx or custom), 1 when two (series or //)
       gprintf(gui, "val:%11G   delta:%11.4G", target+results[pos].delta, results[pos].delta);
       gprintf(gui, " e%%:%9.2G", results[pos].delta/target*100);
@@ -1994,11 +1947,11 @@ int showVal2(u32 numBestRes) { // Solutions with 2 resistors
    if (numBestRes>NumberResMax) numBestRes=NumberResMax;
    for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
       if (count>=numBestRes) break; // found 'numBestRes' results
-      //cmp0 = (strcmp (rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp0 = (strcmp(rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[0]].descIdx<11) cmp0=0; else cmp0=1; // 0 when single (Exx or custom), 1 when two (series or //)
-      //cmp1 = (strcmp (rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
-      //       (strcmp (rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+      //cmp1 = (strcmp(rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
+      //       (strcmp(rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[1]].descIdx<11) cmp1=0; else cmp1=1; // 0 when single (Exx or custom), 1 when two (series or //)
       if (cmp0!=0 || cmp1!=0) continue; // skip when one is 1 (so skip when are more than 2 resistances, do when both are Exx/custom)
       res[count]=pos;
@@ -2065,11 +2018,11 @@ int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr) { // Solutio
       }
       if (maxRp==2) { // maybe a series or parallel value
          int cmp0, cmp1;
-         //cmp0 = (strcmp (rValues[resultsNLowPtr[s].pos[0]].descIdx, "Custom list")!=0) &&
-         //       (strcmp (rValues[resultsNLowPtr[s].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+         //cmp0 = (strcmp(rValues[resultsNLowPtr[s].pos[0]].descIdx, "Custom list")!=0) &&
+         //       (strcmp(rValues[resultsNLowPtr[s].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
          if (rValues[resultsNLowPtr[s].pos[0]].descIdx<11) cmp0=0; else cmp0=1; // 0 when single (Exx or custom), 1 when two (series or //)
-         //cmp1 = (strcmp (rValues[resultsNLowPtr[s].pos[1]].descIdx, "Custom list")!=0) &&
-         //       (strcmp (rValues[resultsNLowPtr[s].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+         //cmp1 = (strcmp(rValues[resultsNLowPtr[s].pos[1]].descIdx, "Custom list")!=0) &&
+         //       (strcmp(rValues[resultsNLowPtr[s].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
          if (rValues[resultsNLowPtr[s].pos[1]].descIdx<11) cmp1=0; else cmp1=1; // 0 when single (Exx or custom), 1 when two (series or //)
          if (dbgLv>=PRINTDEBUG) gprintf(gui, "s:%d cmp0:%d cmp1:%d\n", s, cmp0, cmp1);
          descIdx=rValues[resultsNLowPtr[s].pos[0]].descIdx;
@@ -2147,19 +2100,19 @@ int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr) { // Solutio
 } // int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr)
 
 int freeMem() { // free memory
-   // 12 - freeing dynamic allocated memory ...
+   // 10 - freeing dynamic allocated memory ...
    for (u32 e=0; e<numV; e++) {
-      if (rValues[e].rp) free (rValues[e].rp);
+      if (rValues[e].rp) free(rValues[e].rp);
    }
-   if (rValues) free (rValues); // only with parallel/series
+   if (rValues) free(rValues); // only with parallel/series
    if (mem==0) { // old memory hungry strategy
-      if (results) free (results);
+      if (results) free(results);
    } else { // new mem low strategy
-      if (results2LowPtr) free (results2LowPtr);
+      if (results2LowPtr) free(results2LowPtr);
       if (maxRp==2) {
-         if (resultsLowPtr) free (resultsLowPtr);
-         if (results4LowPtr) free (results4LowPtr);
-         if (results3LowPtr) free (results3LowPtr);
+         if (resultsLowPtr) free(resultsLowPtr);
+         if (results4LowPtr) free(results4LowPtr);
+         if (results3LowPtr) free(results3LowPtr);
       }
    }
    return OK;

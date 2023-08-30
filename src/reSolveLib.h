@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/08/27 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/08/29 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -37,7 +37,7 @@
 #define AppName       "ReSolve"
 #define SourceVersion "0.11.09h beta"
 #define CopyrightYear "2023"
-#define SourceDate    CopyrightYear"/08/27"
+#define SourceDate    CopyrightYear"/08/29"
 #define ReSolveVer    SourceVersion" "SourceDate
 #define Author        "Valerio Messina"
 #define WebLink       "github.com/efa/ReSolve"
@@ -50,7 +50,7 @@
    #define realpath(N,R) _fullpath((R),(N),PATH_MAX)
 #endif
 
-#define Series 192 /* Exx: Series E12, E24, (E48), E96 or E192. Use 0 for custom list */
+#define Series 192 /* Exx: Series E12, E24, E48, E96 or E192. Use 0 for custom list */
 #define Decades 7 /* number of decades of interest, normally 6 or 7 */
 #if (Series>0) /* standard Exx series */
     #define NumR1   (u32)Series*Decades /* number of existant values of resistance */
@@ -155,11 +155,11 @@ int memInpAlloc(); // memory allocation for input values
 int memResAlloc(); // memory allocation for results
 int showConf(); // show config set
 void showEserie();  // show all Eserie resistor values
+int calcRvalues();  // calc values and series or parallel, lists=1
+int calcR2values(); // calc values R1%+R0.1% & R1%//R0.1%, lists=2
 void showRvalues(); // show all input resistor values
-int calcRvalues(); /* in series or parallel, support MaxRp=2 only */
-int calcFvalues(); /* calculate all formula results using 'maxRc' resistances */
-int calcR2values();  // calculate using R1%+R0.1% and R1%//R0.1%
-int calcF2values();  // calculate all formula results: 2 series
+int calcM0Fvalues(); // calculate all results using 'maxRc' when mem=0
+int calcM1Fvalues(); // calculate all results using 'maxRc' when mem=1
 int structQuickSort(struct resultsTy results[], s32 totNumber);/* QuickSort for vector of structs of type resultsTy, using field 'abs(delta)' */
 int doCalc(); // fill inputs, calcs, sort solutions
 int showVal(u32 first); // solutions with up to 4 resistors

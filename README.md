@@ -63,18 +63,23 @@ reSolve 3.3 '15*b/(a+b)' 50
 Support for a second list of user values:
 -----------------------------------------
 When lists=1 and Eserie=0, ReSolve will use:
+```
 userR={ v1, v2, ..., Vn } ; user list of 'n' values @1%
 userRtol=1 ; baseR percent tolerance: use 1 for 1% tolerance
 userRdesc="user list of 'n' values @1% tolerance" ; description max 64 chars
+```
 When lists=2, ReSolve set Eserie=0, maxRp=2, mem=0 and will use a second set
 of user/custom values in addition to the base ones, read from:
+```
 userR2={ v1, v2, ..., Vm } ; user list of 'm' values @0.1%
 userR2tol=0.1 ; baseR2 percent tolerance: use 0.1 for 0.1% tolerance
 userR2desc="user list of 'm' values @0.1% tolerance" ; description max 64 chars
-When valTolBest=1 ; 0 keep all, 1 skip: serie 10*R1%>R0.1%, // R1%<10*R0.1%
-ReSolve will discard values when:
+```
+When valTolBest=1 and lists=2 ReSolve will discard values when:
+```
 - series  : 10*userR(1%) >    userR2(0.1%)
 - parallel:    userR(1%) < 10*userR2(0.1%)
+```
 so results are calculated keeping best tolerances only
 
 System requirements:
@@ -360,16 +365,17 @@ v0.10.09h 2023/05/30
   - GUI: add some hints popup
   - GUI: working About button, thanks @lb90
 
-v0.11.09h 2023/08/27
+v0.11.09h 2023/08/29
 * Added:
   - LIB: Support for 2 custom list of values of different tolerances
   - LIB: Can use lower tolerance list, keeping best final tolerance:
          when lists=2 and valTolBest=1 use baseR2 as 1/10 tolerance than baseR
          when lists=2 and valTolBest=1 use baseR2 & baseR2 too
+  - LIB: use mem=1 computations with lists=2 to reduce memory requirements
   - CLI: new output formatting to show tolerance of each component
-  - CLI: use 80 cols for output formatting
+  - CLI: use 80 columns for output formatting
   - GUI: enlarged to 722 pixels to accomodate 80 cols output formatting
-  - LIB: extended support for decades to 8, GUI too
+  - LIB: extended support to 8 decades, GUI too
   - LIB: reduced memory allocation/compute time for input descriptions:
          baseR[3+2],mem=0,lists2=2,valTolBest=0: 1.7 kB   => 840  B  , 0.000704 s  => 0.000905 s
          E1,decades=7,mem=0,lists2=1           : 1.5 kB   => 1.5 kB  , 0.002569 s  => 0.001241 s
@@ -396,16 +402,18 @@ v0.11.09h 2023/08/27
 
 ToDo:
 -----
-- LIB: use multi-threading to speed-up calculation with multicore CPU/GPU
-- LIB: use mem=1 computations with lists=2 to reduce memory requirements
 - LIB: add half/quarter Eseries: E96/4, E48/2
 - LIB: add custom E24 using closest E96 values
 - LIB: add custom E12 using closest E96 values
 - LIB: add hybrid Eseries: E48+E24, E96+E24, E192+E24
 - LIB: minValue=10 ; when !=0 skip Eserie values lesser than minValue
 - LIB: maxValue=0 ; when !=0 skip Eserie values greather than maxValue
-- GUI: show value read from reSolveConf.txt userR in engineering notation
+- GUI: show values read from reSolveConf.txt userR in engineering notation
+- GUI: support for lists=2 new config: userR2, userR2tol, userR2desc, valTolBest
 - LIB: print with eng/SIprefix notation with mem=0
+- LIB: refactor showValX() functions moving CLI/GUI mem==? and maxRp==? inside LIB
+- LIB: numberOfResults=0 with mem=0 meaning all
+- LIB: use multi-threading to speed-up calculation with multicore CPU/GPU
 - LIB: remove duplicated triangular solutions with MaxRp=2
 - LIB: print exact results, separated by approximate results
 - LIB: separate value below and over the target value

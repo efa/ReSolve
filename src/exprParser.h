@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/08/27 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/08/29 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* exprParser.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify

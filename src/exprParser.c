@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/08/27 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/08/29 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* exprParser.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -49,17 +49,18 @@ static char tokType;
 // private functions:
 void serror(int error);
 int isdelim(char c);
-void getToken(void), putBack (void);
+void getToken(void);
+void putBack(void);
 double findVar(char* s);
 void atom(double* answer);
 void putBack(void);
 void evalExp6(double* answer);
-void evalExp5(double* answer), evalExp6 (double* answer);
+void evalExp5(double* answer); // evalExp6();
 void evalExp4(double* answer);
-void evalExp3(double* answer), evalExp4 (double* answer);
+void evalExp3(double* answer); // evalExp4();
 void evalExp2(double* answer);
 void evalExp1(double* result);
-void evalExp0(double* answer), evalExp2 (double* answer);
+void evalExp0(double* answer); // evalExp2();
 
 /* Display a syntax error */
 void serror(int error) {
