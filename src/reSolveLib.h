@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/08/29 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/09/05 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -37,7 +37,7 @@
 #define AppName       "ReSolve"
 #define SourceVersion "0.11.09h beta"
 #define CopyrightYear "2023"
-#define SourceDate    CopyrightYear"/08/29"
+#define SourceDate    CopyrightYear"/09/05"
 #define ReSolveVer    SourceVersion" "SourceDate
 #define Author        "Valerio Messina"
 #define WebLink       "github.com/efa/ReSolve"
@@ -50,21 +50,21 @@
    #define realpath(N,R) _fullpath((R),(N),PATH_MAX)
 #endif
 
-#define Series 192 /* Exx: Series E12, E24, E48, E96 or E192. Use 0 for custom list */
+#define Series 96 /* Exx: Series E12, E24, E48, E96 or E192. Use 0 for custom list */
 #define Decades 7 /* number of decades of interest, normally 6 or 7 */
+#define NumR1 153 /* Default user list quantity */
+#define NumR2  77 /* Default user list2 quantity */
 #if (Series>0) /* standard Exx series */
-    #define NumR1   (u32)Series*Decades /* number of existant values of resistance */
-    #define ListNumber 0 // not used
+    #define NumR (u32)Series*Decades /* number of existant values of inputs */
 #else /* custom list */
-    #define ListNumber 57 /* Default custom list quantity */
-    #define NumR1  ListNumber /* number of existant values of resistance */
+    #define NumR NumR1
 #endif
 #define MaxRp 1 /* max number of resistances supported per position: as now 1 or 2 */
 #if (MaxRp==1)
-    #define NumV NumR1 /* number of possible values x each position */
+    #define NumV NumR /* number of possible values x each position */
 #endif
 #if (MaxRp==2)    /* if we have 2 resistors per position ... */
-    #define NumV NumR1+NumR1*NumR1+NumR1 /* number of possible values x each position */
+    #define NumV NumR+NumR*NumR+NumR /* number of possible values x each position */
 #endif
 #define MaxRc 2 /* number of resistances (variables) in the circuit: 2 */
 #if (MaxRc==2)   /* as now 2 is the only supported number */
@@ -91,13 +91,14 @@ extern char expr[];    /* default value for formula: reversed high partitor (LM3
 extern double target;  /* searched value */
 extern u08 Eserie;     /* Ex: Series E12, E24, E48, E96 or E192. Use 0 for custom list */
 extern u08 decades;    /* number of decades of interest, normally 6 or 7 */
-extern u32 numR1;      /* number of existant values of resistance */
+extern u16 numR1;      /* number of values in first user list */
 extern u16 maxRp;      /* max number of resistances supported per position: as now 1 or 2 */
 extern u16 maxRc;      /* number of resistances (variables) in the circuit: 2 */
-extern u32 numV;       /* number of input possible values (x each position) */
+extern u32 numV;       /* number of input possible values (all configurations) */
 extern u64 totV;       /* number of results values to try */
 extern u16 numBestRes; /* number of best results to show */
-extern u16 listNumber; // custom list quantity
+//extern u16 listNumber; // user list quantity: numR1 OR numR1+numR2
+extern u16 numR;       // number of values from both lists: numR1 OR numR1+numR2
 extern double* userR;  // declare vector pointer, will be a vector of double userR[listNumber]
 extern char userRdesc[]; // description print: reserve space for 65 chars
 extern char Vdesc[][17]; // "UserListX", "EXXXserie", "Series of", "Parallel "
@@ -106,11 +107,10 @@ extern double* userR2; // declare vector pointer, will be a vector of double use
 extern float userRtol;    // userR percent tolerance: 0.1, 1, 2, 5, 10, 20, 40
 extern float userR2tol;   // userR2 percent tolerance: 0.1, 1, 2, 5, 10, 20, 40
 extern char userR2desc[]; // description print: reserve space for 65 chars
-extern u32 numR2;    // number of values in second list
-extern u32 numR;     // number of values from both lists
+extern u16 numR2;    // number of values in second user list
 extern u32 numT;     // number of valid numV values
 extern u08 valTolBest; // 0 normal, 1 use userR2 as 1/10 tolerance than userR
-extern u16 tolRatio; // userR2 to userR tolerance
+extern float tolRatio; // userR2 to userR tolerance
 struct rValuesTy { double* rp; /* will be a vector of values with [maxRp] elements */
                    double  r;    /* resultant value, single, series & parallel */
                    u08     descIdx; /* description Vdesc[] index how is built (single, series or parallel) */
@@ -135,6 +135,7 @@ extern bool mem; // 0 use old memory hungry strategy, 1 use new mem low strategy
 extern bool gui;  // when 1, gprintf() update the GUI
 extern bool winGuiLoop; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 extern int (*guiUpdateOutPtr)(char*,int); // function pointer to guiUpdateOut()
+extern bit stop; // used by GUI to ask stop computations
 
 // public library functions:
 void chDirBin(char* argList); // change current working directory to binary path
@@ -148,7 +149,7 @@ void showHead();
 void showHelp();
 int updateEserie(char* EseriePtr); // update u08 Eserie from char* EseriePtr
 int updateRdesc(bit force); // update Rdesc
-int baseInit(); // basic initialization
+int globalInit();  // basic initialization
 int memInpCalc();  // memory size calculation for input values
 int memResCalc();  // memory size calculation for results
 int memInpAlloc(); // memory allocation for input values
@@ -158,8 +159,8 @@ void showEserie();  // show all Eserie resistor values
 int calcRvalues();  // calc values and series or parallel, lists=1
 int calcR2values(); // calc values R1%+R0.1% & R1%//R0.1%, lists=2
 void showRvalues(); // show all input resistor values
-int calcM0Fvalues(); // calculate all results using 'maxRc' when mem=0
-int calcM1Fvalues(); // calculate all results using 'maxRc' when mem=1
+int calcFm0values(); // calculate all results using 'maxRc' when mem=0
+int calcFm1values(); // calculate all results using 'maxRc' when mem=1
 int structQuickSort(struct resultsTy results[], s32 totNumber);/* QuickSort for vector of structs of type resultsTy, using field 'abs(delta)' */
 int doCalc(); // fill inputs, calcs, sort solutions
 int showVal(u32 first); // solutions with up to 4 resistors

@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/08/29 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/09/05 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* fileIo.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -246,7 +246,7 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
    //printNchar(bufPtr, 5); printf("\n");
    //printNchar(paramPtr, 5); printf("\n");
    if (dbgLev>=PRINTDEBUG) printf("%s: look for '%s' len:%u\n", __FUNCTION__, paramPtr, len);
-   chPtr=bufPtr+1; // the parameter name must not be on first char
+   chPtr = bufPtr+1; // the parameter name must not be on first char
    //printNchar(chPtr, 5); printf("\n");
    do {
       if (dbgLev>=PRINTDEBUG) if (chPtr!=(bufPtr+1)) printf("%s: search next occurrence of param:'%s'\n", __FUNCTION__, paramPtr);
@@ -257,7 +257,7 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
          if (dbgLev>=PRINTERROR) printf("ERROR %s: param:'%s' not found\n", __FUNCTION__, paramPtr);
          return ERROR;
       }
-      chPtr=chPos;
+      chPtr = chPos;
    } while (*(chPtr+len)!='=' || *(chPtr-1)!='\n'); // pretend "\nPARAMETER="
    //printNchar(chPtr, 10); printf("\n");
    chPtr = strstr(chPtr, "="); // find equal of "\nPARAMETER="
@@ -273,13 +273,13 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
       if (*(chPtr)=='{') chPtr++;
       //if (dbgLev>=PRINTDEBUG) printNchar(chPtr, 7);
       chPos = strstr(chPtr, "}");
-      u32 sizeChr=chPos-chPtr;
+      u32 sizeChr = chPos-chPtr;
       char* vectorChr = malloc(sizeChr+1);
       strncpy(vectorChr, chPtr, sizeChr);
       *(vectorChr+sizeChr)='\0';
       //if (dbgLev>=PRINTDEBUG) printf("vector:'%s'\n", vectorChr);
       chPtr = strchr(vectorChr, ',');
-      u16 size=0; // count how many commas
+      u16 size = 0; // count how many commas
       for (; chPtr; chPtr++) {
          size++;
          //if (dbgLev>=PRINTDEBUG) printf("size:%u\n", size);
@@ -298,7 +298,7 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
          if (chPos==NULL)
             strcpy(val, chPtr);
          else {
-            sizeChr=chPos-chPtr;
+            sizeChr = chPos-chPtr;
             strncpy(val, chPtr, sizeChr);
             val[sizeChr]='\0';
          }
@@ -308,7 +308,7 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
             if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in val='%s'\n", __FUNCTION__, val);
             return ERROR;
          }
-         chPtr=chPtr+sizeChr+1;
+         chPtr = chPtr+sizeChr+1;
       }
       free(vectorChr);
       for (p=0; p<size; p++) {
@@ -349,7 +349,7 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
    if (dbgLev>=PRINTDEBUG) printNchar(chPtr, 5); // printf("\n");
    chPtr++; // skip =
    if (dbgLev>=PRINTDEBUG) printNchar(chPtr, 5); // printf("\n");
-   for (chPos=chPtr; chPos-chPtr<LineLen; chPos++) {
+   for (chPos = chPtr; chPos-chPtr<LineLen; chPos++) {
       paramValue[chPos-chPtr]=*chPos;
       if (*chPos==';' || *chPos==ch || *chPos=='\0') {
          paramValue[chPos-chPtr]='\0';

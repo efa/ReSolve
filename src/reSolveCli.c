@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/08/29 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/09/05 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -29,7 +29,7 @@ int parCheck(int numPar, char* paramPtr[]) { // check CLI parameters
    if (numPar>0) {
       if (!strcmp(paramPtr[1],"-h") || !strcmp(paramPtr[1],"--help")) {
          showHelp();
-         baseInit(); // LIB: set internal variables
+         globalInit(); // LIB: set internal variables
          memInpCalc(); // LIB: memory size calculation for input values
          memResCalc(); // LIB: calculate the needed memory for results
          showConf();
@@ -92,9 +92,9 @@ int parCheck(int numPar, char* paramPtr[]) { // check CLI parameters
 int main(int numPar, char* paramPtr[]) { // CLI entry point
    int ret;
 
-   gui=0; // mean gprintf() do not update GUI
+   gui = 0; // mean gprintf() do not update GUI
    guiUpdateOutPtr = NULL; // no function pointer to guiUpdateOut()
-   winGuiLoop=1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
+   winGuiLoop = 1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
    showHead(); // LIB: show header
    chDirBin(paramPtr[0]); // change current working directory to binary path
@@ -109,14 +109,14 @@ int main(int numPar, char* paramPtr[]) { // CLI entry point
    numPar = parCheck(numPar, paramPtr); // CLI:
    ret = exprCheck(); // LIB: check expression syntax
    // 2 - read and set user request
-   ret = baseInit(); // LIB: set internal variables
+   ret = globalInit(); // LIB: set internal variables
 
    // 3 - calculate the needed memory
    ret = memInpCalc(); // LIB: memory size calculation for input values
    ret = memResCalc(); // LIB: calculate the needed memory for results
 
    // 4 - show config values
-   ret=showConf(); // LIB: show config set
+   ret = showConf(); // LIB: show config set
 
    printf("\nReSolve ...\n");
    // 5 - allocate the memory asking to the OS a malloc()
@@ -132,7 +132,7 @@ int main(int numPar, char* paramPtr[]) { // CLI entry point
       return ERROR;
    }
    char* stringPtr;
-   stringPtr=siMem(allocatedB);
+   stringPtr = siMem(allocatedB);
    printf("Allocated about %s of total RAM\n", stringPtr);
    free(stringPtr);
 

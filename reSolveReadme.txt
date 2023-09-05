@@ -365,17 +365,20 @@ v0.10.09h 2023/05/30
   - GUI: add some hints popup
   - GUI: working About button, thanks @lb90
 
-v0.11.09h 2023/08/29
+v0.11.09h 2023/09/05
 * Added:
   - LIB: Support for 2 custom list of values of different tolerances
   - LIB: Can use lower tolerance list, keeping best final tolerance:
          when lists=2 and valTolBest=1 use baseR2 as 1/10 tolerance than baseR
          when lists=2 and valTolBest=1 use baseR2 & baseR2 too
   - LIB: use mem=1 computations with lists=2 to reduce memory requirements
+  - CLI: Support for 2 custom list of values of different tolerances
   - CLI: new output formatting to show tolerance of each component
   - CLI: use 80 columns for output formatting
   - GUI: enlarged to 722 pixels to accomodate 80 cols output formatting
+  - GUI: new widgets to support lists=2, as now partially inactive
   - LIB: extended support to 8 decades, GUI too
+  - GUI: working Stop button
   - LIB: reduced memory allocation/compute time for input descriptions:
          baseR[3+2],mem=0,lists2=2,valTolBest=0: 1.7 kB   => 840  B  , 0.000704 s  => 0.000905 s
          E1,decades=7,mem=0,lists2=1           : 1.5 kB   => 1.5 kB  , 0.002569 s  => 0.001241 s
@@ -399,6 +402,7 @@ v0.11.09h 2023/08/29
 * Fix:
   - LIB: fix conversion to eng notation in case: -1000E-09 instead of -1E-06
   - LIB: parsing of reSolveConf.txt more robust for duplicates and comments
+  - GUI: target and decades are not updated on direct type
 
 ToDo:
 -----
@@ -428,7 +432,6 @@ ToDo:
 - LIB: show only one qs=0%,100% when algo=1 and Rp=2
 - CLI: add parameters to set Eseries and decades
 - GUI: better parameters checking: custom formula
-- GUI: working Stop button
 - GUI: better circuit images
 - GUI: show best results value in circuit
 
