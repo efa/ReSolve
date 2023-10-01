@@ -40,7 +40,7 @@ format=1; 0 scientific notation, 1 engineering notation, 2 SI prefix
 mem=1   ; 0 use old memory hungry strategy, 1 use new memory save strategy
 
 lists=1 ; 1 normal, 2 use baseR as low precision and baseR2 as hi precision
-        ; when lists=2 automatically set Eserie=0, maxRc=2 and mem=0
+        ; when lists=2 automatically set Eserie=0 and maxRp=2
 
 userR2={ 10, 12.1, 14.7, 17.8, 21.5, 26.1, 31.6, 38.3, 46.4, 56.2, 68.1, 82.5, 100, 121, 147, 178, 215, 261, 316, 383, 464, 562, 681, 825, 1000, 1210, 1470, 1780, 2150, 2610, 3160, 3830, 4640, 5620, 6810, 8250, 10000, 12100, 14700, 17800, 21500, 26100, 31600, 38300, 46400, 56200, 68100, 82500, 100000, 121000, 147000, 178000, 215000, 261000, 316000, 383000, 464000, 562000, 681000, 825000, 1000000, 1210000, 1470000, 1780000, 2150000, 2610000, 3160000, 3830000, 4640000, 5620000, 6810000, 8250000, 10000000, 12100000, 14700000, 17800000, 21500000 } ; user list of 77 E48/4 values @0.1%, 10-22M Ohm
 userR2tol=0.1 ; baseR2 percent tolerance: use 0.1 for 0.1% tolerance

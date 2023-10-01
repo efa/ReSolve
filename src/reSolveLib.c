@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/09/05 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/10/01 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -106,10 +106,10 @@ double baseE192[192] = { 1.00, 1.01, 1.02, 1.04, 1.05, 1.06, 1.07, 1.09, // E192
                          9.09, 9.20, 9.31, 9.42, 9.53, 9.65, 9.76, 9.88 };
 
 char    userRdesc[65]=""; // description: reserve space for 65 chars
-double* userR; // declare vector pointer, will be a vector of double userR[listNumber]
+double* userR; // declare vector pointer, will be a vector of double userR[numR1]
 
 u08 lists = 1;  // 1 normal, 2 use userR as low precision & userR2 as hi prec
-double* userR2; // declare vector pointer, will be a vector of double userR2[listNumber2]
+double* userR2; // declare vector pointer, will be a vector of double userR2[numR2]
 float userRtol;  // userR percent tolerance: 0.1, 1, 2, 5, 10, 20, 40
 float userR2tol; // userR2 percent tolerance: 0.1, 1, 2, 5, 10, 20, 40
 char userR2desc[65]; // description print: reserve space for 65 chars
@@ -375,6 +375,11 @@ int updateRdesc(bit force) { // update userRdesc from baseEdesc
       return ERROR;
    }
    //printf("FUNCT: %s Eserie:%u userRdesc:'%s'\n", __FUNCTION__, Eserie, userRdesc);
+   if (lists==2) {
+      //printf("FUNCT: %s lists:%u userR2desc:'%s'\n", __FUNCTION__, lists, userR2desc);
+      if (strcmp(userR2desc, "")==0 || force==true)
+         sprintf(userR2desc, "user list of %u values @%g%% tolerance", numR2, userR2tol);
+   }
    return OK;
 } // int updateRdesc()
 
@@ -389,7 +394,7 @@ int globalInit() { // basic initialization
       Eserie = 0;
    }
    // calculate numR & numV & totV
-   printf("%s calculate numR & numV & totV\n", __FUNCTION__);
+   //printf("%s calculate numR & numV & totV\n", __FUNCTION__);
    if (lists==1) {
       // numR number of single resistances to try
       if (Eserie>0) {
@@ -416,11 +421,11 @@ int globalInit() { // basic initialization
       totV=((u64)numV)*((u64)numV); /* number of values to try */
    }
    tolRatio = userRtol/userR2tol; // 1/0.1=10
-printf("%s user list  numR1:%u @%g%% tolerance\n", __FUNCTION__, numR1, userRtol);
-printf("%s user list2 numR2:%u @%g%% tolerance\n", __FUNCTION__, numR2, userR2tol);
-printf("%s user lists numR :%u\n", __FUNCTION__, numR);
-printf("%s user lists numV :%u\n", __FUNCTION__, numV);
-printf("%s user lists totV :%llu\n", __FUNCTION__, totV);
+   //printf("%s user list  numR1:%u @%g%% tolerance\n", __FUNCTION__, numR1, userRtol);
+   //printf("%s user list2 numR2:%u @%g%% tolerance\n", __FUNCTION__, numR2, userR2tol);
+   //printf("%s user lists numR :%u\n", __FUNCTION__, numR);
+   //printf("%s user lists numV :%u\n", __FUNCTION__, numV);
+   //printf("%s user lists totV :%llu\n", __FUNCTION__, totV);
 
    //strcpy(Exx, "E");
    //char series[4];
@@ -466,10 +471,10 @@ int showConf() { // show config set
       if (valTolBest) gprintf(gui, "TRUE\n");
       else gprintf(gui, "FALSE\n");
    }
-printf("%s user list  numR1:%u @%g%% tolerance\n", __FUNCTION__, numR1, userRtol);
-printf("%s user list2 numR2:%u @%g%% tolerance\n", __FUNCTION__, numR2, userR2tol);
-printf("%s user lists numR :%u\n", __FUNCTION__, numR);
-//gprintf(gui, "listsNumber     :%u\n", listNumber);
+   //printf("%s user list  numR1:%u @%g%% tolerance\n", __FUNCTION__, numR1, userRtol);
+   //printf("%s user list2 numR2:%u @%g%% tolerance\n", __FUNCTION__, numR2, userR2tol);
+   //printf("%s user lists numR :%u\n", __FUNCTION__, numR);
+   //gprintf(gui, "numR2     :%u\n", numR2);
    if (Eserie>0) {
       gprintf(gui, "Resistors serie:E%u, Decades:%u\n", Eserie, decades);
       gprintf(gui, "Description:'%s'\n", userRdesc);
@@ -625,8 +630,8 @@ int fillConfigVars(void) { // load and check users config file
    sscanf (&paramValue[19], "0x%04hx", &size); // extract size of userR
    if (dbgLev>=PRINTDEBUG) printf("size:0x%04x=%u\n", size, size);
    if (dbgLev>=PRINTDEBUG) printf("array size:%u=0x%x\n", size, size);
-   //if (listNumber!=size) {
-      //if (dbgLev>=PRINTERROR) printf("ERROR %s: listNumber:%u <> userR[size]:%u in config file\n", __FUNCTION__, listNumber, size);
+   //if (numR1!=size) {
+      //if (dbgLev>=PRINTERROR) printf("ERROR %s: numR1:%u <> userR[size]:%u in config file\n", __FUNCTION__, numR1, size);
       //return ERROR;
    //}
    paramValue[18]='\0'; // clear comma/size overlapping with string terminator
@@ -793,8 +798,8 @@ int fillConfigVars(void) { // load and check users config file
    sscanf (&paramValue[19], "0x%04hx", &size); // extract size of userR
    if (dbgLev>=PRINTDEBUG) printf("size:0x%04x=%u\n", size, size);
    if (dbgLev>=PRINTDEBUG) printf("array size:%u=0x%x\n", size, size);
-   //if (listNumber!=size) {
-      //if (dbgLev>=PRINTERROR) printf("WARN %s: listNumber:%u <> userR[size]:%u in config file\n", __FUNCTION__, listNumber, size);
+   //if (numR2!=size) {
+      //if (dbgLev>=PRINTERROR) printf("WARN %s: numR2:%u <> userR[size]:%u in config file\n", __FUNCTION__, numR2, size);
       //return ERROR;
    //}
    paramValue[18]='\0'; // clear comma/size overlapping with string terminator
@@ -1098,7 +1103,7 @@ int memResAlloc() { // memory allocation for results
 } // int memResAlloc()
 
 /* using one decade values and 'decades', calculate all standard Ex series values */
-// 'baseExx[Eserie/listNumber]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].descIdx
+// 'baseExx[Eserie/numR1]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].descIdx
 s16 calcEserie(void) { // or fill with the custom list of values when Eserie=0
    u08 decade;
    u08 rBase;
@@ -1218,7 +1223,7 @@ void showEserie() { // show all Eserie resistor values
 } // void showEserie()
 
 /* calculate all possible resistive values using 'MaxRp' resistances */
-// 'baseExx[Eserie/listNumber]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].desc
+// 'baseExx[Eserie/numR1]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].desc
 int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
    u32 pos;
    double val;
@@ -1296,7 +1301,7 @@ int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
 
 /* calculate all possible resistive values using 'MaxRp' resistances */
 // when lists=2, series: skip when 10*R1%>R0.1%, parallel: skip when 10*R1%<R0.1%
-// 'baseExx[Eserie/listNumber]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].desc
+// 'baseExx[Eserie/numR1]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].desc
 int calcR2values() { // MaxP=2: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
    // valid only for: lists=2, Eserie=0, maxRp==2
    u32 pos;

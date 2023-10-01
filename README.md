@@ -68,7 +68,7 @@ userR={ v1, v2, ..., Vn } ; user list of 'n' values @1%
 userRtol=1 ; baseR percent tolerance: use 1 for 1% tolerance
 userRdesc="user list of 'n' values @1% tolerance" ; description max 64 chars
 ```
-When lists=2, ReSolve set Eserie=0, maxRp=2, mem=0 and will use a second set
+When lists=2, ReSolve set Eserie=0, maxRp=2 and will use a second set
 of user/custom values in addition to the base ones, read from:
 ```
 userR2={ v1, v2, ..., Vm } ; user list of 'm' values @0.1%
@@ -365,7 +365,7 @@ v0.10.09h 2023/05/30
   - GUI: add some hints popup
   - GUI: working About button, thanks @lb90
 
-v0.11.09h 2023/09/05
+v0.11.09h 2023/10/01
 * Added:
   - LIB: Support for 2 custom list of values of different tolerances
   - LIB: Can use lower tolerance list, keeping best final tolerance:
@@ -376,7 +376,7 @@ v0.11.09h 2023/09/05
   - CLI: new output formatting to show tolerance of each component
   - CLI: use 80 columns for output formatting
   - GUI: enlarged to 722 pixels to accomodate 80 cols output formatting
-  - GUI: new widgets to support lists=2, as now partially inactive
+  - GUI: new widgets to support lists=2, (in)activate meaning widgets
   - LIB: extended support to 8 decades, GUI too
   - GUI: working Stop button
   - LIB: reduced memory allocation/compute time for input descriptions:

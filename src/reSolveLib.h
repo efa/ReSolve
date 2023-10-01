@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/09/05 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/10/01 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -37,7 +37,7 @@
 #define AppName       "ReSolve"
 #define SourceVersion "0.11.09h beta"
 #define CopyrightYear "2023"
-#define SourceDate    CopyrightYear"/09/05"
+#define SourceDate    CopyrightYear"/10/01"
 #define ReSolveVer    SourceVersion" "SourceDate
 #define Author        "Valerio Messina"
 #define WebLink       "github.com/efa/ReSolve"
@@ -99,11 +99,11 @@ extern u64 totV;       /* number of results values to try */
 extern u16 numBestRes; /* number of best results to show */
 //extern u16 listNumber; // user list quantity: numR1 OR numR1+numR2
 extern u16 numR;       // number of values from both lists: numR1 OR numR1+numR2
-extern double* userR;  // declare vector pointer, will be a vector of double userR[listNumber]
+extern double* userR;  // declare vector pointer, will be a vector of double userR[numR1]
 extern char userRdesc[]; // description print: reserve space for 65 chars
 extern char Vdesc[][17]; // "UserListX", "EXXXserie", "Series of", "Parallel "
 extern u08 lists; // 1 normal, 2 use userR as low precision & userR2 as hi prec
-extern double* userR2; // declare vector pointer, will be a vector of double userR2[listNumber2]
+extern double* userR2; // declare vector pointer, will be a vector of double userR2[numR2]
 extern float userRtol;    // userR percent tolerance: 0.1, 1, 2, 5, 10, 20, 40
 extern float userR2tol;   // userR2 percent tolerance: 0.1, 1, 2, 5, 10, 20, 40
 extern char userR2desc[]; // description print: reserve space for 65 chars

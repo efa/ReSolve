@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/09/05 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/10/01 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -28,16 +28,20 @@ GtkBuilder* builderPtr;
 GtkWindow* windowPtr;
 
 char    exprConf[LineLen]; // backup config  expression
-double* userRconf;         // backup config  list values
-double* userR2conf;        // backup config  list2 values
+double* userRconf=NULL;    // backup config  list values
+double* userR2conf=NULL;   // backup config  list2 values
 u16     numR1conf;         // backup config  list quantity
 u16     numR2conf;         // backup config  list2 quantity
 char    exprGui[LineLen];  // backup userGui expression
-double* userRgui;          // backup userGui list values
-double* userR2gui;         // backup userGui list2 values
+double* userRgui=NULL;     // backup userGui list values
+double* userR2gui=NULL;    // backup userGui list2 values
 u16     numR1gui;          // backup userGui list quantity
 u16     numR2gui;          // backup userGui list2 quantity
+u08     EserieBack;        // backup lists2 Eserie
+u16     maxRpBack;         // backup lists2 maxRp
 
+static void userListWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr); // called on user list type values
+static void userList2Whf(GtkWidget* widgetWhfPtr, gpointer dataPtr); // called on userList2 type values
 int guiUpdateOut(char* txtPtr, int l); // update output widgets with results values
 int runReSolve(); // memSize, memAlloc, doCalc, show output, freeMem
 
@@ -94,10 +98,10 @@ int updateLabelMem() { // called to update shown memory allocation
    return OK;
 } // updateLabelMem()
 
-static void formulaDropWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on dropdown preset formula selector
+static void formulaDropWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on dropdown preset formula selector
    GtkWidget* widgetPtr;
    g_print("FormulaDrop ComboBoxText\n");
-   gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetWsrPtr);
+   gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetWhfPtr);
    g_print("value:'%s'\n", comboValPtr);
    widgetPtr=GTK_WIDGET(gtk_builder_get_object(builderPtr, "circuits"));
    if (!strcmp(comboValPtr, "Series")) {
@@ -155,12 +159,12 @@ static void formulaDropWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // calle
    //printf("exprConf:'%s'\n", exprConf);
    //printf("exprGui:'%s'\n", exprGui);
    g_free(comboValPtr);
-} // formulaDropWsr()
+} // formulaDropWhf()
 
-static void formulaUserWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on custom formula type
+static void formulaUserWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on custom formula type
    GtkWidget* widgetPtr;
    g_print("FormulaUser Entry\n");
-   const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetWsrPtr);
+   const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetWhfPtr);
    g_print("text:'%s'\n", textPtr);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "formulaList"));
    gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetPtr);
@@ -180,27 +184,27 @@ static void formulaUserWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // calle
    //printf("exprConf:'%s'\n", exprConf);
    //printf("exprGui:'%s'\n", exprGui);
    //g_free(textPtr);
-} // formulaUserWsr()
+} // formulaUserWhf()
 
-static void targetWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on target value change
+static void targetWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on target value change
    g_print("Desired SpinButton\n");
-   gdouble spinVal = gtk_spin_button_get_value((GtkSpinButton*)widgetWsrPtr);
+   gdouble spinVal = gtk_spin_button_get_value((GtkSpinButton*)widgetWhfPtr);
    g_print("value:'%g'\n", spinVal);
    target = spinVal;
-} // targetWsr()
+} // targetWhf()
 
-static void standardSerieWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on radio button standard series
+static void standardSerieWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on radio button standard series
    GtkWidget* widgetPtr;
    int ret;
    g_print("standardSerie RadioButton\n");
-   guint radioVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetWsrPtr);
+   guint radioVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetWhfPtr);
    g_print("value:'%u'\n", radioVal);
    if (radioVal==0) { // custom values
-      // update listNumber from custom list qty
-      // wil do customValues()
-      g_print("standardSerie radioButton break\n");
+      // update numR1 from custom list qty
+      // will do customValues()
+      g_print("standardSerie RadioButton break\n");
       return;
-   } // standard Eseries
+   } // so is standard Eseries
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "EseriesList"));
    gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetPtr);
    //char valStr[5];
@@ -230,13 +234,13 @@ static void standardSerieWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // cal
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userList"));
    gtk_widget_set_sensitive(widgetPtr, false);
    gtk_entry_set_text((GtkEntry*)widgetPtr, "");
-   //g_print("standardSerie radioButton quit\n");
-} // standardSerieWsr()
+   //g_print("standardSerie RadioButton quit\n");
+} // standardSerieWhf()
 
-static void EseriesListWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on Eseries dropdown
+static void EseriesListWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on Eseries dropdown
    int ret;
    g_print("EseriesList ComboBox\n");
-   gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetWsrPtr);
+   gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetWhfPtr);
    //char valStr[5];
    //sprintf(valStr, "%u", radioVal);
    //g_print("value:'%s'\n", comboValPtr);
@@ -258,12 +262,12 @@ static void EseriesListWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // calle
    //gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, TRUE);
    //widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "customValues"));
    //gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, FALSE);
-} // EseriesListWsr()
+} // EseriesListWhf()
 
-static void decadesWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on Decades change
+static void decadesWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on Decades change
    int ret;
    g_print("Decades SpinButton\n");
-   gdouble spinVal = gtk_spin_button_get_value((GtkSpinButton*)widgetWsrPtr);
+   gdouble spinVal = gtk_spin_button_get_value((GtkSpinButton*)widgetWhfPtr);
    //g_print("value:'%g'\n", spinVal);
    decades = spinVal;
    printf("decades:%u\n", decades);
@@ -276,33 +280,33 @@ static void decadesWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on
    if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    ret = updateLabelMem();
    if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
-} // decadesWsr()
+} // decadesWhf()
 
-static void userValuesWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on radio button user values
+static void userValuesWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on radio button user values
    GtkWidget* widgetPtr;
    int ret;
    g_print("userValues RadioButton\n");
-   guint radioVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetWsrPtr);
+   guint radioVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetWhfPtr);
    g_print("value:'%u'\n", radioVal);
    if (radioVal==0) { // standard Eseries
-      // update listNumber from Eserie list qty
-      // wil do standardSeries()
-      g_print("customValues radioButton break\n");
+      // update numR1 from Eserie list qty
+      // will do standardSeries()
+      g_print("userValues RadioButton break\n");
       return;
-   } // custom values
-   //g_print("listNumber:%u\n", listNumber);
-   //g_print("listNumberConf:%u\n", listNumberConf);
+   } // so 1 = custom values
+   //g_print("numR1:%u\n", numR1);
+   //g_print("numR1conf:%u\n", numR1conf);
    Eserie = 0;
-printf("%s user list  numR1:%u @%g%% tolerance\n", __FUNCTION__, numR1, userRtol);
-printf("%s user list2 numR2:%u @%g%% tolerance\n", __FUNCTION__, numR2, userR2tol);
-printf("%s user lists numR :%u\n", __FUNCTION__, numR);
-//gprintf(gui, "listsNumber     :%u\n", listNumber);
+   //g_print("Eserie:%u\n", Eserie);
+   //printf("%s user list  numR1:%u @%g%% tolerance\n", __FUNCTION__, numR1, userRtol);
+   //printf("%s user list2 numR2:%u @%g%% tolerance\n", __FUNCTION__, numR2, userR2tol);
+   //printf("%s user lists numR :%u\n", __FUNCTION__, numR);
+   //gprintf(gui, "numR1     :%u\n", numR1);
    if (lists==1) numR = numR1;
    else          numR = numR1+numR2;
-   //listNumber = numR;
    char* doubleList;
    if (userRgui!=NULL) { // user has already type custom list values
-      g_print("populate customValue list with user values...\n");
+      g_print("populate customValue list with userGui values...\n");
       numR1 = numR1gui;
       uint16_t len = 0;
       char doubleStr[25];
@@ -336,8 +340,7 @@ printf("%s user lists numR :%u\n", __FUNCTION__, numR);
       }
       //g_print("custom values:'%s'\n", doubleList);
    }
-   g_print("%s numR1:%u\n", __FUNCTION__, numR1);
-   //numR1 = listNumber;
+   //g_print("%s numR1:%u\n", __FUNCTION__, numR1);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "EseriesList"));
    gtk_widget_set_sensitive(widgetPtr, false);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "decades"));
@@ -346,7 +349,11 @@ printf("%s user lists numR :%u\n", __FUNCTION__, numR);
    gtk_widget_set_sensitive(widgetPtr, true);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userList"));
    gtk_widget_set_sensitive(widgetPtr, true);
+   g_signal_handlers_block_by_func(widgetPtr, userListWhf, NULL);
+   //g_print("userRgui:%p\n", userRgui);
    gtk_entry_set_text((GtkEntry*)widgetPtr, doubleList);
+   //g_print("userRgui:%p\n", userRgui);
+   g_signal_handlers_unblock_by_func(widgetPtr, userListWhf, NULL);
    free(doubleList);
    updateRdesc(true); // LIB: 
    //g_print("userRdesc:'%s'\n", userRdesc);
@@ -360,13 +367,13 @@ printf("%s user lists numR :%u\n", __FUNCTION__, numR);
    if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    ret = updateLabelMem(); // GUI
    if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
-   //g_print("customValues radioButton end\n");
-} // userValuesWsr()
+   //g_print("customValues RadioButton end\n");
+} // userValuesWhf()
 
-static void userListWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on user list type values
+static void userListWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on user list type values
    int ret;
    g_print("UserList Entry\n");
-   const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetWsrPtr);
+   const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetWhfPtr);
    //g_print("text:'%s'\n", textPtr);
    // make a copy of textPtr[]
    int l = strlen(textPtr);
@@ -440,15 +447,12 @@ static void userListWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called o
    //printf("numR1conf:%u\n", numR1conf);
    //printf("numR1gui :%u\n", numR1gui);
    ret = backGuiVal(); // backup gui 'expr' and 'userR'
-   printf("numR1:%u\n", numR1);
-   printf("numR1conf:%u\n", numR1conf);
-   printf("numR1gui :%u\n", numR1gui);
+   //printf("numR1:%u\n", numR1);
+   //printf("numR1conf:%u\n", numR1conf);
+   //printf("numR1gui :%u\n", numR1gui);
    //for (c=0; c<numR1gui; c++) {
    //   printf("userRgui[%d]:%f\n", c, userRgui[c]);
    //}
-
-   //widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "customValues"));
-   //gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, TRUE);
 
    // 2 - read and set user request
    ret = globalInit(); // LIB: set internal variables
@@ -461,25 +465,26 @@ static void userListWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called o
    if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    ret = updateLabelMem();
    g_free(txtPtr);
-} // userListWsr()
+   g_print("UserList Entry end\n");
+} // userListWhf()
 
-static void bestTolWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on bestTol
+static void bestTolWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on bestTol
    //GtkWidget* widgetPtr;
    //int ret;
    g_print("bestTol CheckButton\n");
-   guint checkVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetWsrPtr);
+   guint checkVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetWhfPtr);
    g_print("value:'%u'\n", checkVal);
    if (checkVal == TRUE)
       valTolBest = 1;
    else
       valTolBest = 0;
-} // bestTolWsr()
+} // bestTolWhf()
 
-static void userRtolWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on userRtol
+static void userRtolWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on userRtol
    GtkWidget* widgetPtr;
    //int ret;
    g_print("userRtol ComboBox\n");
-   gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetWsrPtr);
+   gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetWhfPtr);
    g_print("value:'%s'\n", comboValPtr);
    userRtol = strtof(comboValPtr, NULL);
    updateRdesc(true); // LIB
@@ -490,43 +495,221 @@ static void userRtolWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called o
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "tolRatioWdg"));
    gtk_label_set_text((GtkLabel*)widgetPtr, tolRatioStr);
    free(tolRatioStr);
-} // userRtolWsr()
+} // userRtolWhf()
 
-static void listsWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on 2nd list
+static void listsWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on 2nd list
    GtkWidget* widgetPtr;
-   //int ret;
+   int ret;
    g_print("lists CheckButton\n");
-   guint checkVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetWsrPtr);
+   guint checkVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetWhfPtr);
    g_print("value:'%u'\n", checkVal);
-   if (checkVal==1) {
-      guiUpdateOut(NULL, 0); // clear output widget
-      gprintf(gui, "WARN: GUI as now do not support lists=2. Ignoring ...\n");
-   }
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userList2"));
-   if (checkVal==1) {
-      gtk_widget_set_sensitive(widgetPtr, true);
-      widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userR2tolWdg"));
-      gtk_widget_set_sensitive(widgetPtr, true);
-   } else {
+   if (checkVal==false) { // one list
+      //g_print("back to one list\n");
+      //g_print("EserieBack:%u\n", EserieBack);
+      Eserie = EserieBack;
+      maxRp = maxRpBack;
+      lists = 1;
+      gtk_entry_set_text((GtkEntry*)widgetPtr, "");
       gtk_widget_set_sensitive(widgetPtr, false);
       widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userR2tolWdg"));
+      gtk_widget_set_sensitive(widgetPtr, false);
+      if (Eserie == 0) { // was user list
+         widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userValues"));
+         gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, true);
+         widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "standardSeries"));
+         gtk_widget_set_sensitive(widgetPtr, true);
+      } else { // standard Eserie
+         g_print("back to standard series\n");
+         widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "standardSeries"));
+         gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, true);
+         gtk_widget_set_sensitive(widgetPtr, true);
+      }
+      widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "Rp"));
+      if (maxRp == 1)
+         gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, false);
+      else
+         gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, true);
+   } else { // two lists
+      EserieBack = Eserie; // backup
+      maxRpBack = maxRp; // backup
+      lists = 2;
+      Eserie = 0;
+      //g_print("EserieBack:%u\n", EserieBack);
+      //g_print("Eserie:%u\n", Eserie);
+      gtk_widget_set_sensitive(widgetPtr, true);
+      widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userR2tolWdg"));
+      gtk_widget_set_sensitive(widgetPtr, true);
+      char* doubleList;
+      if (userR2gui!=NULL) { // user has already type custom list values
+         g_print("populate customValue list2 with userGui values...\n");
+         numR2 = numR2gui;
+         uint16_t len = 0;
+         char doubleStr[25];
+         for (uint16_t r=0; r<numR2; r++) {
+            sprintf(doubleStr, "%g", userR2gui[r]);
+            len+=strlen(doubleStr); // count chars
+         }
+         len+=numR2; // space for commas
+         doubleList = calloc(len+1,1);
+         for (uint16_t r=0; r<numR2; r++) {
+            sprintf(doubleStr, "%g", userR2gui[r]);
+            strcat(doubleList, doubleStr);
+            if (r<numR2-1) strcat(doubleList, ",");
+         }
+         //g_print("custom values:'%s'\n", doubleList);
+      } else { // use config file
+         g_print("populate customValue list2 with config values...\n");
+         numR2 = numR2conf;
+         uint16_t len = 0;
+         char doubleStr[25];
+         for (uint16_t r=0; r<numR2; r++) {
+            sprintf(doubleStr, "%g", userR2conf[r]);
+            len+=strlen(doubleStr); // count chars
+         }
+         len+=numR2; // space for commas
+         doubleList = calloc(len+1,1);
+         for (uint16_t r=0; r<numR2; r++) {
+            sprintf(doubleStr, "%g", userR2conf[r]);
+            strcat(doubleList, doubleStr);
+            if (r<numR2-1) strcat(doubleList, ",");
+         }
+         //g_print("custom values:'%s'\n", doubleList);
+      }
+      //g_print("%s numR2:%u\n", __FUNCTION__, numR2);
+      widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userList2"));
+      //g_print("userRgui:%p\n", userRgui);
+      //g_print("userR2gui:%p\n", userR2gui);
+      g_signal_handlers_block_by_func(widgetPtr, userList2Whf, NULL);
+      gtk_entry_set_text((GtkEntry*)widgetPtr, doubleList);
+      g_signal_handlers_unblock_by_func(widgetPtr, userList2Whf, NULL);
+      free(doubleList);
+      //g_print("userRgui:%p\n", userRgui);
+      //g_print("userR2gui:%p\n", userR2gui);
+      widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userValues"));
+      gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, true);
+      widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "Rp"));
+      gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, true);
+      widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "standardSeries"));
       gtk_widget_set_sensitive(widgetPtr, false);
    }
-   
-} // listsWsr()
+   updateRdesc(true); // LIB: update userRdesc from baseEdesc
+   //g_print("userR2desc:'%s'\n", userR2desc);
+   // 2 - read and set user request
+   ret = globalInit(); // LIB: set internal variables
+   updateLabelDesc(); // GUI
+   // 3 - calculate the needed memory
+   ret = memInpCalc(); // LIB: memory size calculation for input values
+   if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
+   ret = memResCalc(); // LIB: calculate the needed memory for results
+   if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
+   ret = updateLabelMem(); // GUI
+   if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
+   //g_print("lists CheckButton end\n");
+} // listsWhf()
 
-static void userList2Wsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on userList2
+static void userList2Whf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on userList2 type values
+   int ret;
    g_print("UserList2 Entry\n");
-   const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetWsrPtr);
-   g_print("text:'%s'\n", textPtr);
-   
-} // userList2Wsr()
+   const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetWhfPtr);
+   //g_print("text:'%s'\n", textPtr);
+   // make a copy of textPtr[]
+   int l = strlen(textPtr);
+   gchar* txtPtr = malloc(l+1);
+   strcpy(txtPtr, textPtr);
+   // check are only digits, dots and commas
+   ret = isNumber(txtPtr, true);
+   //printf("str:'%s' ret:%d (1=number, 0=other, -1=ERROR)\n", txtPtr, ret);
+   if (ret!=1) {
+      //printf("str:'%s' not only numbers\n", txtPtr);
+      printf("WARN: %s not only numbers\n", __FUNCTION__);
+      g_free(txtPtr);
+      return;
+   }
+   int c;
+   //for (c=0; c<numR1conf; c++) {
+   //   printf("userR[%d]:%f\n", c, userR[c]);
+   //}
+   char* chrPtr;
+   char* prvPtr = txtPtr;
+   for (c=0; ; c++) { // count commas
+      chrPtr = strchr(prvPtr, ',');
+      if (chrPtr==NULL) break;
+      prvPtr = chrPtr+1;
+      //printf("prvPtr:%p *prvPtr:%c c:%d\n", prvPtr, *prvPtr, c);
+   }
+   if (c==0) return;
+   c++;
+   //printf("tot c:%d\n", c);
+   if (userR2) free(userR2);
+   userR2 = calloc(c, sizeof(double));
 
-static void userR2tolWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on userR2tol
+   int n, len;
+   prvPtr = txtPtr;
+   for (n=0; n<c; n++) {
+      double num = 0;
+      while (num<1 && *prvPtr!='\0') { // skip letters and consecutive commas
+         chrPtr = strchr(prvPtr, ',');
+         //printf("prvPtr:%p chrPtr:%p\n", prvPtr, chrPtr);
+         //printf("*prvPtr:'%c' str:'%s' ", *prvPtr, prvPtr);
+         //if (chrPtr!=NULL) printf("*chrPtr:'%c' nstr:'%s'\n", *chrPtr, chrPtr);
+         //else printf("\n");
+         if (chrPtr==NULL)
+            len = strlen(prvPtr);
+         else
+            len = chrPtr-prvPtr;
+         //printf("len:%d\n", len);
+         //char doubleStr[len+1];
+         char doubleStr[12];
+         strncpy(doubleStr, prvPtr, len);
+         doubleStr[len]='\0';
+         //printf("doubleStr:'%s'", doubleStr);
+         num = strtod(doubleStr, NULL);
+         //printf(" num:%g\n", num);
+         prvPtr = chrPtr+1;
+         if (num==0) { c--; /*printf("c:%d\n", c);*/ prvPtr = chrPtr+1; }
+      }
+      if (num!=0) {
+         userR2[n]=num;
+         //printf("userR2[%d]:%g\n", n, userR2[n]);
+      } else c--;
+      if (chrPtr==NULL) break;
+   }
+   //printf("c final:%d\n", c);
+   //for (n=0; n<c; n++) {
+   //   printf("userR2[%d]:%f\n", n, userR2[n]);
+   //}
+   //printf("numR2:%u\n", numR2);
+   numR2 = c; // new user quantity
+   //printf("numR2:%u\n", numR2);
+   //printf("numR2conf:%u\n", numR2conf);
+   //printf("numR2gui :%u\n", numR2gui);
+   ret = backGuiVal(); // backup gui 'expr' and 'userR'
+   //printf("numR2:%u\n", numR2);
+   //printf("numR2conf:%u\n", numR2conf);
+   //printf("numR2gui :%u\n", numR2gui);
+   //for (c=0; c<numR2gui; c++) {
+   //   printf("userR2gui[%d]:%f\n", c, userR2gui[c]);
+   //}
+
+   // 2 - read and set user request
+   ret = globalInit(); // LIB: set internal variables
+   ret = updateRdesc(true); // LIB
+   updateLabelDesc(); // GUI
+   // 3 - calculate the needed memory
+   ret = memInpCalc(); // LIB: memory size calculation for input values
+   if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
+   ret = memResCalc(); // LIB: calculate the needed memory for results
+   if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
+   ret = updateLabelMem();
+   g_free(txtPtr);
+} // userList2Whf()
+
+static void userR2tolWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on userR2tol
    GtkWidget* widgetPtr;
    //int ret;
    g_print("userR2tol ComboBox\n");
-   gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetWsrPtr);
+   gchar* comboValPtr = gtk_combo_box_text_get_active_text((GtkComboBoxText*)widgetWhfPtr);
    g_print("value:'%s'\n", comboValPtr);
    userR2tol = strtof(comboValPtr, NULL);
    updateRdesc(true); // LIB
@@ -537,19 +720,19 @@ static void userR2tolWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called 
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "tolRatioWdg"));
    gtk_label_set_text((GtkLabel*)widgetPtr, tolRatioStr);
    free(tolRatioStr);
-} // userR2tolWsr()
+} // userR2tolWhf()
 
-static void RpWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on series/parallel tick
+static void RpWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on series/parallel tick
    GtkWidget* widgetPtr;
    int ret;
    g_print("Rp CheckButton\n");
-   guint checkVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetWsrPtr);
+   guint checkVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetWhfPtr);
    g_print("value:'%u'\n", checkVal);
    if (checkVal==0) {
       maxRp = 1;
       g_print("single values\n");
       widgetPtr=GTK_WIDGET(gtk_builder_get_object(builderPtr, "formulaList"));
-      formulaDropWsr(widgetPtr, NULL);
+      formulaDropWhf(widgetPtr, NULL);
       //g_print("set ID:circuits with pixbuf='circuit03.png'\n");
       //widgetPtr=GTK_WIDGET(gtk_builder_get_object(builderPtr, "circuits"));
       //gtk_image_set_from_file(GTK_IMAGE(widgetPtr), "circuit03.png");
@@ -558,7 +741,7 @@ static void RpWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on seri
       maxRp = 2;
       g_print("series/parallel allowed\n");
       widgetPtr=GTK_WIDGET(gtk_builder_get_object(builderPtr, "formulaList"));
-      formulaDropWsr(widgetPtr, NULL);
+      formulaDropWhf(widgetPtr, NULL);
       //g_print("set ID:circuits with pixbuf='circuit03p.png'\n");
       //widgetPtr=GTK_WIDGET(gtk_builder_get_object(builderPtr, "circuits"));
       //gtk_image_set_from_file(GTK_IMAGE(widgetPtr), "circuit03p.png");
@@ -572,12 +755,12 @@ static void RpWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on seri
    if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    ret = updateLabelMem();
    if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
-} // RpWsr()
+} // RpWhf()
 
-static void resultsWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on Results shown edit
+static void resultsWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on Results shown edit
    int ret;
    g_print("Results Entry\n");
-   const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetWsrPtr);
+   const gchar* textPtr = gtk_entry_get_text((GtkEntry*)widgetWhfPtr);
    //g_print("text:'%s'\n", textPtr);
    // make a copy of textPtr[]
    int l = strlen(textPtr);
@@ -592,7 +775,7 @@ static void resultsWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on
       //widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "results"));
       char unsignedStr[25];
       sprintf(unsignedStr, "%u", numBestRes);
-      gtk_entry_set_text((GtkEntry*)widgetWsrPtr, unsignedStr);
+      gtk_entry_set_text((GtkEntry*)widgetWhfPtr, unsignedStr);
       return;
    }
    u64 tmpNum = atoi(txtPtr);
@@ -610,9 +793,9 @@ static void resultsWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on
    if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
    ret = updateLabelMem();
    if (ret!=OK) { printf("file:%s func:%s line:%d\n", __FILE__, __FUNCTION__, __LINE__); return ; }
-} // resultsWsr()
+} // resultsWhf()
 
-static void resolveWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on ReSolve button
+static void resolveWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on ReSolve button
    int ret;
    g_print("Resolve Button\n");
    stop = false;
@@ -621,9 +804,9 @@ static void resolveWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on
       printf("runReSolve returned:%u, quit\n", ret);
       return;
    }
-} // resolveWsr()
+} // resolveWhf()
 
-static void aboutWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on about button
+static void aboutWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on about button
    g_print("About Button\n");
    const gchar* auth[]={ Author, 0 };
    GdkPixbuf* logoPtr = gdk_pixbuf_new_from_file("./ReSolve.png", NULL);
@@ -639,12 +822,12 @@ static void aboutWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on a
    gtk_about_dialog_set_website_label(GTK_ABOUT_DIALOG(aboutPtr), "http://"WebLabel);
    gtk_dialog_run(GTK_DIALOG(aboutPtr));
    g_object_unref(logoPtr), logoPtr = NULL;
-} // aboutWsr()
+} // aboutWhf()
 
-static void stopWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on stop button
-   g_print("Stop Button\n");
+static void stopWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on stop button
    stop = true;
-} // stopWsr()
+   g_print("Stop Button\n");
+} // stopWhf()
 
 int quit() { // called also on Window destroy
    // free mem allocated by fillConfigVars()
@@ -655,10 +838,10 @@ int quit() { // called also on Window destroy
    return EXIT_SUCCESS;
 } // quit()
 
-static void quitWsr(GtkWidget* widgetWsrPtr, gpointer dataPtr) { // called on quit button
+static void quitWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on quit button
    g_print("Quit Button\n");
    quit();
-} // quitWsr()
+} // quitWhf()
 
 // this is called by gprintf() when guiUpdateOutPtr!=NULL
 // Note: clear output buffer on empty string
@@ -845,8 +1028,8 @@ int guiUpdateStart() { // update widgets with input/config values at startup
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "decades"));
    gtk_spin_button_set_value((GtkSpinButton*)widgetPtr, decades);
 
-   uint16_t len = 0;
    if (Eserie==0) {
+      uint16_t len = 0;
       widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userList"));
       //printf("numR1:%u\n", numR1);
       char doubleStr[25];
@@ -938,23 +1121,26 @@ int guiUpdateStart() { // update widgets with input/config values at startup
    gtk_label_set_text((GtkLabel*)widgetPtr, tolRatioStr);
    free(tolRatioStr);
 
-   widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userList2"));
-   len = 0;
-   //printf("listNumber:%u\n", listNumber);
-   //for (uint16_t r=0; r<listNumber; r++) {
-   //   sprintf(doubleStr, "%g", userR[r]);
-   //   len+=strlen(doubleStr);
-   //}
-   //len+=listNumber;
-   //char* doubleList = calloc(len+1,1);
-   //for (uint16_t r=0; r<listNumber; r++) {
-   //   sprintf(doubleStr, "%g", userR[r]); // switch to engStr()
-   //   strcat(doubleList, doubleStr);
-   //   if (r<listNumber-1) strcat(doubleList, ",");
-   //}
-   //printf("custom values:'%s'\n", doubleList);
-   //gtk_entry_set_text((GtkEntry*)widgetPtr, doubleList);
-   //free(doubleList);
+   if (lists==2) {
+      uint16_t len = 0;
+      widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userList2"));
+      printf("numR2:%u\n", numR2);
+      char doubleStr[25];
+      for (uint16_t r=0; r<numR2; r++) {
+         sprintf(doubleStr, "%g", userR2[r]);
+         len+=strlen(doubleStr);
+      }
+      len+=numR2;
+      char* doubleList = calloc(len+1,1);
+      for (uint16_t r=0; r<numR2; r++) {
+         sprintf(doubleStr, "%g", userR2[r]); // switch to engStr()
+         strcat(doubleList, doubleStr);
+         if (r<numR2-1) strcat(doubleList, ",");
+      }
+      //printf("user2 values:'%s'\n", doubleList);
+      gtk_entry_set_text((GtkEntry*)widgetPtr, doubleList);
+      free(doubleList);
+   }
 
    done = FALSE;
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userR2tolWdg"));
@@ -1044,47 +1230,45 @@ int guiInit(int numPar, char* paramPtr[]) { // create the main window
    windowPtr = GTK_WINDOW(gtk_builder_get_object(builderPtr, "window"));
    g_signal_connect(windowPtr, "destroy", G_CALLBACK(quit), NULL);
 
-   //gtk_builder_connect_signals(builderPtr, NULL); // seems unnecessary
+   //gtk_builder_connect_signals(builderPtr, NULL); // maybe unnecessary
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "formulaList"));
-   g_signal_connect(widgetPtr, "changed", G_CALLBACK(formulaDropWsr), NULL);
+   g_signal_connect(widgetPtr, "changed", G_CALLBACK(formulaDropWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "formulaUser"));
-   g_signal_connect(widgetPtr, "changed", G_CALLBACK(formulaUserWsr), NULL);
+   g_signal_connect(widgetPtr, "changed", G_CALLBACK(formulaUserWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "target"));
-   g_signal_connect(widgetPtr, "value-changed", G_CALLBACK(targetWsr), NULL);
+   g_signal_connect(widgetPtr, "value-changed", G_CALLBACK(targetWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "standardSeries"));
-   g_signal_connect(widgetPtr, "toggled", G_CALLBACK(standardSerieWsr), NULL);
+   g_signal_connect(widgetPtr, "toggled", G_CALLBACK(standardSerieWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "EseriesList"));
-   g_signal_connect(widgetPtr, "changed", G_CALLBACK(EseriesListWsr), NULL);
+   g_signal_connect(widgetPtr, "changed", G_CALLBACK(EseriesListWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "decades"));
-   g_signal_connect(widgetPtr, "value-changed", G_CALLBACK(decadesWsr), NULL);
+   g_signal_connect(widgetPtr, "value-changed", G_CALLBACK(decadesWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userValues"));
-   g_signal_connect(widgetPtr, "toggled", G_CALLBACK(userValuesWsr), NULL);
+   g_signal_connect(widgetPtr, "toggled", G_CALLBACK(userValuesWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userList"));
-   g_signal_connect(widgetPtr, "changed", G_CALLBACK(userListWsr), NULL);
-
+   g_signal_connect(widgetPtr, "changed", G_CALLBACK(userListWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "valTolBestWdg"));
-   g_signal_connect(widgetPtr, "toggled", G_CALLBACK(bestTolWsr), NULL);
+   g_signal_connect(widgetPtr, "toggled", G_CALLBACK(bestTolWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userRtolWdg"));
-   g_signal_connect(widgetPtr, "changed", G_CALLBACK(userRtolWsr), NULL);
+   g_signal_connect(widgetPtr, "changed", G_CALLBACK(userRtolWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "listsWdg"));
-   g_signal_connect(widgetPtr, "toggled", G_CALLBACK(listsWsr), NULL);
+   g_signal_connect(widgetPtr, "toggled", G_CALLBACK(listsWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userList2"));
-   g_signal_connect(widgetPtr, "changed", G_CALLBACK(userList2Wsr), NULL);
+   g_signal_connect(widgetPtr, "changed", G_CALLBACK(userList2Whf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "userR2tolWdg"));
-   g_signal_connect(widgetPtr, "changed", G_CALLBACK(userR2tolWsr), NULL);
-
+   g_signal_connect(widgetPtr, "changed", G_CALLBACK(userR2tolWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "Rp"));
-   g_signal_connect(widgetPtr, "toggled", G_CALLBACK(RpWsr), NULL);
+   g_signal_connect(widgetPtr, "toggled", G_CALLBACK(RpWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "results"));
-   g_signal_connect(widgetPtr, "changed", G_CALLBACK(resultsWsr), NULL);
+   g_signal_connect(widgetPtr, "changed", G_CALLBACK(resultsWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "resolveButton"));
-   g_signal_connect(widgetPtr, "clicked", G_CALLBACK(resolveWsr), NULL);
+   g_signal_connect(widgetPtr, "clicked", G_CALLBACK(resolveWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "aboutButton"));
-   g_signal_connect(widgetPtr, "clicked", G_CALLBACK(aboutWsr), NULL);
+   g_signal_connect(widgetPtr, "clicked", G_CALLBACK(aboutWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "stopButton"));
-   g_signal_connect(widgetPtr, "clicked", G_CALLBACK(stopWsr), NULL);
+   g_signal_connect(widgetPtr, "clicked", G_CALLBACK(stopWhf), NULL);
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "quitButton"));
-   g_signal_connect(widgetPtr, "clicked", G_CALLBACK(quitWsr), NULL);
+   g_signal_connect(widgetPtr, "clicked", G_CALLBACK(quitWhf), NULL);
 
    //gtk_widget_show(GTK_WIDGET(windowPtr)); // seems unnecessary
 
@@ -1093,7 +1277,6 @@ int guiInit(int numPar, char* paramPtr[]) { // create the main window
 
 int main(int numPar, char* paramPtr[]) { // GUI entry point
    int ret;
-   bool flag = false;
 
    gui = 0; // mean gprintf() update GUI
 
@@ -1107,12 +1290,6 @@ int main(int numPar, char* paramPtr[]) { // GUI entry point
    }
    //printf("Found and loaded config file: 'reSolveConf.txt'\n");
    // 1 - checking arguments syntax/config value validity
-   if (lists==2) {
-      printf("WARN: GUI as now do not support lists=2. Ignoring ...\n");
-      flag = true;
-      lists = 1;
-      //exit(1);
-   }
    ret = exprCheck(); // LIB: check expression syntax
    // 2 - read and set user request
    ret = globalInit(); // LIB: set internal variables
@@ -1124,7 +1301,7 @@ int main(int numPar, char* paramPtr[]) { // GUI entry point
    // 4 - show config values
    ret = showConf(); // LIB: show config set
 
-   ret = backConfVal(); // backup config 'expr' and 'userR'
+   ret = backConfVal(); // GUI: backup config 'expr' and 'userR'
 
    //putenv("LANG=C"); // as now use C locale to avoid trouble with .|,
    setlocale(LC_ALL,"C");
@@ -1140,10 +1317,6 @@ int main(int numPar, char* paramPtr[]) { // GUI entry point
    winGuiLoop = 1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
    ret = guiUpdateStart();
-
-   if (flag==true) {
-      gprintf(gui, "WARN: GUI as now do not support lists=2. Ignoring ...\n");
-   }
 
    //ret = runReSolve(); // steps 5 to 10 called by widget callbacks
 
