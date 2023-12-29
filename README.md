@@ -75,7 +75,7 @@ userR2={ v1, v2, ..., Vm } ; user list of 'm' values @0.1%
 userR2tol=0.1 ; baseR2 percent tolerance: use 0.1 for 0.1% tolerance
 userR2desc="user list of 'm' values @0.1% tolerance" ; description max 64 chars
 ```
-When valTolBest=1 and lists=2 ReSolve will discard values when:
+When bestTol=1 and lists=2 ReSolve will discard values when:
 ```
 - series  : 10*userR(1%) >    userR2(0.1%)
 - parallel:    userR(1%) < 10*userR2(0.1%)
@@ -376,8 +376,10 @@ v0.11.09h 2023/10/01
   - CLI: new output formatting to show tolerance of each component
   - CLI: use 80 columns for output formatting
   - GUI: enlarged to 722 pixels to accomodate 80 cols output formatting
+  - GUI: support for lists=2 new config: userR2, userR2tol, userR2desc, valTolBest
   - GUI: new widgets to support lists=2, (in)activate meaning widgets
   - LIB: extended support to 8 decades, GUI too
+  - LIB: print with eng/SIprefix notation with mem=0
   - GUI: working Stop button
   - LIB: reduced memory allocation/compute time for input descriptions:
          baseR[3+2],mem=0,lists2=2,valTolBest=0: 1.7 kB   => 840  B  , 0.000704 s  => 0.000905 s
@@ -402,7 +404,21 @@ v0.11.09h 2023/10/01
 * Fix:
   - LIB: fix conversion to eng notation in case: -1000E-09 instead of -1E-06
   - LIB: parsing of reSolveConf.txt more robust for duplicates and comments
-  - GUI: target and decades are not updated on direct type
+  - GUI: target and decades was not updated on direct type
+
+v0.11.09h 2023/12/29
+* Added:
+  - created test cases to check output consistency
+  - improved (cross-)package creation
+* Fix:
+  - LIB: save position of last single input value to correctly show solutions with 2 resistors
+  - LIB: save numV in numF to avoid memory leak on lists=2 and bestTol=1
+  - LIB: can read userR2 with only one value from config file
+  - LIB: correctly show tolerance ratio
+* Cosmetic
+  - LIB: refactor showVal4(numBestRes),showVal3(numBestRes) in showVal43(numBestRes, num);
+  - LIB: refactor showValX(),showValMemLow() functions moving CLI/GUI maxRp==? mem=? inside LIB
+  - LIB: renamed 'valTolBest' to 'bestTol' in config file
 
 ToDo:
 -----
@@ -410,17 +426,13 @@ ToDo:
 - LIB: add custom E24 using closest E96 values
 - LIB: add custom E12 using closest E96 values
 - LIB: add hybrid Eseries: E48+E24, E96+E24, E192+E24
-- LIB: minValue=10 ; when !=0 skip Eserie values lesser than minValue
-- LIB: maxValue=0 ; when !=0 skip Eserie values greather than maxValue
+- LIB: maxR=100E3 ; when !=0 skip Eserie/User values greather than maxR
+- LIB: minR=10    ; when !=0 skip Eserie/User values smaller than minR
+- LIB: separate value below and over the target value
+- LIB: print exact results, separated by approximate results
 - GUI: show values read from reSolveConf.txt userR in engineering notation
-- GUI: support for lists=2 new config: userR2, userR2tol, userR2desc, valTolBest
-- LIB: print with eng/SIprefix notation with mem=0
-- LIB: refactor showValX() functions moving CLI/GUI mem==? and maxRp==? inside LIB
 - LIB: numberOfResults=0 with mem=0 meaning all
 - LIB: use multi-threading to speed-up calculation with multicore CPU/GPU
-- LIB: remove duplicated triangular solutions with MaxRp=2
-- LIB: print exact results, separated by approximate results
-- LIB: separate value below and over the target value
 - LIB: support for 0 Ohm value in formula denominator (division by 0)
 - LIB: add support for variables with an index number. Es. R1, R2
 - LIB: add support for variables/letters other than a-b. Autoinit values
@@ -439,6 +451,8 @@ Distribution:
 -------------
 In the tar.gz package you will find the sources GNU GPL3 license and binaries
 compiled for various platforms and operative systems.
+For Linux is also provided the cross-distro AppImage file format. $ chmod +x *.AppImage
+For MacOS is also provided the DMG disk file
 As a free software, if you redistribute or modify it, you must redistribute
 everytime the sources too.
 
@@ -453,22 +467,25 @@ src/exprParser.c         expression parser
 src/reSolveLib.c         ReSolve lib implementation
 src/reSolveCli.c         main CLI source
 src/reSolveGui.c         main GUI source
-src/Makefile             Makefile
+src/Makefile             Makefile to build on Linux, MinGW/MSYS2 or MacOS
 src/Makefile32           Makefile to build from Linux64 to Linux32
-src/MakefileX            Makefile to cross-build from Linux to Win64
-src/MakefileX32          Makefile to cross-build from Linux to Win32
-src/makeAppDir.sh        script use to prepare distribution packages
+src/MakefileX            Makefile to cross-build from Linux to Win64 with MXE
+src/MakefileX32          Makefile to cross-build from Linux to Win32 with MXE
+src/makePkg.sh           script used to prepare distribution packages
 src/reSolve.desktop      Linux desktop integration file
 src/ReSolve.png          Linux icon file
-src/AppRun               AppImage run file template
+src/ReSolve.ico          Windows icon file
+src/ReSolve.icns         MacOS icon file
+src/ReSolve.bundle       MacOS packaging file
+src/Info.plist           MacOS DMG package file
 reSolveLinux32           CLI binary for Linux/x86
 reSolveGuiLinux32        GUI binary for Linux/x86
 reSolveLinux64           CLI binary for Linux/amd64
 reSolveGuiLinux64        GUI binary for Linux/amd64
-reSolveWin32.exe         CLI binary for Win32/x86
-reSolveGuiWin32.exe      GUI binary for Win32/x86
-reSolveWin64.exe         CLI binary for Win64/amd64
-reSolveGuiWin64.exe      GUI binary for Win64/amd64
+reSolveWinMxe32.exe      CLI binary for Win32/x86
+reSolveGuiWinMxe32.exe   GUI binary for Win32/x86
+reSolveWinMxe64.exe      CLI binary for Win64/amd64
+reSolveGuiWinMxe64.exe   GUI binary for Win64/amd64
 circuit???.png           Circuit images with example formula
 reSolveConf.txt          Configuration file
 reSolve.glade            GUI resource XML file

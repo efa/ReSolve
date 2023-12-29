@@ -14,13 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with ReSolve. If not, see <http://www.gnu.org/licenses/>.
 #
-# Makefile to crossbuild 'reSolve' from Linux to Win32
+# Makefile to crossbuild 'reSolve' from Linux to Win32 using MXE
 # Linux=>Win32
 #
 # To build for debug use: $ make BUILD=debug debug
 
 HOST=$(shell uname -o)
-PKG=Win
+PKG=WinMxe
 BIT=32
 
 BUILD?=release
@@ -82,9 +82,9 @@ bin: all cleanobj strip
 force: clean bin
 	rm -f *.o
 
-rel: force
-	mv $(TARGET) $(GUI) ..
-
-pkg: rel
+pkg:
 	@echo ""
-	@makeAppDir.sh $(PKG) $(BIT)
+	mv $(TARGET) $(GUI) ..
+	@makePkg.sh $(PKG) $(BIT)
+
+rel: force pkg

@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/10/01 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/12/29 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -32,7 +32,7 @@ u16 numR;          // number of values from both user lists OR Eseries*decades
 //u16 listNumber = ListNumber; // user list quantity
 u32 numV = NumV;   /* number of input possible values (all configurations), need u32 */
 u64 totV = TotV;   /* number of results values to try, need u64 */
-u16 numBestRes = NumberResDefault; /* number of best results to show */
+u32 numBestRes = NumberResDefault; /* number of best results to show */
 
 char   baseE1desc[65] = "standard serie E1 @80% tolerance"; // max 64 chars
 double baseE1[1] = { 1.0 }; // E1 IEC 60063
@@ -107,6 +107,14 @@ double baseE192[192] = { 1.00, 1.01, 1.02, 1.04, 1.05, 1.06, 1.07, 1.09, // E192
 
 char    userRdesc[65]=""; // description: reserve space for 65 chars
 double* userR; // declare vector pointer, will be a vector of double userR[numR1]
+u32 numS; // number of single values, like plv+1
+u32 pfv;  // position of first single value
+u32 plv;  // position of last single value
+u32 pfs;  // position of first serie
+u32 pls;  // position of last serie
+u32 pfp;  // position of first parallel
+u32 plp;  // position of last parallel
+u32 numF; // save calculated numV for memory free
 
 u08 lists = 1;  // 1 normal, 2 use userR as low precision & userR2 as hi prec
 double* userR2; // declare vector pointer, will be a vector of double userR2[numR2]
@@ -114,9 +122,10 @@ float userRtol;  // userR percent tolerance: 0.1, 1, 2, 5, 10, 20, 40
 float userR2tol; // userR2 percent tolerance: 0.1, 1, 2, 5, 10, 20, 40
 char userR2desc[65]; // description print: reserve space for 65 chars
 u16 numR2;   // number of values in second user list
-u32 numT;    // number of valid numV values, need u32
-u08 valTolBest; // 0 normal, 1 use userR2 as 1/10 tolerance than userR
+u08 bestTol; // 0 normal, 1 use userR2 as 1/10 tolerance than userR
 float tolRatio; // userR2 to userR tolerance
+char tol1str[3]; // userRtol tolerance as strings for showVal()
+char tol2str[3]; // userR2tol tolerance as strings for showVal()
 
 //char Exx[24]=""; // description for single result when maxRp=2: "Exx serie "
 char Vdesc[][17] = { "UserList ",   // 0
@@ -137,13 +146,11 @@ char Vdesc[][17] = { "UserList ",   // 0
                      "Parallel ",   // 15 low + hi  tolerance, lists=2
                      "Parallel ",   // 16 hi  + hi  tolerance, lists=2
                    }; // Possible type of values
-char tol1str[3]; // userRtol tolerance as strings for showVal()
-char tol2str[3]; // userR2tol tolerance as strings for showVal()
 //static struct rValuesTy rValues[numV]; /* allocate memory for single, series & parallel */
-struct rValuesTy* rValues; /* pointer to memory for single, series & parallel rValues[numV] */
+struct rValuesTy* rValues; // pointer to rValues[numV] for single, series & parallel
 
 //static struct resultsTy results[totV]; /* allocate memory for results: [(12*7)^2] */
-struct resultsTy* results; /* pointer to memory for results: [(12*7)^2] results[totV] */
+struct resultsTy* results; // pointer to results[totV] for results. Ex.[(12*7)^2]
 
 u16 valTy, resTy; // sizeof struct
 u32 rValueSize; // sizeof vector of struct: rValues[numV]
@@ -179,6 +186,7 @@ void chDirBin(char* argList) { // call with chDirBin(argv[0]);
    cwdPath = malloc(PATH_MAX);
    cwdPath = getcwd(cwdPath, PATH_MAX);
    //printf("cwdPath='%s'\n", cwdPath);
+   free(cwdPath);
    realpath(argList, absPath);
    //printf("realpath()='%s'\n", absPath);
    int len = strlen(absPath);
@@ -190,7 +198,6 @@ void chDirBin(char* argList) { // call with chDirBin(argv[0]);
    }
    //printf("absPath()='%s'\n", absPath);
    chdir(absPath);
-   free(cwdPath);
    return;
 } // chDirBin()
 
@@ -383,16 +390,29 @@ int updateRdesc(bit force) { // update userRdesc from baseEdesc
    return OK;
 } // int updateRdesc()
 
+void showQty() { // show compute quantities
+   printf("%s user list  numR1:%u @%g%% tolerance\n", __FUNCTION__, numR1, userRtol);
+   printf("%s user list2 numR2:%u @%g%% tolerance\n", __FUNCTION__, numR2, userR2tol);
+   printf("%s user lists numR :%u\n", __FUNCTION__, numR);
+   printf("%s user lists numS :%u\n", __FUNCTION__, numS);
+   printf("%s user lists numV :%u\n", __FUNCTION__, numV);
+   printf("%s user lists numF :%u\n", __FUNCTION__, numF);
+   printf("%s user lists totV :%llu\n", __FUNCTION__, totV);
+} // showQty()
+
+void showInPos() { // show input value positions
+   printf("position of first Value   :%u\n", pfv);
+   printf("position of last  Value   :%u\n", plv);
+   printf("position of first Serie   :%u\n", pfs);
+   printf("position of last  Serie   :%u\n", pls);
+   printf("position of first Parallel:%u\n", pfp);
+   printf("position of last  Parallel:%u\n", plp);
+} // showInPos()
+
 int globalInit() { // basic initialization
    //printf("FUNCT: %s\n", __FUNCTION__);
-   //printf("%s user list  numR1:%u @%g%% tolerance\n", __FUNCTION__, numR1, userRtol);
-   //printf("%s user list2 numR2:%u @%g%% tolerance\n", __FUNCTION__, numR2, userR2tol);
-   //printf("%s user lists numR :%u\n", __FUNCTION__, numR);
+   //showQty();
    //numR = numR1;
-   if (lists==2) { // lists=2, imply maxRp=2 and Eserie=0
-      maxRp = 2;
-      Eserie = 0;
-   }
    // calculate numR & numV & totV
    //printf("%s calculate numR & numV & totV\n", __FUNCTION__);
    if (lists==1) {
@@ -412,6 +432,8 @@ int globalInit() { // basic initialization
          numV=2*numR+numR*numR; /* number of possible values x each position */
       }
    } else { // lists=2, imply maxRp=2 and Eserie=0
+      maxRp = 2;
+      Eserie = 0;
       numR=numR1+numR2;
       numV=2*numR+numR*numR; // space for all values
    }
@@ -421,11 +443,8 @@ int globalInit() { // basic initialization
       totV=((u64)numV)*((u64)numV); /* number of values to try */
    }
    tolRatio = userRtol/userR2tol; // 1/0.1=10
-   //printf("%s user list  numR1:%u @%g%% tolerance\n", __FUNCTION__, numR1, userRtol);
-   //printf("%s user list2 numR2:%u @%g%% tolerance\n", __FUNCTION__, numR2, userR2tol);
-   //printf("%s user lists numR :%u\n", __FUNCTION__, numR);
-   //printf("%s user lists numV :%u\n", __FUNCTION__, numV);
-   //printf("%s user lists totV :%llu\n", __FUNCTION__, totV);
+   //printf("FUNCT: %s\n", __FUNCTION__);
+   //showQty();
 
    //strcpy(Exx, "E");
    //char series[4];
@@ -466,14 +485,13 @@ int showConf() { // show config set
    //printf("sizeof (results[%lu]):%lu\n", totV, res);
    if (lists==2) {
       gprintf(gui, "Custom lists number: %u\n", lists);
-      gprintf(gui, "Tolerance ratio: %u\n", tolRatio);
+      gprintf(gui, "Tolerance ratio: %g\n", tolRatio);
       gprintf(gui, "Keep only values of best tolerance: ");
-      if (valTolBest) gprintf(gui, "TRUE\n");
+      if (bestTol) gprintf(gui, "TRUE\n");
       else gprintf(gui, "FALSE\n");
    }
-   //printf("%s user list  numR1:%u @%g%% tolerance\n", __FUNCTION__, numR1, userRtol);
-   //printf("%s user list2 numR2:%u @%g%% tolerance\n", __FUNCTION__, numR2, userR2tol);
-   //printf("%s user lists numR :%u\n", __FUNCTION__, numR);
+   //printf("FUNCT: %s\n", __FUNCTION__);
+   //showQty();
    //gprintf(gui, "numR2     :%u\n", numR2);
    if (Eserie>0) {
       gprintf(gui, "Resistors serie:E%u, Decades:%u\n", Eserie, decades);
@@ -499,7 +517,7 @@ int showConf() { // show config set
    if (mem==0) // 0 use old memory hungry strategy
       gprintf(gui, "Using the old memory hungry strategy\n");
    else // 1 use new mem low strategy
-      gprintf(gui, "Using the new memory save strategy\n");
+      gprintf(gui, "Using the memory save strategy\n");
    //gprintf(gui, "Will allocate a total RAM of %llu B\n", allocatedB);
    char* stringPtr;
    stringPtr = siMem(allocatedB);
@@ -694,7 +712,7 @@ int fillConfigVars(void) { // load and check users config file
    }
    //printf("numberOfResults='%s'\n", paramValue);
    u64 tmpNum = strtol(paramValue, &endPtr, 10);
-   u64 tmpMax=(1<<(8*sizeof(numBestRes)))-1; // 65535
+   u64 tmpMax=NumberResMax; // 512000U
    if (endPtr==paramValue) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot copy paramValue='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
@@ -853,20 +871,20 @@ int fillConfigVars(void) { // load and check users config file
    }
    if (dbgLev>=PRINTDEBUG) printf("userR2desc='%s'\n", userR2desc);
 
-   strcpy(paramName, "valTolBest");
+   strcpy(paramName, "bestTol");
    ret = parseConf (bufferPtr, paramName, paramValue);
    if (ret!=OK) {
       if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find:%s in config file\n", __FUNCTION__, paramName);
       free(bufferPtr);
       return ERROR;
    }
-   //printf("valTolBest='%s'\n", paramValue);
-   valTolBest = strtol(paramValue, &endPtr, 10);
+   //printf("bestTol='%s'\n", paramValue);
+   bestTol = strtol(paramValue, &endPtr, 10);
    if (endPtr==paramValue) {
-      if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in valTolBest='%s'\n", __FUNCTION__, paramValue);
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: cannot find digits in bestTol='%s'\n", __FUNCTION__, paramValue);
       return ERROR;
    }
-   if (dbgLev>=PRINTDEBUG) printf("valTolBest=%u\n", valTolBest);
+   if (dbgLev>=PRINTDEBUG) printf("bestTol=%u\n", bestTol);
 
    //dbgLev=PRINTF;
    //printf("Freeing buffer ...\n");
@@ -932,8 +950,8 @@ int fillConfigVars(void) { // load and check users config file
       if (dbgLev>=PRINTERROR) printf("ERROR %s: unsupported userR2tol:%g\n", __FUNCTION__, userR2tol);
       return ERROR;
    }
-   if (valTolBest>1) {
-      if (dbgLev>=PRINTERROR) printf("ERROR %s: unsupported valTolBest:%u\n", __FUNCTION__, valTolBest);
+   if (bestTol>1) {
+      if (dbgLev>=PRINTERROR) printf("ERROR %s: unsupported bestTol:%u\n", __FUNCTION__, bestTol);
       return ERROR;
    }
    if (lists==0 || lists>2) {
@@ -950,7 +968,7 @@ int fillConfigVars(void) { // load and check users config file
    }
    for (u16 p=0; p<numR2; p++) {
       //if (dbgLev>=PRINTF) printf("%g, ", userR[p]);
-      if (userR[p]==0) {
+      if (userR2[p]==0) {
          if (dbgLev>=PRINTERROR) printf("ERROR %s: value 0 in 'userR2' not allowed\n", __FUNCTION__);
          return ERROR;
       }
@@ -959,9 +977,8 @@ int fillConfigVars(void) { // load and check users config file
 } // int fillConfigVars()
 
 int memInpCalc() { // memory size calculation for input values
-   //printf("%s user list  numR1:%u @%g%% tolerance\n", __FUNCTION__, numR1, userRtol);
-   //printf("%s user list2 numR2:%u @%g%% tolerance\n", __FUNCTION__, numR2, userR2tol);
-   //printf("%s user lists numR :%u\n", __FUNCTION__, numR);
+   //printf("FUNCT: %s\n", __FUNCTION__);
+   //showQty();
    // 3 - calculate the needed memory
    valTy = sizeof(struct rValuesTy);
    rValueSize = numV*valTy; // expected no more than '1536x48=73728'
@@ -1171,7 +1188,7 @@ s16 calcEserie(void) { // or fill with the custom list of values when Eserie=0
             if (dbgLv>=PRINTDEBUG) printf("rValue:%g\n", val);
          }
       }
-   } else { // custom list of values
+   } else { // Eserie=0 custom list of values
       if (lists==1) {
          //printf("calcEserie numR:%d\n", numR);
          for (pos=0; pos<numR; pos++) { // populate with custom values
@@ -1203,17 +1220,21 @@ s16 calcEserie(void) { // or fill with the custom list of values when Eserie=0
             if (dbgLv>=PRINTVERBOSE) printf("rValue:%g\n", val);
          }
       }
+      pos--; // so point to last filled position
    }
    if (dbgLv>=PRINTDEBUG) printf("calcEserie pos:%d\n", pos);
+   //printf("calcEserie pos:%d\n", pos);
    //printf("calcEserie numR:%d\n", numR);
-   return pos;
+   //printf("calcEserie numR1:%d\n", numR1);
+   numS = pos+1;
+   return pos; // last filled position
 } // s16 calcEserie(void)
 
 void showEserie() { // show all Eserie resistor values
    printf("Resistor values (Eserie/custom):\n");
-   for (u16 pos=0; pos<numR; pos++) {
+   for (u16 pos=0; pos<numS; pos++) {
       printf("pos:%4u", pos);
-      printf(" r:%8.0f", rValues[pos].r);
+      printf(" r:%8.2f", rValues[pos].r);
       /*printf(" rp[0]:%8.0f", rValues[pos].rp[0]);
       for (u08 p=1; p<maxRp; p++) {
          printf(" rp[%u]:%8.0f", p, rValues[pos].rp[p]);
@@ -1224,14 +1245,15 @@ void showEserie() { // show all Eserie resistor values
 
 /* calculate all possible resistive values using 'MaxRp' resistances */
 // 'baseExx[Eserie/numR1]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].desc
-int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
+// use pre-calculated [numR] ==> rValues[numV]
+int calcRvalues(void) { /* lists=1, when MaxRp=2 also in series and parallel */
    u32 pos;
    double val;
    u16 rp1, rp2;
    u08 p;
-   //printf("calcRvalues numR:%d\n", numR);
-   //printf("calcRvalues numV:%d\n", numV);
-   //printf("calcRvalues totV:%lld\n", totV);
+   //printf("FUNCT: %s\n", __FUNCTION__);
+   //showQty();
+   pfv = 0; // position of first single value
    /* at first calculate the single values (Eserie) or fill custom values */
    pos = calcEserie(); // calculate all standard Exx series values
    if (pos==ERROR) {
@@ -1240,11 +1262,13 @@ int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
    }
    //printf("numR:%u numV:%u totV:%llu numBestRes:%u\n", numR, numV, totV, numBestRes);
    if (dbgLv>=PRINTDEBUG) printf("calcRvalues pos:%d\n", pos);
+   plv = pos; // position of last single value
    //showEserie();
    if (maxRp==2) { // as now support only maxRp=2 resistances per position
       /* now calculate all series values with 2 resistances per position */
       //printf("calcRvalues pos:%d numR:%d\n", pos, numR);
-      pos = numR; // can be commented
+      pos++; // first serie, pos = numR;
+      pfs = pos; // position of fist serie
       for (rp1=0; rp1<numR; rp1++) {
          for (rp2=0; rp2<=rp1; rp2++) { /* skip triangular matrix */
             val = rValues[rp1].r + rValues[rp2].r;
@@ -1262,6 +1286,8 @@ int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
          }
       }
       if (dbgLv>=PRINTDEBUG) printf("calcRvalues pos:%d\n", pos);
+      pls = pos-1; // position of last serie
+      pfp = pos; // position of first parallel
       /* now calculate all parallel values with 2 resistances per position */
       for (rp1=0; rp1<numR; rp1++) {
          for (rp2=0; rp2<=rp1; rp2++) { /* skip triangular matrix */
@@ -1278,52 +1304,49 @@ int calcRvalues(void) { /* when MaxRp=2 also in series and parallel */
             pos++;
          }
       }
+      pos--;
+      plp = pos; // position of last parallel
    }
+   if (dbgLv>=PRINTDEBUG) printf("calcRvalues pos:%d end\n", pos);
+   //printf("calcRvalues numV:%d\n", numV);
+   //showInPos();
+   //showRvalues();
+   numF=numV; // save calculated numV for memory free
    if (maxRp>2) {
       printf("Unsupported maxRp:%u. Supported maxRp 1 or 2\n", maxRp);
       return ERROR;
    }
-   if (dbgLv>=PRINTDEBUG) printf("calcRvalues pos:%d end\n", pos);
-   //firstSingle  =0;
-   //lastSingle   =numR-1;
-   //firstSeries  =numR;
-   //lastSeries   =numR+(numR*numR+numR)/2-1;
-   //firstParallel = numR+(numR*numR+numR)/2;
-   //lastParallel =numV-1; // pos
-   //rValues[   lastSingle:firstSingle ] are single (Exx or custom)
-   //rValues[  firstSeries:lastSeries  ] are series
-   //rValues[firstParallel:lastParallel] are parallel
-   numT=pos;
-   //printf("calcRvalues numT:%d\n", numT);
-   //showRvalues();
    return OK;
 } // int calcRvalues(void)
 
 /* calculate all possible resistive values using 'MaxRp' resistances */
 // when lists=2, series: skip when 10*R1%>R0.1%, parallel: skip when 10*R1%<R0.1%
 // 'baseExx[Eserie/numR1]' ==> rValues[pos].r, rValues[pos].rp[p], rValues[pos].desc
-int calcR2values() { // MaxP=2: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
+// use pre-calculated [numR] ==> rValues[numV]
+int calcR2values() { // lists=2, bestTol=1: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
    // valid only for: lists=2, Eserie=0, maxRp==2
    u32 pos;
    double val, v1, v2;
    u16 rp1, rp2;
    u08 p;
    u08 descIdx;
-   //printf("calcR2values numR1:%d\n", numR1);
-   //printf("calcR2values numR2:%d\n", numR2);
-   //printf("calcR2values numR:%d\n", numR);
-   //printf("calcR2values numV:%d\n", numV);
-   //printf("calcR2values totV:%lld\n", totV);
-   if (Eserie!=0) Eserie = 0; // at first fill custom values
-   pos = calcEserie(); // calculate all standard Exx series values
+   //printf("FUNCT: %s\n", __FUNCTION__);
+   //showQty();
+   pfv = 0; // position of first single value
+   //if (Eserie!=0) Eserie = 0; // at first fill custom values
+   pos = calcEserie(); // fill with hi precision custom values for lists=2
    if (pos==ERROR) {
       printf("calcEserie returned ERROR\n");
       return ERROR;
    }
-   //showEserie();
    //printf("calcRvalues pos:%d numR2:%d\n", pos, numR2);
-   pos = numR2; // so will overwrite Custom list1 @1%
    if (dbgLv>=PRINTDEBUG) printf("calcR2values pos:%d\n", pos);
+   plv = pos; // position of last single value
+   //showEserie();
+   pos = numR2; // so keep Custom list2 and overwrite Custom list1 @1%
+   numS = pos; // number of single values
+   plv = pos-1; // position of last single value after overwrite
+   pfs = pos; // position of first serie after overwrite
    // now calculate all series values: R1%+R0.1%
    for (rp1=0;rp1<numR;rp1++) { // 1% tolerance
       for (rp2=0;rp2<=rp1;rp2++) { // 0.1% tolerance
@@ -1343,8 +1366,8 @@ int calcR2values() { // MaxP=2: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
             descIdx = 11;
          }
          //printf("v2:%f v1:%f\n", v2, v1);
-         if ((valTolBest==1 && rp2>=numR2) ||
-             (valTolBest==1 && rp1>=numR2 && tolRatio*v1>v2)) { // series: skip when 10*R1%>R0.1%
+         if ((bestTol==1 && rp2>=numR2) ||
+             (bestTol==1 && rp1>=numR2 && tolRatio*v1>v2)) { // series: skip when 10*R1%>R0.1%
             //val = 0; v1 = 0; v2 = 0;
             continue;
          } //else
@@ -1364,6 +1387,8 @@ int calcR2values() { // MaxP=2: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
       }
    }
    if (dbgLv>=PRINTDEBUG) printf("calcR2values pos:%d\n", pos);
+   pls = pos-1; // position of last serie
+   pfp = pos; // position of first parallel
    // now calculate all parallel values: R1%//R0.1%
    for (rp1=0;rp1<numR;rp1++) { // 1% tolerance
       for (rp2=0;rp2<=rp1;rp2++) { // 0.1% tolerance
@@ -1383,8 +1408,8 @@ int calcR2values() { // MaxP=2: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
             descIdx = 14;
          }
          //printf("rp1:%05u v2:%8g v1:%8g\n", rp1, v2, v1);
-         if ((valTolBest==1 && rp2>=numR2) ||
-             (valTolBest==1 && rp1>=numR2 && v1<tolRatio*v2)) { // parallel: skip when R1%<10*R0.1%
+         if ((bestTol==1 && rp2>=numR2) ||
+             (bestTol==1 && rp1>=numR2 && v1<tolRatio*v2)) { // parallel: skip when R1%<10*R0.1%
             //val = 0; v1 = 0; v2 = 0;
             continue;
          } //else
@@ -1402,31 +1427,36 @@ int calcR2values() { // MaxP=2: using userR[]:1%+userR2[]:0.1% and R1%//R0.1%
          pos++;
       }
    }
+   plp = pos-1; // position of last parallel
    //printf("calcR2values pos:%d end\n", pos);
-   numT=pos;
-   //printf("calcR2values numT:%d\n", numT);
+   //showInPos();
    //showRvalues();
-   gprintf(gui, "Found %d high precision values\n", numT);
-   if (valTolBest==1) gprintf(gui, "Discarding %u low precision values: skip + %u*R1%%>R0.1%%, // R1%%<%u*R0.1%%\n", numV-numT, tolRatio, tolRatio);
-   numV=numT; // reduce to the real finded values
-   totV=numV*numV; // reduce to the real finded values
+   gprintf(gui, "Found %d high precision values\n", pos);
+   if (bestTol==1) gprintf(gui, "Discarding %u low precision values: skip ++ %g*R1%%>R0.1%%, // R1%%<%g*R0.1%%\n", numV-pos, tolRatio, tolRatio);
+   numF=numV; // save calculated numV for memory free
+   numV=pos; // reduce to the real found values
+   totV=numV*numV; // reduce to the real found values
+   //printf("calcR2values numV:%d\n", numV);
    return OK;
 } // calcR2values()
 
 void showRvalues() { // show all input resistor values
+   //printf("FUNCT: %s\n", __FUNCTION__);
+   //showQty();
    printf("Input values (single, serie, parallel):\n");
-   for (u32 pos=0; pos<numT; pos++) {
+   for (u32 pos=0; pos<numV; pos++) {
       printf("pos:%5u", pos);
-      printf(" r:%10.1f", rValues[pos].r);
-      printf(" rp[0]:%10.1f", rValues[pos].rp[0]);
+      printf(" r:%10.2f", rValues[pos].r);
+      printf(" rp[0]:%10.2f", rValues[pos].rp[0]);
       for (u08 p=1; p<maxRp; p++) {
-         printf(" rp[%u]:%10.1f", p, rValues[pos].rp[p]);
+         printf(" rp[%u]:%10.2f", p, rValues[pos].rp[p]);
       }
       printf(" desc[%02u]:'%s'\n", rValues[pos].descIdx, Vdesc[rValues[pos].descIdx]);
    }
 } // void showRvalues()
 
 /* calculate all formula results using 'maxRc' resistances: mem=0,lists=1/2 */
+// use rValues[numV] ==> results[totV]
 int calcFm0values(void) {
    u32 rc1, rc2;
    /*float res[maxRc];*/ /* single case, normally 2 resistances */
@@ -1434,21 +1464,23 @@ int calcFm0values(void) {
    double val;
    double delta = 0;
    u32 pos = 0;
+   //printf("FUNCT: %s\n", __FUNCTION__);
+   //showInPos();
    if (dbgLv>=PRINTDEBUG) printf("numV:%u, totV:%llu\n", numV, totV);
    if (dbgLv>=PRINTDEBUG) printf("expr:'%s'\n", expr);
    if (dbgLv>=PRINTF) gprintf(gui, "sol="); // here print something for user feedback (take time)
    fflush(NULL); // user space stdout flush
    fsync(1);   // kernel space stdout flush
-   for (rc1=0; rc1<numV; rc1++) {
-      exprVarsParser[0] = rValues[rc1].r; /* estract single case to try */
+   for (rc1=0; rc1<numV; rc1++) { // all input values
+      exprVarsParser[0] = rValues[rc1].r; /* estract a value to try */
       if (dbgLv>=PRINTDEBUG) printf("exprVarsParser[0]:%g\n", exprVarsParser[0]);
       //printf("rc1:%d 0:%f\n", rc1, exprVarsParser[0]);
       //if (exprVarsParser[0]==0.) {
          //printf("rc1:%d skip:%f\n", rc1, exprVarsParser[0]);
       //   continue;
       //}
-      for (rc2=0; rc2<numV; rc2++) {
-         exprVarsParser[1] = rValues[rc2].r; /* estract single case to try */
+      for (rc2=0; rc2<numV; rc2++) { // all input values
+         exprVarsParser[1] = rValues[rc2].r; /* estract a value to try */
          if (dbgLv>=PRINTDEBUG) printf("exprVarsParser[1]:%g\n", exprVarsParser[1]);
          //printf("rc1:%d rc2:%d 0:%f 1:%f\n", rc1, rc2, exprVarsParser[0], exprVarsParser[1]);
          //if (exprVarsParser[1]==0.) {
@@ -1484,11 +1516,6 @@ int calcFm0values(void) {
    //if (dbgLv>=PRINTF) gprintf(gui, "%u\n", rc1*numV-1); // here print something for user feedback (take time)
    if (dbgLv>=PRINTF) gprintf(gui, "100%%\n"); // here print something for user feedback (take time)
    //printf("pos:%u totV:%llu\n", pos, totV);
-   if (lists==2) {
-      gprintf(gui, "Found %d high precision solutions\n", pos);
-      if (totV-pos>0) gprintf(gui, "Discarding %llu solutions: skip + %u*R1%%>R0.1%%, // R1%%<%u*R0.1%%\n", totV-pos, tolRatio, tolRatio);
-      totV=pos; // reduce to the real finded values
-   }
    return OK;
 } // int calcFm0values(void)
 
@@ -1515,11 +1542,14 @@ bool is_double_le(double a, double b, double epsilon) {
 }
 
 /* calculate best formula results using 'maxRc' resistances: mem=1,lists=1/2 */
+// use rValues[numV] ==> resultsXLow[totV]
 int calcFm1values(void) {
    u32 rc1, rc2;
    u64 per; // percentage progress
    double val;
    double delta = 0;
+   //printf("FUNCT: %s\n", __FUNCTION__);
+   //showInPos();
    if (dbgLv>=PRINTDEBUG) printf("numR:%u, numV:%u, totV:%llu\n", numR, numV, totV);
    if (dbgLv>=PRINTDEBUG) printf("expr:'%s'\n", expr);
    w2 = 0;
@@ -1541,53 +1571,52 @@ int calcFm1values(void) {
    if (dbgLv>=PRINTF) gprintf(gui, "sol="); // here print something for user feedback (take time)
    fflush(NULL); // user space stdout flush
    fsync(1);   // kernel space stdout flush
-//printf("\n");
-//printf("numR:%u numV:%u totV:%llu numBestRes:%u\n", numR, numV, totV, numBestRes);
-//printf("rValues[numV:%u] results[totV:%llu] results4LowPtr[numBestRes:%u]\n", numV, totV, numBestRes);
-//firstSeries  =numR;
-//lastSeries   =numR+(numR*numR+numR)/2-1;
-//firstParallel = numR+(numR*numR+numR)/2;
-//lastParallel =numV-1;
+   //printf("\n");
+   //printf("numR:%u numV:%u totV:%llu numBestRes:%u\n", numR, numV, totV, numBestRes);
+   //printf("rValues[numV:%u] results[totV:%llu] results4LowPtr[numBestRes:%u]\n", numV, totV, numBestRes);
+   //printf("firstSeries   =numR                     :%u\n", numR);
    if (dbgLv>=PRINTDEBUG) printf("numR:%u, numV:%u, totV:%llu, numBestRes:%u\n", numR, numV, totV, numBestRes);
-   for (rc1=0; rc1<numV; rc1++) {
-      exprVarsParser[0] = rValues[rc1].r; /* estract single case to try */
+   for (rc1=0; rc1<numV; rc1++) { // all input values
+      exprVarsParser[0] = rValues[rc1].r; /* estract a value to try */
       if (dbgLv>=PRINTDEBUG) printf("exprVarsParser[0]:%g\n", exprVarsParser[0]);
-      for (rc2=0; rc2<numV; rc2++) {
-         exprVarsParser[1] = rValues[rc2].r; /* estract single case to try */
+      for (rc2=0; rc2<numV; rc2++) { // all input values
+         exprVarsParser[1] = rValues[rc2].r; /* estract a value to try */
          if (dbgLv>=PRINTDEBUG) printf("exprVarsParser[1]:%g\n", exprVarsParser[1]);
+         //printf("\nexprVarsParser[0]:%g\n", exprVarsParser[0]);
+         //printf("exprVarsParser[1]:%g\n", exprVarsParser[1]);
          val = evalExprParser (expr);
          delta = val - target;
          //printf("rc1:%u rc2:%u val:%g delta:%g\n", rc1, rc2, val, delta);
-         if (maxRp==1) { // 
+         if (maxRp==1) { // single value only
 //            if (fabs(delta) <= delta2Worst) {
 //            if (delta2Worst > fabs(delta)) {
 //            if ( definitelyGreaterThan(delta2Worst, fabs(delta), Epsilon )) {
             //gprintf(gui, "rc1:%d rc2:%d val:%.1f delta:%f delta2Worst:%f, w2:%u\n", rc1, rc2, val, fabs(delta), delta2Worst, w2);
-            if (is_double_le(fabs(delta), delta2Worst, Epsilon)) {
+            if (is_double_le(fabs(delta), delta2Worst, Epsilon)) { // this is for 2 resistors
                //printf("new better result:%f delta:%.4f oldDeltaMin:%.4f\n", val, delta, deltaWorst);
-               //gprintf(gui, "rc1:%03u rc2:%03u old delta:%f fill at:%d with new delta:%f\n", rc1, rc2, delta2Worst, w2, fabs(delta));
+               //gprintf(gui, "rc1:%03u rc2:%03u oldDelta:%.2f fill at:%d with newDelta:%.2f\n", rc1, rc2, delta2Worst, w2, fabs(delta));
                results2LowPtr[w2].pos[0] = rc1;   // always insert in worst pos
                results2LowPtr[w2].pos[1] = rc2;   // always insert in worst pos
                results2LowPtr[w2].delta  = delta; // always insert in worst pos
                findWorst(results2LowPtr, &w2, &delta2Worst); // find worst (higher delta) solution
             }
          }
-         if (maxRp==2) { // 
-            if (is_double_le(fabs(delta), deltaWorst, Epsilon)) {
+         if (maxRp==2) { // single value, series and parallels
+            if (is_double_le(fabs(delta), deltaWorst, Epsilon)) { // this is for up to 4 resistors
                //printf("new better result:%f delta:%.4f oldDeltaMax:%.4f\n", val, delta, deltaWorst);
-               //printf("rc1:%03u rc2:%03u old delta:%f fill at:%d with new delta:%f\n", rc1, rc2, deltaWorst, w, fabs(delta));
+               //printf("rc1:%03u rc2:%03u oldDelta:%.2f fill at:%d with newDelta:%.2f\n", rc1, rc2, deltaWorst, w, fabs(delta));
                resultsLowPtr[w].pos[0] = rc1;   // always insert in worst pos
                resultsLowPtr[w].pos[1] = rc2;   // always insert in worst pos
                resultsLowPtr[w].delta  = delta; // always insert in worst pos
                findWorst(resultsLowPtr, &w, &deltaWorst); // find worst (higher delta) solution
             }
             bool cmp0, cmp1;
-            if (is_double_le(fabs(delta), delta4Worst, Epsilon)) {
-               //printf("new better result:%.1f delta:%.4f oldDelta:%.1f\n", val, delta, delta4Worst);
-               //printf("rc1:%03u rc2:%03u old delta:%.1f fill at:%d with new delta:%.1f\n", rc1, rc2, delta4Worst, w4, fabs(delta));
-               if (rc1<numR) cmp0 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+            if (is_double_le(fabs(delta), delta4Worst, Epsilon)) { // this is for 4 resistors
+               //printf("new better result with 4 res:%.1f delta:%.4f oldDelta:%.2f\n", val, delta, delta4Worst);
+               //printf("rc1:%03u rc2:%03u oldDelta:%.2f fill at:%d with newDelta:%.2f\n", rc1, rc2, delta4Worst, w4, fabs(delta));
+               if (rc1<numS) cmp0 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
                else cmp0 = 1;
-               if (rc2<numR) cmp1 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+               if (rc2<numS) cmp1 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
                else cmp1 = 1;
                //printf("rc1:%d rc2:%d cmp0:%d cmp1:%d w4:%d\n", rc1, rc2, cmp0, cmp1, w4);
                if (cmp0==0 || cmp1==0) goto n3; // skip when one is 0 (so skip when are less than 4 resistances, do when both are series/parallel)
@@ -1598,10 +1627,10 @@ int calcFm1values(void) {
                findWorst(results4LowPtr, &w4, &delta4Worst); // find worst (higher delta) solution
             }
             n3:
-            if (is_double_le(fabs(delta), delta3Worst, Epsilon)) {
-               if (rc1<numR) cmp0 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+            if (is_double_le(fabs(delta), delta3Worst, Epsilon)) { // this is for 3 resistors
+               if (rc1<numS) cmp0 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
                else cmp0 = 1;
-               if (rc2<numR) cmp1 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+               if (rc2<numS) cmp1 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
                else cmp1 = 1;
                if (cmp0==cmp1) goto n2; // skip when both 0 or both 1 (both Exx/custom or both series/parallel, so do when are 3 resistances)
                results3LowPtr[w3].pos[0] = rc1;   // always insert in worst pos
@@ -1610,18 +1639,21 @@ int calcFm1values(void) {
                findWorst(results3LowPtr, &w3, &delta3Worst); // find worst (higher delta) solution
             }
             n2:
-            if (is_double_le(fabs(delta), delta2Worst, Epsilon)) {
-               if (rc1<numR) cmp0 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+            if (is_double_le(fabs(delta), delta2Worst, Epsilon)) { // this is for 2 resistors
+               //printf("find new better with 2 res\n");
+               if (rc1<numS) cmp0 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
                else cmp0 = 1;
-               if (rc2<numR) cmp1 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
+               if (rc2<numS) cmp1 = 0; // 0 when single (Exx or custom), 1 when two (series or //)
                else cmp1 = 1;
+               //printf("rc1:%d rc2:%d cmp0:%d cmp1:%d w2:%d\n", rc1, rc2, cmp0, cmp1, w2);
                if (cmp0!=0 || cmp1!=0) continue; // skip when one is 1 (so skip when are more than 2 resistances, do when both are Exx/custom)
                //printf("rc1:%d rc2:%d cmp0:%d cmp1:%d w2:%d\n", rc1, rc2, cmp0, cmp1, w2);
-               //printf("rc1:%03u rc2:%03u old delta:%.1f fill @:%d new delta:%.1f val:%.1f\n", rc1, rc2, delta2Worst, w2, fabs(delta), target+delta);
+               //printf("rc1:%03u rc2:%03u oldDelta:%.2f fill @:%d newDelta:%.2f val:%.2f\n", rc1, rc2, delta2Worst, w2, fabs(delta), target+delta);
                results2LowPtr[w2].pos[0] = rc1;   // always insert in worst pos
                results2LowPtr[w2].pos[1] = rc2;   // always insert in worst pos
                results2LowPtr[w2].delta  = delta; // always insert in worst pos
                findWorst(results2LowPtr, &w2, &delta2Worst); // find worst (higher delta) solution
+               //printf("new worst at w2:%u ---\n", w2);
             }
          } // if (maxRp==2)
       } // inner for ()
@@ -1750,6 +1782,10 @@ int doCalc() { // fill inputs, calcs, sort solutions
       free(results);
       return ERROR;
    }
+   //printf("FUNCT: %s\n", __FUNCTION__);
+   //showQty();
+   //showInPos();
+   //showRvalues();
 
    // 7 - calculus of solutions
    if (mem==0) {
@@ -1770,7 +1806,6 @@ int doCalc() { // fill inputs, calcs, sort solutions
       }
    }
    if (numBestRes>totV) numBestRes = totV;
-   first = totV-numBestRes; /* 0 worse, 'first' 1st printed, 'totV' best, numBestRes # of best print */
 
    // 8 - sorting of solutions
    if (mem==0) {
@@ -1799,8 +1834,8 @@ int doCalc() { // fill inputs, calcs, sort solutions
    return OK;
 } // int doCalc()
 
-/* print last 'numBestRes = totV-first' results */
-int showVal(u32 first) { // solutions with up to 4 resistors
+/* print last 'numBestRes = totV-first' results, mem=0 */
+int showVal2to4(u32 first) { // show Solutions when mem=0
    u32 pos;
    int cmp0, cmp1;
    u08 descIdx;
@@ -1856,21 +1891,22 @@ int showVal(u32 first) { // solutions with up to 4 resistors
       }
    }
    return OK;
-} // int showVal(u32 first)
+} // int showVal2to4(u32 first)
 
-/* print best 'numBestRes' results */
-int showVal4(u32 numBestRes) { // Solutions with 4 resistors
+/* print best 'numBestRes' results, mem=0 */
+int showVal43(u32 numBestRes, u08 numRes) { // Solutions with 4/3 resistors
    s32 pos, best;
-   u32 count = 0;
    int cmp0, cmp1;
-   u32 res[NumberResMax];
    u08 descIdx;
    char* tol0;
    char* tol1;
+   u32 count = 0;
+   u32 res[NumberResMax];
 
-   //printf("numBestRes:%ld NumberResMax:%d\n", numBestRes, NumberResMax);
-   if (numBestRes>NumberResMax) numBestRes=NumberResMax;
-   //printf("numBestRes:%ld NumberResMax:%d\n", numBestRes, NumberResMax);
+   if (numRes<3 || numRes>4) {
+      printf("numRes:%hu can be 3 or 4\n", numRes);
+      return ERROR;
+   }
    for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
       /*printf("pos:%9lu", pos);*/
       if (count>=numBestRes) break; // found 'numBestRes' results
@@ -1880,23 +1916,27 @@ int showVal4(u32 numBestRes) { // Solutions with 4 resistors
       //cmp1 = (strcmp(rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
       //       (strcmp(rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[1]].descIdx<11) cmp1 = 0; else cmp1 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
-      if (cmp0==0 || cmp1==0) continue; // skip when one is 0 (so skip when are less than 4 resistances, do when both are series/parallel)
+      if (numRes==4) if (cmp0==0 || cmp1==0) continue; // skip when one is 0 (so skip when are less than 4 resistances, do when both are series/parallel)
+      if (numRes==3) if (cmp0==cmp1) continue;         // skip when both 0 or both 1 (both User/Exx or both series/parallel, so do when are 3 resistances)
       res[count]=pos;
-      //printf("showVal4 added pos:%ld\n", pos);
+      //printf("%s added pos:%ld\n", __FUNCTION__, pos);
       count++;
    }
    for (best=count-1; best>=0; best--) { // [0] is the best solution
       pos = res[best];
+      //printf("pos:%d results[pos].pos[0]:%u, results[pos].pos[1]:%u\n", pos, results[pos].pos[0], results[pos].pos[1]);
+
       //cmp0 = (strcmp(rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
       //       (strcmp(rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[0]].descIdx<11) cmp0 = 0; else cmp0 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
       //cmp1 = (strcmp(rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
       //       (strcmp(rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
       if (rValues[results[pos].pos[1]].descIdx<11) cmp1 = 0; else cmp1 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
+
       gprintf(gui, "val:%11G   delta:%11.4G", target+results[pos].delta, results[pos].delta);
       gprintf(gui, " e%%:%9.2G", results[pos].delta/target*100);
       gprintf(gui, "   a:%11G b:%11G\n", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      if (maxRp==2) { // maybe a series or parallel value
+      if (maxRp==2) { // maybe a series or parallel value, when maxRp==1 is a repetition of 'a' and 'b' as are User list
          descIdx = rValues[results[pos].pos[0]].descIdx;
          if (cmp0==0) { // single resistors
             tol0 = tol1str;
@@ -1931,91 +1971,19 @@ int showVal4(u32 numBestRes) { // Solutions with 4 resistors
       }
    }
    return OK;
-} // int showVal4(u32 numBestRes)
+} // int showVal43(u32 numBestRes, u08 numRes)
 
-/* print best 'numBestRes' results */
-int showVal3(u32 numBestRes) { // Solutions with 3 resistors
-   s32 pos, best;
-   u32 count = 0;
-   int cmp0, cmp1;
-   u32 res[NumberResMax];
-   u08 descIdx;
-   char* tol0;
-   char* tol1;
-
-   if (numBestRes>NumberResMax) numBestRes=NumberResMax;
-   for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
-      if (count>=numBestRes) break; // found 'numBestRes' results
-      //cmp0 = (strcmp(rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
-      //       (strcmp(rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      if (rValues[results[pos].pos[0]].descIdx<11) cmp0 = 0; else cmp0 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
-      //cmp1 = (strcmp(rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
-      //       (strcmp(rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      if (rValues[results[pos].pos[1]].descIdx<11) cmp1 = 0; else cmp1 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
-      if (cmp0==cmp1) continue; // skip when both 0 or both 1 (both Arb/Exx or both series/parallel, so do when are 3 resistances)
-      res[count]=pos;
-      //printf("showVal3 added pos:%ld\n", pos);
-      count++;
-   }
-   for (best=count-1; best>=0; best--) { // [0] is the best solution
-      pos = res[best];
-      //cmp0 = (strcmp(rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
-      //       (strcmp(rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      if (rValues[results[pos].pos[0]].descIdx<11) cmp0 = 0; else cmp0 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
-      //cmp1 = (strcmp(rValues[results[pos].pos[1]].descIdx, "Custom list")!=0) &&
-      //       (strcmp(rValues[results[pos].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-      if (rValues[results[pos].pos[1]].descIdx<11) cmp1 = 0; else cmp1 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
-      gprintf(gui, "val:%11G   delta:%11.4G", target+results[pos].delta, results[pos].delta);
-      gprintf(gui, " e%%:%9.2G", results[pos].delta/target*100);
-      gprintf(gui, "   a:%11G b:%11G\n", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      if (maxRp==2) { // maybe a series or parallel value
-         descIdx = rValues[results[pos].pos[0]].descIdx;
-         if (cmp0==0) { // single resistors
-            tol0 = tol1str;
-            if (descIdx==2) tol0 = tol2str;
-            gprintf(gui, "a:%-9s:%8G@%2s%%                 ", Vdesc[rValues[results[pos].pos[0]].descIdx], rValues[results[pos].pos[0]].rp[0], tol0);
-         } else { // 2 resistors in series or parallel
-            tol0 = tol1str;
-            if (descIdx==2 || descIdx==13 || descIdx==16) tol0 = tol2str;
-            tol1 = tol1str;
-            if (descIdx==2 || descIdx==12 || descIdx==13 || descIdx==15 || descIdx==16) tol1 = tol2str;
-            if (descIdx<14) // series
-               gprintf(gui, "a:%-9s:%8G@%2s%% ++%8G@%2s%%  " , Vdesc[rValues[results[pos].pos[0]].descIdx], rValues[results[pos].pos[0]].rp[0], tol0, rValues[results[pos].pos[0]].rp[1], tol1);
-            else // parallel
-               gprintf(gui, "a:%-9s:%8G@%2s%% //%8G@%2s%%  " , Vdesc[rValues[results[pos].pos[0]].descIdx], rValues[results[pos].pos[0]].rp[0], tol0, rValues[results[pos].pos[0]].rp[1], tol1);
-         }
-         descIdx = rValues[results[pos].pos[1]].descIdx;
-         if (cmp1==0) { // single resistors
-            tol0 = tol1str;
-            if (descIdx==2) tol0 = tol2str;
-            gprintf(gui, "b:%-9s:%8G@%2s%%", Vdesc[rValues[results[pos].pos[1]].descIdx], rValues[results[pos].pos[1]].rp[0], tol0);
-         } else { // 2 resistors in series or parallel
-            tol0 = tol1str;
-            if (descIdx==2 || descIdx==13 || descIdx==16) tol0 = tol2str;
-            tol1 = tol1str;
-            if (descIdx==2 || descIdx==12 || descIdx==13 || descIdx==15 || descIdx==16) tol1 = tol2str;
-            if (descIdx<14) // series
-               gprintf(gui, "b:%-9s:%8G@%2s%% ++%8G@%2s%%", Vdesc[rValues[results[pos].pos[1]].descIdx], rValues[results[pos].pos[1]].rp[0], tol0, rValues[results[pos].pos[1]].rp[1], tol1);
-            else // parallel
-               gprintf(gui, "b:%-9s:%8G@%2s%% //%8G@%2s%%", Vdesc[rValues[results[pos].pos[1]].descIdx], rValues[results[pos].pos[1]].rp[0], tol0, rValues[results[pos].pos[1]].rp[1], tol1);
-         }
-         gprintf(gui, "\n");
-      }
-   }
-   return OK;
-} // int showVal3(u32 numBestRes)
-
-/* print best 'numBestRes' results */
+/* print best 'numBestRes' results, mem=0 */
 int showVal2(u32 numBestRes) { // Solutions with 2 resistors
    s32 pos, best;
-   u32 count = 0;
    int cmp0, cmp1;
-   u32 res[NumberResMax];
    u08 descIdx;
    char* tol0;
+   u32 count = 0;
+   u32 res[NumberResMax];
 
-   if (numBestRes>NumberResMax) numBestRes=NumberResMax;
    for (pos=totV-1; pos>=0; pos--) { // [totV] is the best solution
+      /*printf("pos:%9lu", pos);*/
       if (count>=numBestRes) break; // found 'numBestRes' results
       //cmp0 = (strcmp(rValues[results[pos].pos[0]].descIdx, "Custom list")!=0) &&
       //       (strcmp(rValues[results[pos].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
@@ -2025,7 +1993,7 @@ int showVal2(u32 numBestRes) { // Solutions with 2 resistors
       if (rValues[results[pos].pos[1]].descIdx<11) cmp1 = 0; else cmp1 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
       if (cmp0!=0 || cmp1!=0) continue; // skip when one is 1 (so skip when are more than 2 resistances, do when both are Exx/custom)
       res[count]=pos;
-      //printf("showVal2 added pos:%ld\n", pos);
+      //printf("%s added pos:%ld\n", __FUNCTION__, pos);
       count++;
    }
    for (best=count-1; best>=0; best--) { // [0] is the best solution
@@ -2034,7 +2002,7 @@ int showVal2(u32 numBestRes) { // Solutions with 2 resistors
       gprintf(gui, "val:%11G   delta:%11.4G", target+results[pos].delta, results[pos].delta);
       gprintf(gui, " e%%:%9.2G", results[pos].delta/target*100);
       gprintf(gui, "   a:%11G b:%11G\n", rValues[results[pos].pos[0]].r, rValues[results[pos].pos[1]].r);
-      if (maxRp==2) { // when maxRp==1 is a repetition of 'a' and 'b' as are Custom list
+      if (maxRp==2) { // maybe a series or parallel value, when maxRp==1 is a repetition of 'a' and 'b' as are User list
          descIdx = rValues[results[pos].pos[0]].descIdx;
          tol0 = tol1str;
          if (descIdx==2) tol0 = tol2str;
@@ -2049,135 +2017,201 @@ int showVal2(u32 numBestRes) { // Solutions with 2 resistors
    return OK;
 } // int showVal2(u32 numBestRes)
 
-/* print best 'numBestRes' LowMem results */
-int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr) { // Solutions
+/* print best 'numBestRes' LowMem results, mem=1 */
+int showValMemLow(u32 numBestRes) { // show Solutions when mem=1
+   struct resultsTy* resultsNLowPtr=NULL;
    u08 descIdx;
    char* tol0;
    char* tol1;
 
    if (dbgLv>=PRINTDEBUG) gprintf(gui, "numR:%u, numV:%u, totV:%llu, numBestRes:%u\n", numR, numV, totV, numBestRes);
-   for (int s=0; s<numBestRes; s++) {
-      //printf("s:%02d resultsNLowPtr[].pos[0]:%03u resultsNLowPtr[].pos[1]:%03u\n", s, resultsNLowPtr[s].pos[0], resultsNLowPtr[s].pos[1]);
-      //printf("s:%02d resultsNLowPtr[].delta:%.5f val:%.5f\n", s, resultsNLowPtr[s].delta, target+resultsNLowPtr[s].delta);
-      //printf("s:%02d numV:%u\n", s, numV);
-      if (resultsNLowPtr[s].pos[0] >= numV || resultsNLowPtr[s].pos[1] >= numV) continue;
-      //printf("s:%02d delta:%.5f MaxValue/2:%.5f\n", s, resultsNLowPtr[s].delta, MaxValue/2);
-      //gprintf(gui, "-\n");
-      //if (resultsNLowPtr[s].delta>MaxValue/2) continue;
-      if (dbgLv>=PRINTDEBUG) gprintf(gui, "valid s:%02d resultsNLowPtr[].pos[0]:%03u resultsNLowPtr[].pos[1]:%03u\n", s, resultsNLowPtr[s].pos[0], resultsNLowPtr[s].pos[1]);
-      if (format==0) {
-         gprintf(gui, "val:%11G", target+resultsNLowPtr[s].delta);
-         gprintf(gui, "   delta:%11.4G", resultsNLowPtr[s].delta);
-         gprintf(gui, " e%%:%9.2G", resultsNLowPtr[s].delta/target*100);
-         gprintf(gui, "   a:%11G", rValues[resultsNLowPtr[s].pos[0]].r);
-         gprintf(gui, " b:%11G\n", rValues[resultsNLowPtr[s].pos[1]].r);
-      } else {
-         char* valPtr = engStr(target+resultsNLowPtr[s].delta, 6, false, format-1);
-         char* deltaPtr = engStr(resultsNLowPtr[s].delta, 4, false, format-1);
-         char* aPtr = engStr(rValues[resultsNLowPtr[s].pos[0]].r, 6, false, format-1);
-         char* bPtr = engStr(rValues[resultsNLowPtr[s].pos[1]].r, 6, false, format-1);
-         gprintf(gui, "val:%11s", valPtr);
-         gprintf(gui, "   delta:%11s", deltaPtr);
-         gprintf(gui, " e%%:%9.2G", resultsNLowPtr[s].delta/target*100);
-         gprintf(gui, "   a:%11s", aPtr);
-         gprintf(gui, " b:%11s\n", bPtr);
-         free(valPtr);
-         free(deltaPtr);
-         free(aPtr);
-         free(bPtr);
+   for (u08 v=5; v>=2; v--) { // up to 4, 4, 3, 2 resistors
+      //printf("v:%u\n", v);
+      if (maxRp==1 && v>2) continue;
+      if (maxRp==2) { // when maxRp==2 need to showVal4+,4,3 ...
+         if (v==5) {
+            gprintf(gui, "Show best:%u solutions with up to 4 resistors:\n", numBestRes);
+            resultsNLowPtr = resultsLowPtr;
+         }
+         if (v==4) {
+            gprintf(gui, "Show best:%u solutions with 4 resistors:\n", numBestRes);
+            resultsNLowPtr = results4LowPtr;
+         }
+         if (v==3) {
+            gprintf(gui, "Show best:%u solutions with 3 resistors:\n", numBestRes);
+            resultsNLowPtr = results3LowPtr;
+         }
       }
-      if (maxRp==2) { // maybe a series or parallel value
-         int cmp0, cmp1;
-         //cmp0 = (strcmp(rValues[resultsNLowPtr[s].pos[0]].descIdx, "Custom list")!=0) &&
-         //       (strcmp(rValues[resultsNLowPtr[s].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-         if (rValues[resultsNLowPtr[s].pos[0]].descIdx<11) cmp0 = 0; else cmp0 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
-         //cmp1 = (strcmp(rValues[resultsNLowPtr[s].pos[1]].descIdx, "Custom list")!=0) &&
-         //       (strcmp(rValues[resultsNLowPtr[s].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
-         if (rValues[resultsNLowPtr[s].pos[1]].descIdx<11) cmp1 = 0; else cmp1 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
-         if (dbgLv>=PRINTDEBUG) gprintf(gui, "s:%d cmp0:%d cmp1:%d\n", s, cmp0, cmp1);
-         descIdx = rValues[resultsNLowPtr[s].pos[0]].descIdx;
-         if (cmp0==0) { // single resistors
-            tol0 = tol1str;
-            if (descIdx==2) tol0 = tol2str;
-            if (format==0) { // sci format
-               //gprintf(gui, "a:%-9s:%8G             ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], rValues[resultsNLowPtr[s].pos[0]].rp[0]);
-               gprintf(gui, "a:%-9s:%8G@%2s%%                 ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], rValues[resultsNLowPtr[s].pos[0]].rp[0], tol0);
-            } else { // eng/SIprefix format
-               char* aPtr = engStr(rValues[resultsNLowPtr[s].pos[0]].rp[0], 6, false, format-1);
-               gprintf(gui, "a:%-9s:%8s@%2s%%                 ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], aPtr, tol0);
-               free(aPtr);
+      if (v==2) { // when maxRp==1 no need to showVal4+,4,3 ...
+         gprintf(gui, "Show best:%u solutions with 2 resistors:\n", numBestRes);
+         resultsNLowPtr = results2LowPtr;
+      }
+      for (int s=0; s<numBestRes; s++) { // for each bestRes
+         //printf("s:%02d resultsNLowPtr[].pos[0]:%03u resultsNLowPtr[].pos[1]:%03u\n", s, resultsNLowPtr[s].pos[0], resultsNLowPtr[s].pos[1]);
+         //printf("s:%02d resultsNLowPtr[].delta:%.5f val:%.5f\n", s, resultsNLowPtr[s].delta, target+resultsNLowPtr[s].delta);
+         //printf("s:%02d numV:%u\n", s, numV);
+         if (resultsNLowPtr[s].pos[0] >= numV || resultsNLowPtr[s].pos[1] >= numV) continue;
+         //printf("s:%02d delta:%.5f MaxValue/2:%.5f\n", s, resultsNLowPtr[s].delta, MaxValue/2);
+         //gprintf(gui, "-\n");
+         //if (resultsNLowPtr[s].delta>MaxValue/2) continue;
+         if (dbgLv>=PRINTDEBUG) gprintf(gui, "valid s:%02d resultsNLowPtr[].pos[0]:%03u resultsNLowPtr[].pos[1]:%03u\n", s, resultsNLowPtr[s].pos[0], resultsNLowPtr[s].pos[1]);
+         if (format==0) {
+            gprintf(gui, "val:%11G", target+resultsNLowPtr[s].delta);
+            gprintf(gui, "   delta:%11.4G", resultsNLowPtr[s].delta);
+            gprintf(gui, " e%%:%9.2G", resultsNLowPtr[s].delta/target*100);
+            gprintf(gui, "   a:%11G", rValues[resultsNLowPtr[s].pos[0]].r);
+            gprintf(gui, " b:%11G\n", rValues[resultsNLowPtr[s].pos[1]].r);
+         } else {
+            char* valPtr = engStr(target+resultsNLowPtr[s].delta, 6, false, format-1);
+            char* deltaPtr = engStr(resultsNLowPtr[s].delta, 4, false, format-1);
+            char* aPtr = engStr(rValues[resultsNLowPtr[s].pos[0]].r, 6, false, format-1);
+            char* bPtr = engStr(rValues[resultsNLowPtr[s].pos[1]].r, 6, false, format-1);
+            gprintf(gui, "val:%11s", valPtr);
+            gprintf(gui, "   delta:%11s", deltaPtr);
+            gprintf(gui, " e%%:%9.2G", resultsNLowPtr[s].delta/target*100);
+            gprintf(gui, "   a:%11s", aPtr);
+            gprintf(gui, " b:%11s\n", bPtr);
+            free(valPtr);
+            free(deltaPtr);
+            free(aPtr);
+            free(bPtr);
+         }
+         if (maxRp==2) { // maybe a series or parallel value
+            int cmp0, cmp1;
+            //cmp0 = (strcmp(rValues[resultsNLowPtr[s].pos[0]].descIdx, "Custom list")!=0) &&
+            //       (strcmp(rValues[resultsNLowPtr[s].pos[0]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+            if (rValues[resultsNLowPtr[s].pos[0]].descIdx<11) cmp0 = 0; else cmp0 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
+            //cmp1 = (strcmp(rValues[resultsNLowPtr[s].pos[1]].descIdx, "Custom list")!=0) &&
+            //       (strcmp(rValues[resultsNLowPtr[s].pos[1]].descIdx, Exx          )!=0);   // 0 when single (Exx or custom), 1 when two (series or //)
+            if (rValues[resultsNLowPtr[s].pos[1]].descIdx<11) cmp1 = 0; else cmp1 = 1; // 0 when single (Exx or custom), 1 when two (series or //)
+            if (dbgLv>=PRINTDEBUG) gprintf(gui, "s:%d cmp0:%d cmp1:%d\n", s, cmp0, cmp1);
+            descIdx = rValues[resultsNLowPtr[s].pos[0]].descIdx;
+            if (cmp0==0) { // single resistors
+               tol0 = tol1str;
+               if (descIdx==2) tol0 = tol2str;
+               if (format==0) { // sci format
+                  //gprintf(gui, "a:%-9s:%8G             ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], rValues[resultsNLowPtr[s].pos[0]].rp[0]);
+                  gprintf(gui, "a:%-9s:%8G@%2s%%                 ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], rValues[resultsNLowPtr[s].pos[0]].rp[0], tol0);
+               } else { // eng/SIprefix format
+                  char* aPtr = engStr(rValues[resultsNLowPtr[s].pos[0]].rp[0], 6, false, format-1);
+                  gprintf(gui, "a:%-9s:%8s@%2s%%                 ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], aPtr, tol0);
+                  free(aPtr);
+               }
+            } else { // 2 resistors in series or parallel
+               tol0 = tol1str;
+               if (descIdx==2 || descIdx==13 || descIdx==16) tol0 = tol2str;
+               tol1 = tol1str;
+               if (descIdx==2 || descIdx==12 || descIdx==13 || descIdx==15 || descIdx==16) tol1 = tol2str;
+               if (format==0) { // sci format
+                  //gprintf(gui, "a:%-9s:%8G & %8G  " , Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], rValues[resultsNLowPtr[s].pos[0]].rp[0], rValues[resultsNLowPtr[s].pos[0]].rp[1]);
+                  if (descIdx<14) // series
+                     gprintf(gui, "a:%-9s:%8G@%2s%% ++%8G@%2s%%  ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], rValues[resultsNLowPtr[s].pos[0]].rp[0], tol0, rValues[resultsNLowPtr[s].pos[0]].rp[1], tol1);
+                  else // parallel
+                     gprintf(gui, "a:%-9s:%8G@%2s%% //%8G@%2s%%  ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], rValues[resultsNLowPtr[s].pos[0]].rp[0], tol0, rValues[resultsNLowPtr[s].pos[0]].rp[1], tol1);
+               } else { // eng/SIprefix format
+                  char* a0Ptr = engStr(rValues[resultsNLowPtr[s].pos[0]].rp[0], 6, false, format-1);
+                  char* a1Ptr = engStr(rValues[resultsNLowPtr[s].pos[0]].rp[1], 6, false, format-1);
+                  if (descIdx<14) // series
+                     gprintf(gui, "a:%-9s:%8s@%2s%% ++%8s@%2s%%  ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], a0Ptr, tol0, a1Ptr, tol1);
+                  else // parallel
+                     gprintf(gui, "a:%-9s:%8s@%2s%% //%8s@%2s%%  ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], a0Ptr, tol0, a1Ptr, tol1);
+                  free(a0Ptr);
+                  free(a1Ptr);
+               }
             }
-         } else { // 2 resistors in series or parallel
-            tol0 = tol1str;
-            if (descIdx==2 || descIdx==13 || descIdx==16) tol0 = tol2str;
-            tol1 = tol1str;
-            if (descIdx==2 || descIdx==12 || descIdx==13 || descIdx==15 || descIdx==16) tol1 = tol2str;
-            if (format==0) { // sci format
-               //gprintf(gui, "a:%-9s:%8G & %8G  " , Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], rValues[resultsNLowPtr[s].pos[0]].rp[0], rValues[resultsNLowPtr[s].pos[0]].rp[1]);
-               if (descIdx<14) // series
-                  gprintf(gui, "a:%-9s:%8G@%2s%% ++%8G@%2s%%  ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], rValues[resultsNLowPtr[s].pos[0]].rp[0], tol0, rValues[resultsNLowPtr[s].pos[0]].rp[1], tol1);
-               else // parallel
-                  gprintf(gui, "a:%-9s:%8G@%2s%% //%8G@%2s%%  ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], rValues[resultsNLowPtr[s].pos[0]].rp[0], tol0, rValues[resultsNLowPtr[s].pos[0]].rp[1], tol1);
-            } else { // eng/SIprefix format
-               char* a0Ptr = engStr(rValues[resultsNLowPtr[s].pos[0]].rp[0], 6, false, format-1);
-               char* a1Ptr = engStr(rValues[resultsNLowPtr[s].pos[0]].rp[1], 6, false, format-1);
-               if (descIdx<14) // series
-                  gprintf(gui, "a:%-9s:%8s@%2s%% ++%8s@%2s%%  ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], a0Ptr, tol0, a1Ptr, tol1);
-               else // parallel
-                  gprintf(gui, "a:%-9s:%8s@%2s%% //%8s@%2s%%  ", Vdesc[rValues[resultsNLowPtr[s].pos[0]].descIdx], a0Ptr, tol0, a1Ptr, tol1);
-               free(a0Ptr);
-               free(a1Ptr);
+            descIdx = rValues[resultsNLowPtr[s].pos[1]].descIdx;
+            if (cmp1==0) { // single resistors
+               tol0 = tol1str;
+               if (descIdx==2) tol0 = tol2str;
+               if (format==0) { // sci format
+                  //gprintf(gui, "b:%-9s:%8G"       , Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], rValues[resultsNLowPtr[s].pos[1]].rp[0]);
+                  gprintf(gui, "b:%-9s:%8G@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], rValues[resultsNLowPtr[s].pos[1]].rp[0], tol0);
+               } else { // eng/SIprefix format
+                  char* bPtr = engStr(rValues[resultsNLowPtr[s].pos[1]].rp[0], 6, false, format-1);
+                  gprintf(gui, "b:%-9s:%8s@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], bPtr, tol0);
+                  free(bPtr);
+               }
+            } else { // 2 resistors in series or parallel
+               tol0 = tol1str;
+               if (descIdx==2 || descIdx==13 || descIdx==16) tol0 = tol2str;
+               tol1 = tol1str;
+               if (descIdx==2 || descIdx==12 || descIdx==13 || descIdx==15 || descIdx==16) tol1 = tol2str;
+               if (format==0) { // sci format
+                  //gprintf(gui, "b:%-9s:%8G & %8G ", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], rValues[resultsNLowPtr[s].pos[1]].rp[0], rValues[resultsNLowPtr[s].pos[1]].rp[1]);
+                  if (descIdx<14) // series
+                     gprintf(gui, "b:%-9s:%8G@%2s%% ++%8G@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], rValues[resultsNLowPtr[s].pos[1]].rp[0], tol0, rValues[resultsNLowPtr[s].pos[1]].rp[1], tol1);
+                  else // parallel
+                     gprintf(gui, "b:%-9s:%8G@%2s%% //%8G@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], rValues[resultsNLowPtr[s].pos[1]].rp[0], tol0, rValues[resultsNLowPtr[s].pos[1]].rp[1], tol1);
+               } else { // eng/SIprefix format
+                  char* b0Ptr = engStr(rValues[resultsNLowPtr[s].pos[1]].rp[0], 6, false, format-1);
+                  char* b1Ptr = engStr(rValues[resultsNLowPtr[s].pos[1]].rp[1], 6, false, format-1);
+                  if (descIdx<14) // series
+                     gprintf(gui, "b:%-9s:%8s@%2s%% ++%8s@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], b0Ptr, tol0, b1Ptr, tol1);
+                  else // parallel
+                     gprintf(gui, "b:%-9s:%8s@%2s%% //%8s@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], b0Ptr, tol0, b1Ptr, tol1);
+                  free(b0Ptr);
+                  free(b1Ptr);
+               }
+            } // single or serie/parallel
+            gprintf(gui, "\n");
+         } // maxRp=2 maybe a series or parallel value
+      } // for each bestRes
+      gprintf(gui, "\n");
+   } // up to 4, 4, 3, 2 resistors
+   return OK;
+} // int showValMemLow(u32 numBestRes)
+
+/* print last 'numBestRes = totV-first' results */
+int showVal(u32 numBestRes) { // show Solutions
+   int ret = OK;
+
+   //printf("numBestRes:%ld NumberResMax:%d\n", numBestRes, NumberResMax);
+   if (numBestRes>NumberResMax) numBestRes=NumberResMax;
+   //printf("numBestRes:%ld NumberResMax:%d\n", numBestRes, NumberResMax);
+   first = totV-numBestRes; /* 0 worse, 'first' 1st printed, 'totV' best, numBestRes # of best print */
+   //printf("totV:%llu numBestRes:%u first:%u\n", totV, numBestRes, first);
+
+   if (mem==0) {
+      for (u08 v=5; v>=2; v--) { // up to 4, 4, 3, 2 resistors
+         //printf("v:%u\n", v);
+         if (maxRp==1 && v>2) continue;
+         if (maxRp==2) { // when maxRp==2 need to showVal4+,4,3 ...
+            if (v==5) {
+               gprintf(gui, "Show %u solutions with up to 4 resistors:\n", numBestRes);
+               ret = showVal2to4(first);
+            }
+            if (v==4) {
+               gprintf(gui, "Show %u solutions with 4 resistors:\n", numBestRes);
+               ret = showVal43(numBestRes, 4);
+            }
+            if (v==3) {
+               gprintf(gui, "Show %u solutions with 3 resistors:\n", numBestRes);
+               ret = showVal43(numBestRes, 3);
             }
          }
-         descIdx = rValues[resultsNLowPtr[s].pos[1]].descIdx;
-         if (cmp1==0) { // single resistors
-            tol0 = tol1str;
-            if (descIdx==2) tol0 = tol2str;
-            if (format==0) { // sci format
-               //gprintf(gui, "b:%-9s:%8G"       , Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], rValues[resultsNLowPtr[s].pos[1]].rp[0]);
-               gprintf(gui, "b:%-9s:%8G@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], rValues[resultsNLowPtr[s].pos[1]].rp[0], tol0);
-            } else { // eng/SIprefix format
-               char* bPtr = engStr(rValues[resultsNLowPtr[s].pos[1]].rp[0], 6, false, format-1);
-               gprintf(gui, "b:%-9s:%8s@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], bPtr, tol0);
-               free(bPtr);
-            }
-         } else { // 2 resistors in series or parallel
-            tol0 = tol1str;
-            if (descIdx==2 || descIdx==13 || descIdx==16) tol0 = tol2str;
-            tol1 = tol1str;
-            if (descIdx==2 || descIdx==12 || descIdx==13 || descIdx==15 || descIdx==16) tol1 = tol2str;
-            if (format==0) { // sci format
-               //gprintf(gui, "b:%-9s:%8G & %8G ", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], rValues[resultsNLowPtr[s].pos[1]].rp[0], rValues[resultsNLowPtr[s].pos[1]].rp[1]);
-               if (descIdx<14) // series
-                  gprintf(gui, "b:%-9s:%8G@%2s%% ++%8G@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], rValues[resultsNLowPtr[s].pos[1]].rp[0], tol0, rValues[resultsNLowPtr[s].pos[1]].rp[1], tol1);
-               else // parallel
-                  gprintf(gui, "b:%-9s:%8G@%2s%% //%8G@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], rValues[resultsNLowPtr[s].pos[1]].rp[0], tol0, rValues[resultsNLowPtr[s].pos[1]].rp[1], tol1);
-            } else { // eng/SIprefix format
-               char* b0Ptr = engStr(rValues[resultsNLowPtr[s].pos[1]].rp[0], 6, false, format-1);
-               char* b1Ptr = engStr(rValues[resultsNLowPtr[s].pos[1]].rp[1], 6, false, format-1);
-               if (descIdx<14) // series
-                  gprintf(gui, "b:%-9s:%8s@%2s%% ++%8s@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], b0Ptr, tol0, b1Ptr, tol1);
-               else // parallel
-                  gprintf(gui, "b:%-9s:%8s@%2s%% //%8s@%2s%%", Vdesc[rValues[resultsNLowPtr[s].pos[1]].descIdx], b0Ptr, tol0, b1Ptr, tol1);
-               free(b0Ptr);
-               free(b1Ptr);
-            }
+         if (v==2) { // when maxRp==1 no need to showVal4+,4,3 ...
+            gprintf(gui, "Show %u solutions with 2 resistors:\n", numBestRes);
+            ret = showVal2(numBestRes);
          }
          gprintf(gui, "\n");
-      }
+      } // up to 4, 4, 3, 2 resistors
+   } else { // mem=1
+      ret = showValMemLow(numBestRes); // show Solutions when mem=1
    }
-   return OK;
-} // int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr)
+   return ret;
+} // int showVal(u32 numBestRes)
 
 int freeMem() { // free memory
+   numV=numF; // if needed restore numV
+   memInpCalc(); // if needed recalc the allocated size
    // 10 - freeing dynamic allocated memory ...
-   for (u32 e=0; e<numV; e++) {
+   for (u32 e=0; e<numV; e++) { // for input values
       if (rValues[e].rp) free(rValues[e].rp);
    }
-   if (rValues) free(rValues); // only with parallel/series
-   if (mem==0) { // old memory hungry strategy
+   if (rValues) free(rValues); // for input values with parallel/series
+   if (mem==0) { // for results old memory hungry strategy
       if (results) free(results);
-   } else { // new mem low strategy
+   } else { // for results new mem low strategy
       if (results2LowPtr) free(results2LowPtr);
       if (maxRp==2) {
          if (resultsLowPtr) free(resultsLowPtr);

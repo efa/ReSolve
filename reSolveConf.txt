@@ -5,7 +5,7 @@
 ; strings are enclosed in "", keep in one line, shorter than 78 chars
 ; vectors are {} enclosed and comma separated (space and multi lines allowed)
 ; comments follow ;
-; remember that command line arguments take precedence to config values
+; remember that command line arguments take precedence to config file values
 ; -h|--help to see command line syntax
 
 expr="1.25*(1+b/a)" ; default formula. Use only 'a' and 'b' as variables
@@ -46,4 +46,4 @@ userR2={ 10, 12.1, 14.7, 17.8, 21.5, 26.1, 31.6, 38.3, 46.4, 56.2, 68.1, 82.5, 1
 userR2tol=0.1 ; baseR2 percent tolerance: use 0.1 for 0.1% tolerance
 userR2desc="user list of 77 E48/4 values @0.1%, 10-22M Ohm" ; description max 64 chars
 
-valTolBest=1 ; 0 keep all values, 1 skip: serie 10*R1%>R0.1%, // R1%<10*R0.1%
+bestTol=1 ; 0 keep all values, 1 skip: serie 10*R1%>R0.1%, // R1%<10*R0.1%

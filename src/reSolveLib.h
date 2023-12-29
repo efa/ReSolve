@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/10/01 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/12/29 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveLib.h is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -37,7 +37,7 @@
 #define AppName       "ReSolve"
 #define SourceVersion "0.11.09h beta"
 #define CopyrightYear "2023"
-#define SourceDate    CopyrightYear"/10/01"
+#define SourceDate    CopyrightYear"/12/29"
 #define ReSolveVer    SourceVersion" "SourceDate
 #define Author        "Valerio Messina"
 #define WebLink       "github.com/efa/ReSolve"
@@ -79,7 +79,7 @@
 #define MICRO "μ"//"u" // used when SI prefix are requested
 
 #define NumberResDefault  20  /* default number of results to print */
-#define NumberResMax     512000 /* the limit depends on compiler */
+#define NumberResMax     512000U /* the limit depends on compiler */
 
 #define PRINTBATCH   3
 #define PRINTF       4
@@ -96,40 +96,52 @@ extern u16 maxRp;      /* max number of resistances supported per position: as n
 extern u16 maxRc;      /* number of resistances (variables) in the circuit: 2 */
 extern u32 numV;       /* number of input possible values (all configurations) */
 extern u64 totV;       /* number of results values to try */
-extern u16 numBestRes; /* number of best results to show */
+extern u32 numBestRes; /* number of best results to show */
 //extern u16 listNumber; // user list quantity: numR1 OR numR1+numR2
 extern u16 numR;       // number of values from both lists: numR1 OR numR1+numR2
 extern double* userR;  // declare vector pointer, will be a vector of double userR[numR1]
 extern char userRdesc[]; // description print: reserve space for 65 chars
-extern char Vdesc[][17]; // "UserListX", "EXXXserie", "Series of", "Parallel "
+extern u32 numS; // number of single values, like plv+1
+extern u32 pfv;  // position of first single value
+extern u32 plv;  // position of last single value
+extern u32 pfs;  // position of first serie
+extern u32 pls;  // position of last serie
+extern u32 pfp;  // position of first parallel
+extern u32 plp;  // position of last parallel
+extern u32 numF; // save calculated numV for memory free
+
 extern u08 lists; // 1 normal, 2 use userR as low precision & userR2 as hi prec
 extern double* userR2; // declare vector pointer, will be a vector of double userR2[numR2]
 extern float userRtol;    // userR percent tolerance: 0.1, 1, 2, 5, 10, 20, 40
 extern float userR2tol;   // userR2 percent tolerance: 0.1, 1, 2, 5, 10, 20, 40
 extern char userR2desc[]; // description print: reserve space for 65 chars
-extern u16 numR2;    // number of values in second user list
-extern u32 numT;     // number of valid numV values
-extern u08 valTolBest; // 0 normal, 1 use userR2 as 1/10 tolerance than userR
+extern u16 numR2;   // number of values in second user list
+extern u08 bestTol; // 0 normal, 1 use userR2 as 1/10 tolerance than userR
 extern float tolRatio; // userR2 to userR tolerance
+
+extern char Vdesc[][17]; // "UserListX", "EXXXserie", "Series of", "Parallel "
 struct rValuesTy { double* rp; /* will be a vector of values with [maxRp] elements */
                    double  r;    /* resultant value, single, series & parallel */
                    u08     descIdx; /* description Vdesc[] index how is built (single, series or parallel) */
                  }; /* struct declaration */
 extern struct rValuesTy* rValues; /* pointer to rValues[numV] for single, series & parallel rValues[numV] */
-struct resultsTy { u16   pos[MaxRc]; /* positions in rValues of each resistance, [maxRc] elements */
+struct resultsTy { u16   pos[MaxRc]; /* positions in rValues of each resistance, [maxRc=2] elements */
                    float delta;     /* distance from desiderata */
                  }; /* struct declaration */
-extern struct resultsTy* results; /* pointer to results[totV] for results: [(12*7)^2] results[totV] */
+extern struct resultsTy* results; // pointer to results[totV] for results. Ex.[(12*7)^2]
+
 extern u16 valTy, resTy; // sizeof struct
 extern u32 rValueSize; // sizeof vector of struct: rValues[numV]
 extern u64 resultSize; // sizeof vector of struct: results[totV]
 extern u64 allocatedB; // sizeof total allocated memory in Bytes
 extern u32 first; // first result to show
+
 extern size_t resultLowSize; // size of mem low vectors resultsLow[numBestRes]
 extern struct resultsTy* resultsLowPtr; // low mem results[numBestRes], all kind solutions
 extern struct resultsTy* results4LowPtr; // low mem results[numBestRes], 4R solutions
 extern struct resultsTy* results3LowPtr; // low mem results[numBestRes], 3R solutions
 extern struct resultsTy* results2LowPtr; // low mem results[numBestRes], 2R solutions
+
 extern u08 format; // 0 scientific notation, 1 engineering notation, 2 SI prefix
 extern bool mem; // 0 use old memory hungry strategy, 1 use new mem low strategy
 extern bool gui;  // when 1, gprintf() update the GUI
@@ -149,6 +161,8 @@ void showHead();
 void showHelp();
 int updateEserie(char* EseriePtr); // update u08 Eserie from char* EseriePtr
 int updateRdesc(bit force); // update Rdesc
+void showQty();   // show compute quantities
+void showInPos(); // show input value positions
 int globalInit();  // basic initialization
 int memInpCalc();  // memory size calculation for input values
 int memResCalc();  // memory size calculation for results
@@ -163,11 +177,7 @@ int calcFm0values(); // calculate all results using 'maxRc' when mem=0
 int calcFm1values(); // calculate all results using 'maxRc' when mem=1
 int structQuickSort(struct resultsTy results[], s32 totNumber);/* QuickSort for vector of structs of type resultsTy, using field 'abs(delta)' */
 int doCalc(); // fill inputs, calcs, sort solutions
-int showVal(u32 first); // solutions with up to 4 resistors
-int showVal4(u32 numBestRes); // Solutions with 4 resistors
-int showVal3(u32 numBestRes); // Solutions with 3 resistors
-int showVal2(u32 numBestRes); // Solutions with 2 resistors
-int showValMemLow(u32 numBestRes, struct resultsTy* resultsNLowPtr); // Solutions
+int showVal(u32 numBestRes); // show Solutions
 int freeMem(); // free memory
 
 #endif /* _INCh */

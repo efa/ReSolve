@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with ReSolve. If not, see <http://www.gnu.org/licenses/>.
 #
-# Makefile to build 'ReSolve' using GCC+GNUtoolchain on Linux
+# Makefile to build 'ReSolve' using GCC+GNUtoolchain on Linux, MinGw on Win, Clang on MacOS
 # Linux32=>Linux32, Linux64=>Linux64, MinGw32=>Win32, MinGw64=>Win64, macOS64=>macOS64
 #
 # To build for debug use: $ make BUILD=debug debug
@@ -28,7 +28,7 @@ else
    PKG=MacOS
 endif
 ifeq ($(HOST),Msys)
-   PKG=Win
+   PKG=WinMgw
 endif
 BIT := $(shell getconf LONG_BIT)
 
@@ -92,9 +92,9 @@ bin: all cleanobj strip
 force: clean bin
 	rm -f *.o
 
-rel: force
-	mv $(TARGET) $(GUI) ..
-
-pkg: rel
+pkg:
 	@echo ""
-	@makeAppDir.sh $(PKG) $(BIT)
+	mv $(TARGET) $(GUI) ..
+	@makePkg.sh $(PKG) $(BIT)
+
+rel: force pkg

@@ -80,9 +80,9 @@ bin: all cleanobj strip
 force: clean bin
 	rm -f *.o
 
-rel: force
-	mv $(TARGET) $(GUI) ..
-
-pkg: rel
+pkg:
 	@echo ""
-	@makeAppDir.sh $(PKG) $(BIT)
+	mv $(TARGET) $(GUI) ..
+	@makePkg.sh $(PKG) $(BIT)
+
+rel: force pkg

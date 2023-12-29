@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/10/01 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/12/29 solve math expressions using discrete values*/
 /* Copyright 2022-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveGui.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -475,9 +475,9 @@ static void bestTolWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on
    guint checkVal = gtk_toggle_button_get_active((GtkToggleButton*)widgetWhfPtr);
    g_print("value:'%u'\n", checkVal);
    if (checkVal == TRUE)
-      valTolBest = 1;
+      bestTol = 1;
    else
-      valTolBest = 0;
+      bestTol = 0;
 } // bestTolWhf()
 
 static void userRtolWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on userRtol
@@ -779,7 +779,7 @@ static void resultsWhf(GtkWidget* widgetWhfPtr, gpointer dataPtr) { // called on
       return;
    }
    u64 tmpNum = atoi(txtPtr);
-   u64 tmpMax=(1<<(8*sizeof(numBestRes)))-1; // 65535
+   u64 tmpMax=NumberResMax; // 512000U
    if (tmpNum==0 || tmpNum>tmpMax) {
       printf("Unsupported:'%s'\n", txtPtr);
       numBestRes=NumberResDefault;
@@ -927,44 +927,8 @@ int runReSolve() { // memSize, memAlloc, doCalc, show output, freeMem
 
    // 9 - print results
    winGuiLoop = 0; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
-   if (mem==0) { // old memory hungry strategy
-      gprintf(gui, "Printing best:%u solutions (top worst, botton best) in all configurations\n\n", numBestRes);
-      if (maxRp==1) { // no need to showVal4,3,2 ...
-         gprintf(gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-         ret = showVal2(numBestRes); // LIB:
-      } else {
-         gprintf(gui, "Show %u solutions with up to 4 resistors:\n", numBestRes);
-         ret = showVal(first); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show %u solutions with 4 resistors:\n", numBestRes);
-         ret = showVal4(numBestRes); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show %u solutions with 3 resistors:\n", numBestRes);
-         ret = showVal3(numBestRes); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-         ret = showVal2(numBestRes); // LIB:
-      }
-   } else { // new mem low strategy
-      gprintf(gui, "Printing best:%u solutions (top worst, botton best) in all configurations\n\n", numBestRes);
-      if (maxRp==1) { // no need to showVal4,3,2 ...
-         gprintf(gui, "Show best:%u solutions with 2 resistors:\n", numBestRes);
-         ret = showValMemLow(numBestRes, results2LowPtr); // LIB:
-      } else {
-         gprintf(gui, "Show best:%u solutions with up to 4 resistors:\n", numBestRes);
-         ret = showValMemLow(numBestRes, resultsLowPtr); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show best:%u solutions with 4 resistors:\n", numBestRes);
-         ret = showValMemLow(numBestRes, results4LowPtr); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show best:%u solutions with 3 resistors:\n", numBestRes);
-         ret = showValMemLow(numBestRes, results3LowPtr); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show best:%u solutions with 2 resistors:\n", numBestRes);
-         ret = showValMemLow(numBestRes, results2LowPtr); // LIB:
-      }
-   }
-   gprintf(gui, "\n");
+   gprintf(gui, "Printing best:%u solutions (top worst, botton best) in all configurations\n\n", numBestRes);
+   ret = showVal(numBestRes); // LIB: show Solutions
    winGuiLoop = 1; // Win loop gtk_events_pending/gtk_main_iteration to update GUI
 
    // 10 - freeing dynamic allocated memory ...
@@ -1108,7 +1072,7 @@ int guiUpdateStart() { // update widgets with input/config values at startup
    }
 
    widgetPtr = GTK_WIDGET(gtk_builder_get_object(builderPtr, "valTolBestWdg"));
-   if (valTolBest==1) { // bestTol checked
+   if (bestTol==1) { // bestTol checked
       gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, TRUE);
    } else {
       gtk_toggle_button_set_active((GtkToggleButton*)widgetPtr, FALSE);

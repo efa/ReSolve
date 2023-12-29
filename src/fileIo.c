@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/10/01 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/12/29 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* fileIo.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -287,6 +287,7 @@ errOk parseConf(char* bufPtr, char* paramPtr, char paramValue[LineLen]) {
          if (chPtr==NULL) break;
          //if (dbgLev>=PRINTDEBUG) printNchar(chPtr, 10);
       }
+      if (size==0) size=1; // one value, so no comma
       if (dbgLev>=PRINTDEBUG) printf("size:%u\n", size);
       double* vectorVal = malloc(size*sizeof(double)); //must be freed by caller
       chPtr = vectorChr;

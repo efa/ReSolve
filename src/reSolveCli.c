@@ -1,4 +1,4 @@
-/* ReSolve v0.11.09h 2023/10/01 solve math expressions using discrete values*/
+/* ReSolve v0.11.09h 2023/12/29 solve math expressions using discrete values*/
 /* Copyright 2005-2023 Valerio Messina http://users.iol.it/efa              */
 /* reSolveCli.c is part of ReSolve
    ReSolve is free software: you can redistribute it and/or modify
@@ -151,48 +151,11 @@ int main(int numPar, char* paramPtr[]) { // CLI entry point
    printf("Compute time: %f s\n", time);
 
    // 9 - print results
-   if (mem==0) { // old memory hungry strategy
-      gprintf(gui, "Printing best:%u found solutions (top worst, botton best) in all configurations\n\n", numBestRes);
-      if (maxRp==1) { // no need to showVal4,3,2 ...
-         gprintf(gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-         ret = showVal2(numBestRes); // LIB:
-      } else {
-         gprintf(gui, "Show %u solutions with up to 4 resistors:\n", numBestRes);
-         ret = showVal(first); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show %u solutions with 4 resistors:\n", numBestRes);
-         ret = showVal4(numBestRes); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show %u solutions with 3 resistors:\n", numBestRes);
-         ret = showVal3(numBestRes); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show %u solutions with 2 resistors:\n", numBestRes);
-         ret = showVal2(numBestRes); // LIB:
-      }
-   } else { // new mem low strategy
-      gprintf(gui, "Printing best:%u found solutions (top worst, botton best) in all configurations\n\n", numBestRes);
-      if (maxRp==1) { // no need to showVal4,3,2 ...
-         gprintf(gui, "Show best:%u solutions with 2 resistors:\n", numBestRes);
-         ret = showValMemLow(numBestRes, results2LowPtr); // LIB:
-      } else {
-         gprintf(gui, "Show best:%u solutions with up to 4 resistors:\n", numBestRes);
-         ret = showValMemLow(numBestRes, resultsLowPtr); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show best:%u solutions with 4 resistors:\n", numBestRes);
-         ret = showValMemLow(numBestRes, results4LowPtr); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show best:%u solutions with 3 resistors:\n", numBestRes);
-         ret = showValMemLow(numBestRes, results3LowPtr); // LIB:
-         gprintf(gui, "\n");
-         gprintf(gui, "Show best:%u solutions with 2 resistors:\n", numBestRes);
-         ret = showValMemLow(numBestRes, results2LowPtr); // LIB:
-      }
-   }
-   gprintf(gui, "\n");
+   gprintf(gui, "Printing best:%u found solutions (top worst, botton best) in all configurations\n\n", numBestRes);
+   ret = showVal(numBestRes); // LIB: show Solutions
 
    // 10 - freeing dynamic allocated memory ...
    //printf("Quit...\n");
-   memInpCalc(); // if needed restore numV to the allocated value
    ret = freeMem(); // LIB: free memory
    if (userR) free(userR); // free mem allocated by fillConfigVars()
 
